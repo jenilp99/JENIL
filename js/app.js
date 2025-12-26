@@ -187,8 +187,8 @@ function addWindow(event) {
     const window = {
         configId: document.getElementById('configId').value,
         projectName: document.getElementById('projectName').value,
-        width: parseFloat(document.getElementById('width').value),
-        height: parseFloat(document.getElementById('height').value),
+        width: convertToInches(parseFloat(document.getElementById('width').value)),
+        height: convertToInches(parseFloat(document.getElementById('height').value)),
         tracks: parseInt(document.getElementById('tracks').value),
         shutters: parseInt(document.getElementById('shutters').value),
         mosquitoShutters: parseInt(document.getElementById('mosquitoShutters').value),
@@ -249,8 +249,8 @@ function editWindow(idx) {
     document.getElementById('editWindowIndex').value = idx;
     document.getElementById('editConfigId').value = win.configId;
     document.getElementById('editProjectName').value = win.projectName;
-    document.getElementById('editWidth').value = win.width;
-    document.getElementById('editHeight').value = win.height;
+    document.getElementById('editWidth').value = convertFromInches(win.width);
+    document.getElementById('editHeight').value = convertFromInches(win.height);
     document.getElementById('editTracks').value = win.tracks;
     document.getElementById('editShutters').value = win.shutters;
     document.getElementById('editMosquitoShutters').value = win.mosquitoShutters;
@@ -270,8 +270,8 @@ function saveWindowEdit(event) {
     windows[idx] = {
         configId: document.getElementById('editConfigId').value,
         projectName: document.getElementById('editProjectName').value,
-        width: parseFloat(document.getElementById('editWidth').value),
-        height: parseFloat(document.getElementById('editHeight').value),
+        width: convertToInches(parseFloat(document.getElementById('editWidth').value)),
+        height: convertToInches(parseFloat(document.getElementById('editHeight').value)),
         tracks: parseInt(document.getElementById('editTracks').value),
         shutters: parseInt(document.getElementById('editShutters').value),
         mosquitoShutters: parseInt(document.getElementById('editMosquitoShutters').value),
