@@ -75,14 +75,29 @@
             color: #999;
         }
 
-        input[type="password"] {
+        input[type="password"],
+        input[type="text"] {
             width: 100%;
-            padding: 15px 15px 15px 50px;
+            padding: 15px 50px 15px 50px;
             border: 2px solid #e0e0e0;
             border-radius: 12px;
             font-size: 16px;
             transition: all 0.3s;
             background: #f8f9fa;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #666;
+            padding: 4px;
+            line-height: 1;
         }
 
         input[type="password"]:focus {
@@ -211,6 +226,7 @@
                     required
                     autofocus
                 >
+                <button type="button" class="toggle-password" id="togglePassword" aria-label="Show password">👁</button>
             </div>
 
             <button type="submit" class="btn-access" id="submitBtn">
@@ -305,6 +321,24 @@
         document.getElementById('passwordInput').addEventListener('input', function() {
             document.getElementById('errorBox').classList.remove('show');
         });
+
+        // Toggle password visibility
+        const togglePassword = document.getElementById('togglePassword');
+        if (togglePassword) {
+            togglePassword.addEventListener('click', function() {
+                const pwd = document.getElementById('passwordInput');
+                if (!pwd) return;
+                if (pwd.type === 'password') {
+                    pwd.type = 'text';
+                    togglePassword.textContent = '👁';
+                    togglePassword.setAttribute('aria-label', 'Hide password');
+                } else {
+                    pwd.type = 'password';
+                    togglePassword.textContent = '👁';
+                    togglePassword.setAttribute('aria-label', 'Show password');
+                }
+            });
+        }
 
         // Shake animation CSS
         const style = document.createElement('style');

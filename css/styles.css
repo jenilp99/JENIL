@@ -140,7 +140,6 @@ input:checked + .slider:before {
 .tab-content {
     display: none;
     padding: 30px;
-    max-height: calc(100vh - 300px);
     overflow-y: auto;
 }
 
@@ -513,7 +512,6 @@ table tr:hover {
     max-width: 600px;
     width: 90%;
     max-height: 90vh;
-    overflow-y: auto;
 }
 
 .modal-header {
@@ -556,5 +554,12 @@ table tr:hover {
         position: absolute;
         left: 0;
         top: 0;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    
+    .modal-content {
+        overflow-y: auto;
     }
 }

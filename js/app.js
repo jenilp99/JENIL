@@ -287,12 +287,12 @@ function saveWindowEdit(event) {
 }
 
 function deleteWindow(idx) {
-    if (confirm('Delete this window?')) {
+    showConfirm('Delete this window?', () => {
         windows.splice(idx, 1);
         autoSaveWindows();
         displayWindows();
         refreshProjectSelector();
-    }
+    });
 }
 
 // ============================================================================
@@ -397,11 +397,11 @@ function saveFormulaEdit(event) {
 }
 
 function deleteFormula(series, idx) {
-    if (confirm('Delete this formula?')) {
+    showConfirm('Delete this formula?', () => {
         seriesFormulas[series].splice(idx, 1);
         autoSaveFormulas();
         refreshFormulasDisplay();
-    }
+    });
 }
 
 function addNewSeries(event) {
@@ -428,13 +428,13 @@ function addNewSeries(event) {
 }
 
 function deleteSeries(series) {
-    if (confirm('Delete entire ' + series + ' series?')) {
+    showConfirm('Delete entire ' + series + ' series?', () => {
         delete seriesFormulas[series];
         delete stockMaster[series];
         autoSaveFormulas();
         autoSaveStock();
         refreshAllUI();
-    }
+    });
 }
 
 // ============================================================================
@@ -506,11 +506,11 @@ function updateStock(series, idx, field, value) {
 }
 
 function deleteStock(series, idx) {
-    if (confirm('Delete this stock material?')) {
+    showConfirm('Delete this stock material?', () => {
         stockMaster[series].splice(idx, 1);
         autoSaveStock();
         refreshStockMaster();
-    }
+    });
 }
 
 function updateKerf() {
@@ -548,12 +548,63 @@ function refreshProjectSelector() {
 // CLEAR DATA
 // ============================================================================
 
-function clearAllData() {
-    if (confirm('⚠️ This will delete ALL saved data. Continue?')) {
-        StorageManager.clearAll();
-        alert('✅ All data cleared! Refresh the page to start fresh.');
-        location.reload();
+// ----------------------------
+// Confirm modal helper
+// ----------------------------
+let __confirmCallback = null;
+function showConfirm(message, onConfirm) {
+    const modal = document.getElementById('confirmModal');
+    const msg = document.getElementById('confirmModalMessage');
+    if (!modal || !msg) {
+        // Fallback to browser confirm
+        if (confirm(message)) onConfirm && onConfirm();
+        return;
     }
+    msg.textContent = message;
+    __confirmCallback = onConfirm;
+    modal.classList.add('active');
+}
+
+function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) modal.classList.remove('active');
+    __confirmCallback = null;
+}
+
+// wire up buttons (if present)
+function _wireConfirmButtons() {
+    const ok = document.getElementById('confirmOkBtn');
+    const cancel = document.getElementById('confirmCancelBtn');
+    if (ok) {
+        // avoid attaching multiple handlers
+        ok.removeEventListener && ok.removeEventListener('click', ok._confirmHandler);
+        ok._confirmHandler = function() {
+            const cb = __confirmCallback; // capture before closing
+            closeConfirmModal();
+            if (typeof cb === 'function') cb();
+        };
+        ok.addEventListener('click', ok._confirmHandler);
+    }
+    if (cancel) {
+        cancel.removeEventListener && cancel.removeEventListener('click', cancel._cancelHandler);
+        cancel._cancelHandler = function() {
+            closeConfirmModal();
+        };
+        cancel.addEventListener('click', cancel._cancelHandler);
+    }
+}
+
+// Attempt immediate wiring and also wire on DOMContentLoaded as a fallback
+_wireConfirmButtons();
+document.addEventListener('DOMContentLoaded', _wireConfirmButtons);
+
+function clearAllData() {
+    showConfirm('⚠️ This will delete ALL saved data. Continue?', () => {
+        StorageManager.clearAll();
+        // Replace alert with modal-less notification or simple reload
+        // you can add a toast later; for now reload to reflect cleared state
+        location.reload();
+    });
 }
 
 // ============================================================================
