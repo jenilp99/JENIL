@@ -732,8 +732,8 @@
             document.getElementById('editWindowIndex').value = idx;
             document.getElementById('editConfigId').value = win.configId;
             document.getElementById('editProjectName').value = win.projectName;
-            document.getElementById('editWidth').value = win.width;
-            document.getElementById('editHeight').value = win.height;
+            document.getElementById('editWidth').value = convertFromInches(win.width);
+            document.getElementById('editHeight').value = convertFromInches(win.height);
             document.getElementById('editTracks').value = win.tracks;
             document.getElementById('editShutters').value = win.shutters;
             document.getElementById('editMosquitoShutters').value = win.mosquitoShutters;
@@ -1282,3 +1282,4 @@
 </body>
 
 </html>
+
