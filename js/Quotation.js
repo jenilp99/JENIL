@@ -502,11 +502,16 @@ function generateWindowDiagram(config) {
     for (let i = 0; i < config.tracks; i++) {
         const trackX = startX + frameThickness + (i * trackWidth * 0.7);
         
+        // Top track
         svg += `<rect x="${trackX}" y="${startY + 3}" width="${trackWidth}" height="${frameThickness}" 
                 fill="#7f8c8d" stroke="#5d6d7e" stroke-width="0.5" opacity="0.6" rx="1"/>`;
         
         svg += `<text x="${trackX + trackWidth/2}" y="${startY - 2}" text-anchor="middle" 
                 font-family="Arial, sans-serif" font-size="7" fill="#5d6d7e" font-weight="bold">T${i+1}</text>`;
+        
+        // Bottom track
+        svg += `<rect x="${trackX}" y="${startY + windowHeight - frameThickness * 2}" width="${trackWidth}" height="${frameThickness}" 
+                fill="#7f8c8d" stroke="#5d6d7e" stroke-width="0.5" opacity="0.6" rx="1"/>`;
     }
     
     // Draw shutters
@@ -545,29 +550,55 @@ function generateWindowDiagram(config) {
                     stroke="#3498db" stroke-width="2"/>`;
         }
         
-        // Handle
-        const handleX = shutterX + shutterWidth - 10;
-        const handleY = shutterY + shutterHeight / 2;
-        svg += `<rect x="${handleX}" y="${handleY - 6}" width="5" height="12" 
-                fill="#2c3e50" rx="1.5"/>`;
-        svg += `<circle cx="${handleX + 2.5}" cy="${handleY}" r="2" fill="#34495e"/>`;
+        // Handle - Only on corner shutters (first and last)
+        // First shutter: lock on left side, Last shutter: lock on right side
+        if (i === 0) {
+            // First shutter - lock on LEFT side
+            const handleX = shutterX + 5;
+            const handleY = shutterY + shutterHeight / 2;
+            svg += `<rect x="${handleX}" y="${handleY - 6}" width="5" height="12" 
+                    fill="#2c3e50" rx="1.5"/>`;
+            svg += `<circle cx="${handleX + 2.5}" cy="${handleY}" r="2" fill="#34495e"/>`;
+        } else if (i === config.shutters - 1) {
+            // Last shutter - lock on RIGHT side
+            const handleX = shutterX + shutterWidth - 10;
+            const handleY = shutterY + shutterHeight / 2;
+            svg += `<rect x="${handleX}" y="${handleY - 6}" width="5" height="12" 
+                    fill="#2c3e50" rx="1.5"/>`;
+            svg += `<circle cx="${handleX + 2.5}" cy="${handleY}" r="2" fill="#34495e"/>`;
+        }
         
         // Shutter label
         svg += `<text x="${shutterX + shutterWidth/2}" y="${shutterY + 18}" text-anchor="middle" 
                 font-family="Arial, sans-serif" font-size="11" fill="#2980b9" font-weight="bold">S${i+1}</text>`;
         
-        // Sliding arrow
+        // Sliding arrow - shows direction of shutter movement toward center
         const arrowY = shutterY + shutterHeight - 15;
-        if (i % 2 === 0) {
+        if (i === 0) {
+            // First shutter - arrow points RIGHT (slides right)
             svg += `<path d="M ${shutterX + shutterWidth/2 - 8},${arrowY} L ${shutterX + shutterWidth/2 + 4},${arrowY} 
                     L ${shutterX + shutterWidth/2},${arrowY - 4} M ${shutterX + shutterWidth/2 + 4},${arrowY} 
                     L ${shutterX + shutterWidth/2},${arrowY + 4}" 
                     stroke="#e74c3c" stroke-width="2" fill="none" stroke-linecap="round"/>`;
-        } else {
+        } else if (i === config.shutters - 1) {
+            // Last shutter - arrow points LEFT (slides left)
             svg += `<path d="M ${shutterX + shutterWidth/2 + 8},${arrowY} L ${shutterX + shutterWidth/2 - 4},${arrowY} 
                     L ${shutterX + shutterWidth/2},${arrowY - 4} M ${shutterX + shutterWidth/2 - 4},${arrowY} 
                     L ${shutterX + shutterWidth/2},${arrowY + 4}" 
                     stroke="#e74c3c" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+        } else {
+            // Middle shutters - alternating directions
+            if (i % 2 === 0) {
+                svg += `<path d="M ${shutterX + shutterWidth/2 - 8},${arrowY} L ${shutterX + shutterWidth/2 + 4},${arrowY} 
+                        L ${shutterX + shutterWidth/2},${arrowY - 4} M ${shutterX + shutterWidth/2 + 4},${arrowY} 
+                        L ${shutterX + shutterWidth/2},${arrowY + 4}" 
+                        stroke="#e74c3c" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+            } else {
+                svg += `<path d="M ${shutterX + shutterWidth/2 + 8},${arrowY} L ${shutterX + shutterWidth/2 - 4},${arrowY} 
+                        L ${shutterX + shutterWidth/2},${arrowY - 4} M ${shutterX + shutterWidth/2 - 4},${arrowY} 
+                        L ${shutterX + shutterWidth/2},${arrowY + 4}" 
+                        stroke="#e74c3c" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+            }
         }
     }
     
