@@ -4,6 +4,7 @@
 let windows = [];
 let seriesFormulas = {};
 let stockMaster = {};
+let hardwareMaster = {};
 let optimizationResults = null;
 let kerf = 0.125;
 let unitMode = 'inch';
@@ -88,6 +89,40 @@ function initializeDefaults() {
         };
     }
 
+    // Initialize Hardware Master
+    if (!localStorage.getItem('hardwareMaster')) {
+        const hardwareMaster = {
+            'Domal': [
+                { hardware: 'Domal Shutter Lock', unit: 'Nos', rate: 50 },
+                { hardware: 'Domal Wool Pile Weather Strip', unit: 'Meter', rate: 25 },
+                { hardware: 'Domal Bearing', unit: 'Nos', rate: 30 },
+                { hardware: 'Silicon', unit: 'Bottle', rate: 150 },
+                { hardware: 'Corner Cleat', unit: 'Nos', rate: 15 },
+                { hardware: 'Shutter Wing Connector', unit: 'Nos', rate: 20 },
+                { hardware: 'Interlock Cap', unit: 'Nos', rate: 10 }
+            ],
+            '3/4': [
+                { hardware: '3/4 Sliding Shutter Lock', unit: 'Nos', rate: 45 },
+                { hardware: '3/4 Wool Pile Weather Strip', unit: 'Meter', rate: 22 },
+                { hardware: '3/4 Bearing', unit: 'Nos', rate: 28 },
+                { hardware: 'Silicon', unit: 'Bottle', rate: 150 }
+            ],
+            '1': [
+                { hardware: '1" Sliding Shutter Lock', unit: 'Nos', rate: 48 },
+                { hardware: '1" Wool Pile Weather Strip', unit: 'Meter', rate: 24 },
+                { hardware: '1" Bearing', unit: 'Nos', rate: 32 },
+                { hardware: 'Silicon', unit: 'Bottle', rate: 150 }
+            ]
+        };
+        localStorage.setItem('hardwareMaster', JSON.stringify(hardwareMaster));
+    } else {
+        // Load hardwareMaster from localStorage
+        const savedHardwareMaster = localStorage.getItem('hardwareMaster');
+        if (savedHardwareMaster) {
+            hardwareMaster = JSON.parse(savedHardwareMaster);
+        }
+    }
+
     if (windows.length === 0) {
         windows = [{
             configId: 'W01',
@@ -117,7 +152,10 @@ function showTab(tabName) {
     
     if (tabName === 'windows') displayWindows();
     if (tabName === 'formulas') refreshFormulasDisplay();
-    if (tabName === 'stock') refreshStockMaster();
+    if (tabName === 'stock') {
+        refreshStockMaster();
+        refreshHardwareMaster();
+    }
     if (tabName === 'optimize') refreshProjectSelector();
 }
 
@@ -516,6 +554,99 @@ function deleteStock(series, idx) {
 function updateKerf() {
     kerf = parseFloat(document.getElementById('kerfGlobal').value);
     autoSaveSettings();
+}
+
+// ============================================================================
+// HARDWARE MASTER MANAGEMENT
+// ============================================================================
+
+function refreshHardwareMaster() {
+    const container = document.getElementById('hardwareMasterList');
+    let html = '';
+    
+    Object.entries(hardwareMaster).forEach(([series, hardwareItems]) => {
+        html += `<div class="stock-material-card">
+            <h4>${series} Series Hardware</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Hardware Item</th>
+                        <th>Unit</th>
+                        <th>Rate (₹)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+        
+        hardwareItems.forEach((item, idx) => {
+            html += `<tr>
+                <td>${item.hardware}</td>
+                <td>${item.unit}</td>
+                <td><input type="number" value="${item.rate}" onchange="updateHardwareRate('${series}', ${idx}, this.value)" style="width: 100px; padding: 5px;"></td>
+                <td><button class="btn btn-secondary btn-sm" onclick="resetHardwareRate('${series}', ${idx})">🔄</button></td>
+            </tr>`;
+        });
+        
+        html += '</tbody></table></div>';
+    });
+    
+    container.innerHTML = html;
+}
+
+function updateHardwareRate(series, idx, newRate) {
+    hardwareMaster[series][idx].rate = parseFloat(newRate);
+    autoSaveHardwareMaster();
+}
+
+function resetHardwareRate(series, idx) {
+    if (confirm('Reset this hardware rate to default?')) {
+        // Get default from initialization
+        const defaultRates = {
+            'Domal': [
+                { hardware: 'Domal Shutter Lock', unit: 'Nos', rate: 50 },
+                { hardware: 'Domal Wool Pile Weather Strip', unit: 'Meter', rate: 25 },
+                { hardware: 'Domal Bearing', unit: 'Nos', rate: 30 },
+                { hardware: 'Silicon', unit: 'Bottle', rate: 150 },
+                { hardware: 'Corner Cleat', unit: 'Nos', rate: 15 },
+                { hardware: 'Shutter Wing Connector', unit: 'Nos', rate: 20 },
+                { hardware: 'Interlock Cap', unit: 'Nos', rate: 10 }
+            ],
+            '3/4': [
+                { hardware: '3/4 Sliding Shutter Lock', unit: 'Nos', rate: 45 },
+                { hardware: '3/4 Wool Pile Weather Strip', unit: 'Meter', rate: 22 },
+                { hardware: '3/4 Bearing', unit: 'Nos', rate: 28 },
+                { hardware: 'Silicon', unit: 'Bottle', rate: 150 }
+            ],
+            '1': [
+                { hardware: '1" Sliding Shutter Lock', unit: 'Nos', rate: 48 },
+                { hardware: '1" Wool Pile Weather Strip', unit: 'Meter', rate: 24 },
+                { hardware: '1" Bearing', unit: 'Nos', rate: 32 },
+                { hardware: 'Silicon', unit: 'Bottle', rate: 150 }
+            ]
+        };
+        
+        hardwareMaster[series][idx].rate = defaultRates[series][idx].rate;
+        autoSaveHardwareMaster();
+        refreshHardwareMaster();
+        alert('✅ Hardware rate reset to default!');
+    }
+}
+
+function autoSaveHardwareMaster() {
+    localStorage.setItem('hardwareMaster', JSON.stringify(hardwareMaster));
+}
+
+function toggleHardwareFormulas() {
+    const formulasRef = document.getElementById('hardwareFormulasRef');
+    const toggle = document.getElementById('formulasToggle');
+    
+    if (formulasRef.style.display === 'none') {
+        formulasRef.style.display = 'block';
+        toggle.textContent = '▲';
+    } else {
+        formulasRef.style.display = 'none';
+        toggle.textContent = '▼';
+    }
 }
 
 // ============================================================================

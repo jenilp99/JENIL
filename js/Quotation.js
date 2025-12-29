@@ -46,6 +46,109 @@ function showQuotationInputDialog(projectWindows, selectedProject) {
     generateQuotationPDF(projectWindows, selectedProject, quoteNo, dept);
 }
 
+function generatePurchaseListPDF() {
+    const projectSelector = document.getElementById('projectSelector');
+    const selectedProject = projectSelector.value;
+    
+    if (!selectedProject) {
+        alert('⚠️ Please select a project first!');
+        return;
+    }
+    
+    const projectWindows = windows.filter(w => w.projectName === selectedProject);
+    
+    if (projectWindows.length === 0) {
+        alert('⚠️ No windows found for this project!');
+        return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    let currentY = 20;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const quoteDate = new Date().toLocaleDateString('en-GB');
+    
+    // ========== HEADER ==========
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(46, 125, 50);
+    doc.text('NIRUMA - Aluminium Section', 14, currentY);
+    
+    currentY += 6;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text('Trimandir Trust, Fatepura, Nadiad - 387001, Gujarat', 14, currentY);
+    
+    currentY += 4;
+    doc.text('Ph: +91 90999 99887', 14, currentY);
+    
+    currentY += 8;
+    doc.setDrawColor(46, 125, 50);
+    doc.setLineWidth(0.5);
+    doc.line(14, currentY, pageWidth - 14, currentY);
+    
+    currentY += 8;
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(46, 125, 50);
+    doc.text('Hardware / Purchase List', 14, currentY);
+    
+    currentY += 6;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Project: ${selectedProject}`, 14, currentY);
+    
+    currentY += 4;
+    doc.text(`Date: ${quoteDate}`, 14, currentY);
+    
+    currentY += 4;
+    doc.text(`Total Windows: ${projectWindows.length}`, 14, currentY);
+    
+    currentY += 8;
+    
+    // ========== PURCHASE LIST TABLE ==========
+    const purchaseListData = generatePurchaseListTable(projectWindows);
+    const hardwareTotalCost = calculatePurchaseListTotal(projectWindows);
+    
+    doc.autoTable({
+        startY: currentY,
+        head: [['Hardware Item', 'Qty', 'Unit', 'Rate (₹)', 'Cost (₹)']],
+        body: purchaseListData,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [46, 125, 50],
+            textColor: [255, 255, 255],
+            fontSize: 9,
+            fontStyle: 'bold'
+        },
+        bodyStyles: {
+            fontSize: 8
+        },
+        columnStyles: {
+            0: { cellWidth: 90, halign: 'left' },
+            1: { cellWidth: 20, halign: 'center' },
+            2: { cellWidth: 20, halign: 'center' },
+            3: { cellWidth: 25, halign: 'right' },
+            4: { cellWidth: 30, halign: 'right' }
+        }
+    });
+    
+    currentY = doc.lastAutoTable.finalY + 5;
+    
+    // ========== TOTALS ==========
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(46, 125, 50);
+    doc.text(`Total Hardware Cost: Rs. ${hardwareTotalCost.toFixed(0)}`, 14, currentY);
+    
+    // ========== SAVE PDF ==========
+    doc.save(`PurchaseList_${selectedProject}_${quoteDate.replace(/\//g, '-')}.pdf`);
+    
+    alert(`✅ Purchase List generated successfully!\n\nProject: ${selectedProject}\nWindows: ${projectWindows.length}\nHardware Cost: Rs. ${hardwareTotalCost.toFixed(0)}`);
+}
+
 function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requestingDept) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -288,6 +391,55 @@ function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requesti
             doc.text(`(Rupees ${numberToWords(grandTotal)} Only)`, 14, currentY);
         }
         
+        // ========== HARDWARE/PURCHASE LIST ==========
+        if (currentY > 220) {
+            doc.addPage();
+            currentY = 20;
+        } else {
+            currentY += 15;
+        }
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(46, 125, 50);
+        doc.text('Hardware / Purchase List', 14, currentY);
+        
+        currentY += 8;
+        
+        const purchaseListData = generatePurchaseListTable(projectWindows);
+        const hardwareTotalCost = calculatePurchaseListTotal(projectWindows);
+        
+        doc.autoTable({
+            startY: currentY,
+            head: [['Hardware Item', 'Qty', 'Unit', 'Rate (₹)', 'Cost (₹)']],
+            body: purchaseListData,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [46, 125, 50],
+                textColor: [255, 255, 255],
+                fontSize: 9,
+                fontStyle: 'bold'
+            },
+            bodyStyles: {
+                fontSize: 8
+            },
+            columnStyles: {
+                0: { cellWidth: 90, halign: 'left' },
+                1: { cellWidth: 20, halign: 'center' },
+                2: { cellWidth: 20, halign: 'center' },
+                3: { cellWidth: 25, halign: 'right' },
+                4: { cellWidth: 30, halign: 'right' }
+            }
+        });
+        
+        currentY = doc.lastAutoTable.finalY + 5;
+        
+        // Hardware Total
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(46, 125, 50);
+        doc.text(`Hardware Total Cost: Rs. ${hardwareTotalCost.toFixed(0)}`, 14, currentY);
+        
         // ========== SAVE PDF ==========
         doc.save(`Quotation_${selectedProject}_${quoteDate.replace(/\//g, '-')}.pdf`);
         
@@ -429,6 +581,142 @@ function generateWindowDiagram(config) {
     svg += '</svg>';
     
     return svg;
+}
+
+// ============================================================================
+// HARDWARE CALCULATIONS
+// ============================================================================
+
+function calculateWindowHardware(window) {
+    /**
+     * Calculate hardware quantities for a single window based on series
+     * Returns object with hardware items and their quantities
+     */
+    const series = window.series;
+    const shutters = window.shutters || 0;
+    const mosquitoShutters = window.mosquitoShutters || 0;
+    const width = window.width || 0;
+    const height = window.height || 0;
+    
+    // Perimeter calculation: 2*(width + height) in inches
+    const perimeter = 2 * (width + height);
+    
+    // Silicon bottles calculation: CEILING(perimeter / 1000)
+    const siliconBottles = Math.ceil(perimeter / 1000);
+    
+    let hardware = {};
+    
+    if (series === 'Domal') {
+        // Domal Series: 7 hardware items
+        hardware = {
+            'Domal Shutter Lock': (2 * shutters) + (1 * mosquitoShutters),
+            'Domal Wool Pile Weather Strip': 2 * perimeter,  // 2 per inch (top + bottom, left + right)
+            'Domal Bearing': 2 * (shutters + mosquitoShutters),
+            'Silicon': siliconBottles,
+            'Corner Cleat': 4,  // 4 corners per window
+            'Shutter Wing Connector': 2 * shutters,  // 2 per shutter
+            'Interlock Cap': shutters + mosquitoShutters  // 1 per shutter
+        };
+    } else if (series === '3/4') {
+        // 3/4" Series: 4 hardware items
+        hardware = {
+            '3/4 Sliding Shutter Lock': (2 * shutters) + (1 * mosquitoShutters),
+            '3/4 Wool Pile Weather Strip': 2 * perimeter,
+            '3/4 Bearing': 2 * (shutters + mosquitoShutters),
+            'Silicon': siliconBottles
+        };
+    } else if (series === '1') {
+        // 1" Series: 4 hardware items
+        hardware = {
+            '1" Sliding Shutter Lock': (2 * shutters) + (1 * mosquitoShutters),
+            '1" Wool Pile Weather Strip': 2 * perimeter,
+            '1" Bearing': 2 * (shutters + mosquitoShutters),
+            'Silicon': siliconBottles
+        };
+    }
+    
+    return hardware;
+}
+
+function aggregateProjectHardware(projectWindows) {
+    /**
+     * Aggregate hardware quantities for all windows in a project
+     * Returns aggregated totals for each hardware item
+     */
+    const aggregated = {};
+    
+    projectWindows.forEach(window => {
+        const windowHardware = calculateWindowHardware(window);
+        
+        Object.entries(windowHardware).forEach(([item, qty]) => {
+            if (!aggregated[item]) {
+                aggregated[item] = 0;
+            }
+            aggregated[item] += qty;
+        });
+    });
+    
+    return aggregated;
+}
+
+function generatePurchaseListTable(projectWindows) {
+    /**
+     * Generate purchase list showing hardware items with quantities and costs
+     * Returns array suitable for jsPDF autoTable
+     */
+    const aggregatedHardware = aggregateProjectHardware(projectWindows);
+    const purchaseListData = [];
+    
+    Object.entries(aggregatedHardware).forEach(([hardwareName, quantity]) => {
+        // Find hardware unit and rate from hardwareMaster
+        let unit = 'Nos';
+        let rate = 0;
+        let cost = 0;
+        
+        // Search through all series to find this hardware item
+        Object.values(hardwareMaster).forEach(seriesHardware => {
+            const found = seriesHardware.find(h => h.hardware === hardwareName);
+            if (found) {
+                unit = found.unit;
+                rate = found.rate;
+                cost = quantity * rate;
+            }
+        });
+        
+        purchaseListData.push([
+            hardwareName,
+            Math.ceil(quantity),  // Round up quantities
+            unit,
+            `${rate}`,
+            `Rs. ${cost.toFixed(0)}`
+        ]);
+    });
+    
+    // Sort by hardware name for consistent display
+    purchaseListData.sort((a, b) => a[0].localeCompare(b[0]));
+    
+    return purchaseListData;
+}
+
+function calculatePurchaseListTotal(projectWindows) {
+    /**
+     * Calculate total hardware cost for the project
+     */
+    const aggregatedHardware = aggregateProjectHardware(projectWindows);
+    let totalHardwareCost = 0;
+    
+    Object.entries(aggregatedHardware).forEach(([hardwareName, quantity]) => {
+        let rate = 0;
+        Object.values(hardwareMaster).forEach(seriesHardware => {
+            const found = seriesHardware.find(h => h.hardware === hardwareName);
+            if (found) {
+                rate = found.rate;
+            }
+        });
+        totalHardwareCost += (quantity * rate);
+    });
+    
+    return totalHardwareCost;
 }
 
 // ============================================================================

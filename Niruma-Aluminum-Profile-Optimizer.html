@@ -201,9 +201,106 @@
                 </div>
                 <button type="submit" class="btn btn-success">➕ Add Stock Material</button>
             </form>
-        </div>
 
-        <div id="optimize" class="tab-content">
+            <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+            <h2 style="color: #2c3e50; margin-bottom: 20px;">Hardware Master Configuration</h2>
+            <div class="alert alert-info">
+                <strong>ℹ️ Configure Hardware:</strong> Set rates for locks, pile, bearings, silicon, and other hardware items per series
+            </div>
+            <div id="hardwareMasterList"></div>
+
+            <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+
+            <h3 style="color: #2c3e50; margin-bottom: 15px; cursor: pointer;" onclick="toggleHardwareFormulas()">
+                📋 Hardware Calculation Formulas <span id="formulasToggle" style="color: #27ae60;">▼</span>
+            </h3>
+            <div id="hardwareFormulasRef" style="display: none; background: #f5f5f5; padding: 20px; border-radius: 8px; border-left: 4px solid #27ae60;">
+                <p style="color: #555; margin-bottom: 15px;"><strong>Reference:</strong> Shows how hardware quantities are calculated for each series based on window dimensions.</p>
+                
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">Domal Series (7 Hardware Items)</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <tr style="background: #e8f5e9;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Domal Shutter Lock</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= (2 × Shutters) + (1 × Mosquito Shutters)</td>
+                        </tr>
+                        <tr style="background: #ffffff;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Domal Wool Pile Weather Strip</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × Perimeter (meters) | Perimeter = 2×(Width + Height)</td>
+                        </tr>
+                        <tr style="background: #e8f5e9;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Domal Bearing</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × (Shutters + Mosquito Shutters)</td>
+                        </tr>
+                        <tr style="background: #ffffff;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Silicon</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= CEILING(Perimeter ÷ 1000) bottles</td>
+                        </tr>
+                        <tr style="background: #e8f5e9;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Corner Cleat</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 4 (fixed, 4 corners)</td>
+                        </tr>
+                        <tr style="background: #ffffff;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Shutter Wing Connector</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × Shutters</td>
+                        </tr>
+                        <tr style="background: #e8f5e9;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Interlock Cap</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= Shutters + Mosquito Shutters</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">3/4" Series (4 Hardware Items)</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <tr style="background: #e3f2fd;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">3/4 Sliding Shutter Lock</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= (2 × Shutters) + (1 × Mosquito Shutters)</td>
+                        </tr>
+                        <tr style="background: #ffffff;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">3/4 Wool Pile Weather Strip</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × Perimeter (meters)</td>
+                        </tr>
+                        <tr style="background: #e3f2fd;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">3/4 Bearing</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × (Shutters + Mosquito Shutters)</td>
+                        </tr>
+                        <tr style="background: #ffffff;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Silicon</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= CEILING(Perimeter ÷ 1000) bottles</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 10px;">1" Series (4 Hardware Items)</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                        <tr style="background: #f3e5f5;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">1" Sliding Shutter Lock</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= (2 × Shutters) + (1 × Mosquito Shutters)</td>
+                        </tr>
+                        <tr style="background: #ffffff;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">1" Wool Pile Weather Strip</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × Perimeter (meters)</td>
+                        </tr>
+                        <tr style="background: #f3e5f5;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">1" Bearing</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × (Shutters + Mosquito Shutters)</td>
+                        </tr>
+                        <tr style="background: #ffffff;">
+                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Silicon</td>
+                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= CEILING(Perimeter ÷ 1000) bottles</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <p style="color: #666; font-size: 12px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
+                    <strong>Note:</strong> These formulas are applied automatically when generating quotations and purchase lists. Modify hardware rates (not formulas) in the Hardware Master tables above.
+                </p>
+            </div>
+        </div>
             <h2 style="color: #2c3e50; margin-bottom: 20px;">Run Optimization</h2>
             <div class="optimization-mode">
                 <h4>💰 Smart Cost Optimization Enabled</h4>
@@ -235,6 +332,10 @@
                 <button class="btn btn-primary" onclick="generateQuotation()"
                     style="font-size: 16px; padding: 15px 30px;">
                     📄 Generate Quotation
+                </button>
+                <button class="btn btn-info" onclick="generatePurchaseListPDF()"
+                    style="font-size: 16px; padding: 15px 30px; margin-left: 10px;">
+                    📋 Download Purchase List
                 </button>
                 <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Saved Data</button>
             </div>
