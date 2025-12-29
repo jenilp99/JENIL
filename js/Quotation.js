@@ -170,6 +170,22 @@ function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requesti
             window.series
         ]);
         
+        // Calculate required cell height for diagrams
+        // SVG Source: 200px width × 140px height = aspect ratio 1.4286:1
+        // PDF rendering width: 40pt
+        // Calculate height maintaining aspect ratio: height = width / (svgWidth / svgHeight)
+        const svgSourceWidth = 200;
+        const svgSourceHeight = 140;
+        const pdfDiagramWidth = 40;
+        const aspectRatio = svgSourceWidth / svgSourceHeight;
+        const diagramWidth = pdfDiagramWidth;
+        const diagramHeight = Math.round(pdfDiagramWidth / aspectRatio); // 40 / 1.4286 ≈ 28pt
+        
+        // Cell height = diagram height + padding (top 15 + bottom 15) + border buffer (6)
+        const cellPaddingVertical = 30;
+        const borderBuffer = 6;
+        const requiredCellHeight = diagramHeight + cellPaddingVertical + borderBuffer;
+        
         doc.autoTable({
             startY: currentY,
             head: [['#', 'Diagram', 'ID', 'Type', 'Description', 'Size (mm)', 'Series']],
@@ -185,25 +201,25 @@ function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requesti
                 fontSize: 8
             },
             columnStyles: {
-                0: { cellWidth: 10, halign: 'center' },
-                1: { cellWidth: 45, halign: 'center', valign: 'middle' },
-                2: { cellWidth: 15, halign: 'center' },
-                3: { cellWidth: 30, halign: 'center' },
-                4: { cellWidth: 40 },
-                5: { cellWidth: 25, halign: 'center' },
-                6: { cellWidth: 20, halign: 'center' }
+                0: { cellWidth: 10, halign: 'center', cellPadding: 5 },
+                1: { cellWidth: 45, halign: 'center', valign: 'middle', cellPadding: [15, 2, 15, 2] },
+                2: { cellWidth: 15, halign: 'center', cellPadding: 5 },
+                3: { cellWidth: 30, halign: 'center', cellPadding: 5 },
+                4: { cellWidth: 40, cellPadding: 5 },
+                5: { cellWidth: 25, halign: 'center', cellPadding: 5 },
+                6: { cellWidth: 20, halign: 'center', cellPadding: 5 }
             },
             didDrawCell: function(data) {
                 if (data.column.index === 1 && data.cell.section === 'body') {
                     const rowIndex = data.row.index;
                     if (pngImages[rowIndex]) {
                         const cellX = data.cell.x + 2;
-                        const cellY = data.cell.y + (data.cell.height - 35) / 2;
-                        doc.addImage(pngImages[rowIndex], 'PNG', cellX, cellY, 40, 30);
+                        const cellY = data.cell.y + (data.cell.height - diagramHeight) / 2;
+                        doc.addImage(pngImages[rowIndex], 'PNG', cellX, cellY, diagramWidth, diagramHeight);
                     }
                 }
             },
-            minCellHeight: 40
+            minCellHeight: requiredCellHeight + 30
         });
         
         currentY = doc.lastAutoTable.finalY + 10;
@@ -232,12 +248,12 @@ function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requesti
             const grandTotal = (parseFloat(subtotal) + parseFloat(gst)).toFixed(0);
             
             const costData = [
-                ['Material Cost (Aluminum Profiles)', `₹ ${materialCost.toFixed(0)}`],
-                ['Labor/Fabrication Charges (10%)', `₹ ${laborCharges}`],
-                ['Transportation (Internal)', `₹ ${transportation}`],
-                ['Subtotal', `₹ ${subtotal}`],
-                ['GST @ 18%', `₹ ${gst}`],
-                ['Grand Total', `₹ ${grandTotal}`]
+                ['Material Cost (Aluminum Profiles)', `Rs. ${materialCost.toFixed(0)}`],
+                ['Labor/Fabrication Charges (10%)', `Rs. ${laborCharges}`],
+                ['Transportation (Internal)', `Rs. ${transportation}`],
+                ['Subtotal', `Rs. ${subtotal}`],
+                ['GST @ 18%', `Rs. ${gst}`],
+                ['Grand Total', `Rs. ${grandTotal}`]
             ];
             
             doc.autoTable({
@@ -245,11 +261,12 @@ function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requesti
                 body: costData,
                 theme: 'plain',
                 bodyStyles: {
-                    fontSize: 10
+                    fontSize: 11,
+                    fontName: 'helvetica'
                 },
                 columnStyles: {
-                    0: { cellWidth: 140, fontStyle: 'bold', textColor: [52, 73, 94] },
-                    1: { cellWidth: 44, halign: 'right', fontStyle: 'bold', textColor: [52, 73, 94] }
+                    0: { cellWidth: 140, fontStyle: 'bold', textColor: [52, 73, 94], fontSize: 11 },
+                    1: { cellWidth: 44, halign: 'right', fontStyle: 'bold', textColor: [52, 73, 94], fontSize: 11 }
                 },
                 didParseCell: function(data) {
                     if (data.row.index === 5) {
