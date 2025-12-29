@@ -15,6 +15,12 @@ function getNextQuotationNumber() {
 }
 
 function generateQuotation() {
+    // Show confirmation if optimization hasn't been run
+    if (!optimizationResults || !optimizationResults.results) {
+        const proceed = confirm('⚠️ Users can generate quotations anytime, but quantities will be more accurate after running Smart Optimization!\n\nDo you want to proceed with estimated quantities?');
+        if (!proceed) return;
+    }
+    
     const projectSelector = document.getElementById('projectSelector');
     const selectedProject = projectSelector.value;
     
@@ -47,6 +53,12 @@ function showQuotationInputDialog(projectWindows, selectedProject) {
 }
 
 function generatePurchaseListPDF() {
+    // Show confirmation if optimization hasn't been run
+    if (!optimizationResults || !optimizationResults.results) {
+        const proceed = confirm('⚠️ Users can generate purchase lists anytime, but quantities will be more accurate after running Smart Optimization!\n\nDo you want to proceed with estimated quantities?');
+        if (!proceed) return;
+    }
+    
     const projectSelector = document.getElementById('projectSelector');
     const selectedProject = projectSelector.value;
     
