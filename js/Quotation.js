@@ -1,3 +1,19 @@
+// Initialize quotation counter in localStorage
+function initQuotationCounter() {
+    if (!localStorage.getItem('quotationCounter')) {
+        localStorage.setItem('quotationCounter', '0');
+    }
+}
+
+// Get next quotation number
+function getNextQuotationNumber() {
+    initQuotationCounter();
+    let counter = parseInt(localStorage.getItem('quotationCounter')) + 1;
+    localStorage.setItem('quotationCounter', counter.toString());
+    const year = new Date().getFullYear();
+    return `TRM/QT/${year}/${String(counter).padStart(5, '0')}`;
+}
+
 function generateQuotation() {
     const projectSelector = document.getElementById('projectSelector');
     const selectedProject = projectSelector.value;
@@ -14,12 +30,28 @@ function generateQuotation() {
         return;
     }
     
+    // Show quotation input dialog
+    showQuotationInputDialog(projectWindows, selectedProject);
+}
+
+function showQuotationInputDialog(projectWindows, selectedProject) {
+    const { jsPDF } = window.jspdf;
+    
+    const userQuoteNo = prompt('Enter Quotation Number (leave blank for auto-generated):', '');
+    const quoteNo = (userQuoteNo && userQuoteNo.trim()) ? userQuoteNo.trim() : getNextQuotationNumber();
+    
+    const requestingDept = prompt('Enter Requesting Department:', 'Maintenance Department');
+    const dept = (requestingDept && requestingDept.trim()) ? requestingDept.trim() : 'Maintenance Department';
+    
+    generateQuotationPDF(projectWindows, selectedProject, quoteNo, dept);
+}
+
+function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requestingDept) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    const quoteNo = `TRM/QT/${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`;
     const quoteDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const validUntil = new Date(Date.now() + 30*24*60*60*1000).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const validUntil = new Date(Date.now() + 3*24*60*60*1000).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
     
     let currentY = 20;
     
@@ -27,7 +59,7 @@ function generateQuotation() {
     doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(41, 128, 185);
-    doc.text('🏭 NIRUMA', 14, currentY);
+    doc.text('NIRUMA', 14, currentY);
     
     currentY += 8;
     doc.setFontSize(14);
@@ -43,9 +75,9 @@ function generateQuotation() {
     // Right side
     doc.setFontSize(9);
     doc.setTextColor(52, 73, 94);
-    doc.text('Trimandir Trust - Fabrication Division', 200, 20, { align: 'right' });
+    doc.text('Aluminium Section', 200, 20, { align: 'right' });
     doc.text('Adalaj, Gandhinagar, Gujarat', 200, 25, { align: 'right' });
-    doc.text('Phone: +91-XXXXXXXXXX', 200, 30, { align: 'right' });
+    doc.text('Phone: +91 90999 99887', 200, 30, { align: 'right' });
     
     currentY = 45;
     doc.setDrawColor(52, 152, 219);
@@ -70,7 +102,7 @@ function generateQuotation() {
     doc.text(`Project: ${selectedProject}`, 14, currentY + 15);
     
     doc.text('Requesting Department:', 120, currentY);
-    doc.text('Maintenance Department', 120, currentY + 5);
+    doc.text(requestingDept, 120, currentY + 5);
     doc.text('Contact: [Department Head]', 120, currentY + 10);
     
     currentY += 25;
@@ -118,11 +150,12 @@ function generateQuotation() {
         const svg = generateWindowDiagram({
             tracks: window.tracks,
             shutters: window.shutters,
+            mosquitoShutters: window.mosquitoShutters,
             width: window.width,
             height: window.height,
             windowId: window.configId
         });
-        return svgToPng(svg, 280, 180);
+        return svgToPng(svg, 200, 140);
     });
     
     Promise.all(diagramPromises).then(pngImages => {
@@ -131,7 +164,7 @@ function generateQuotation() {
             idx + 1,
             '', // Placeholder for diagram
             window.configId,
-            `${window.tracks}T${window.shutters}S`,
+            `${window.tracks}T${window.shutters}S${window.mosquitoShutters > 0 ? window.mosquitoShutters + 'MS' : ''}`,
             window.description || '-',
             `${window.width} × ${window.height}`,
             window.series
@@ -152,10 +185,10 @@ function generateQuotation() {
                 fontSize: 8
             },
             columnStyles: {
-                0: { cellWidth: 8, halign: 'center' },
-                1: { cellWidth: 45, halign: 'center' },
+                0: { cellWidth: 10, halign: 'center' },
+                1: { cellWidth: 45, halign: 'center', valign: 'middle' },
                 2: { cellWidth: 15, halign: 'center' },
-                3: { cellWidth: 25, halign: 'center' },
+                3: { cellWidth: 30, halign: 'center' },
                 4: { cellWidth: 40 },
                 5: { cellWidth: 25, halign: 'center' },
                 6: { cellWidth: 20, halign: 'center' }
@@ -164,12 +197,13 @@ function generateQuotation() {
                 if (data.column.index === 1 && data.cell.section === 'body') {
                     const rowIndex = data.row.index;
                     if (pngImages[rowIndex]) {
-                        doc.addImage(pngImages[rowIndex], 'PNG', 
-                            data.cell.x + 2, data.cell.y + 2, 41, 27);
+                        const cellX = data.cell.x + 2;
+                        const cellY = data.cell.y + (data.cell.height - 35) / 2;
+                        doc.addImage(pngImages[rowIndex], 'PNG', cellX, cellY, 40, 30);
                     }
                 }
             },
-            minCellHeight: 30
+            minCellHeight: 40
         });
         
         currentY = doc.lastAutoTable.finalY + 10;
@@ -198,12 +232,12 @@ function generateQuotation() {
             const grandTotal = (parseFloat(subtotal) + parseFloat(gst)).toFixed(0);
             
             const costData = [
-                ['Material Cost (Aluminum Profiles)', `₹${materialCost.toFixed(0)}`],
-                ['Labor/Fabrication Charges (10%)', `₹${laborCharges}`],
-                ['Transportation (Internal)', `₹${transportation}`],
-                ['Subtotal', `₹${subtotal}`],
-                ['GST @ 18%', `₹${gst}`],
-                ['Grand Total', `₹${grandTotal}`]
+                ['Material Cost (Aluminum Profiles)', `₹ ${materialCost.toFixed(0)}`],
+                ['Labor/Fabrication Charges (10%)', `₹ ${laborCharges}`],
+                ['Transportation (Internal)', `₹ ${transportation}`],
+                ['Subtotal', `₹ ${subtotal}`],
+                ['GST @ 18%', `₹ ${gst}`],
+                ['Grand Total', `₹ ${grandTotal}`]
             ];
             
             doc.autoTable({
@@ -240,7 +274,7 @@ function generateQuotation() {
         // ========== SAVE PDF ==========
         doc.save(`Quotation_${selectedProject}_${quoteDate.replace(/\//g, '-')}.pdf`);
         
-        alert(`✅ Quotation generated successfully!\n\nQuotation No: ${quoteNo}\nProject: ${selectedProject}\nWindows: ${projectWindows.length}`);
+        alert(`✅ Quotation generated successfully!\n\nQuotation No: ${quoteNo}\nProject: ${selectedProject}\nWindows: ${projectWindows.length}\nDepartment: ${requestingDept}`);
         
     }).catch(err => {
         console.error('Error processing diagrams:', err);
@@ -253,10 +287,10 @@ function generateQuotation() {
 // ============================================================================
 
 function generateWindowDiagram(config) {
-    // config = { tracks: 2, shutters: 2, width: 1143, height: 1121, windowId: "W1" }
+    // config = { tracks: 2, shutters: 2, mosquitoShutters: 1, width: 1143, height: 1121, windowId: "W1" }
     
-    const svgWidth = 280;
-    const svgHeight = 180;
+    const svgWidth = 200;
+    const svgHeight = 140;
     const frameThickness = 8;
     const trackWidth = 10;
     const shutterGap = 3;
@@ -276,8 +310,9 @@ function generateWindowDiagram(config) {
     
     let svg = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">`;
     
-    // Title
-    svg += `<text x="${svgWidth/2}" y="15" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2c3e50">${config.windowId} - ${config.tracks}T${config.shutters}S</text>`;
+    // Title - Include mosquito shutter info
+    const typeStr = `${config.tracks}T${config.shutters}S${config.mosquitoShutters > 0 ? config.mosquitoShutters + 'MS' : ''}`;
+    svg += `<text x="${svgWidth/2}" y="12" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="bold" fill="#2c3e50">${config.windowId} - ${typeStr}</text>`;
     
     // Draw outer frame
     svg += `<rect x="${startX}" y="${startY}" width="${windowWidth}" height="${windowHeight}" 
@@ -367,9 +402,12 @@ function generateWindowDiagram(config) {
         }
     }
     
-    // Dimensions
-    svg += `<text x="${svgWidth/2}" y="${svgHeight - 5}" text-anchor="middle" 
-            font-family="Arial, sans-serif" font-size="9" fill="#7f8c8d">${config.width}mm × ${config.height}mm</text>`;
+    // Mosquito shutter indicator
+    if (config.mosquitoShutters > 0) {
+        svg += `<circle cx="${svgWidth - 8}" cy="8" r="5" fill="#e74c3c"/>`;
+        svg += `<text x="${svgWidth - 8}" y="11" text-anchor="middle" 
+                font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="white">MS</text>`;
+    }
     
     svg += '</svg>';
     
