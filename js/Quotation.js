@@ -109,8 +109,8 @@ function generatePurchaseListPDF() {
     currentY += 8;
     
     // ========== PURCHASE LIST TABLE ==========
-    const purchaseListData = generatePurchaseListTable(projectWindows);
-    const hardwareTotalCost = calculatePurchaseListTotal(projectWindows);
+    const purchaseListData = generatePurchaseListTable(projectWindows, optimizationResults);
+    const hardwareTotalCost = calculatePurchaseListTotal(projectWindows, optimizationResults);
     
     doc.autoTable({
         startY: currentY,
@@ -406,8 +406,8 @@ function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requesti
         
         currentY += 8;
         
-        const purchaseListData = generatePurchaseListTable(projectWindows);
-        const hardwareTotalCost = calculatePurchaseListTotal(projectWindows);
+        const purchaseListData = generatePurchaseListTable(projectWindows, optimizationResults);
+        const hardwareTotalCost = calculatePurchaseListTotal(projectWindows, optimizationResults);
         
         doc.autoTable({
             startY: currentY,
@@ -508,10 +508,6 @@ function generateWindowDiagram(config) {
         
         svg += `<text x="${trackX + trackWidth/2}" y="${startY - 2}" text-anchor="middle" 
                 font-family="Arial, sans-serif" font-size="7" fill="#5d6d7e" font-weight="bold">T${i+1}</text>`;
-        
-        // Bottom track
-        svg += `<rect x="${trackX}" y="${startY + windowHeight - frameThickness * 2}" width="${trackWidth}" height="${frameThickness}" 
-                fill="#7f8c8d" stroke="#5d6d7e" stroke-width="0.5" opacity="0.6" rx="1"/>`;
     }
     
     // Draw shutters
@@ -609,6 +605,13 @@ function generateWindowDiagram(config) {
                 font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="white">MS</text>`;
     }
     
+    // Draw bottom tracks last so they appear on top (visible)
+    for (let i = 0; i < config.tracks; i++) {
+        const trackX = startX + frameThickness + (i * trackWidth * 0.7);
+        svg += `<rect x="${trackX}" y="${startY + windowHeight - frameThickness - 2}" width="${trackWidth}" height="${frameThickness}" 
+                fill="#7f8c8d" stroke="#5d6d7e" stroke-width="0.5" opacity="0.6" rx="1"/>`;
+    }
+    
     svg += '</svg>';
     
     return svg;
@@ -618,7 +621,7 @@ function generateWindowDiagram(config) {
 // HARDWARE CALCULATIONS
 // ============================================================================
 
-function calculateWindowHardware(window) {
+function calculateWindowHardware(window, optimizationResults = null) {
     /**
      * Calculate hardware quantities for a single window based on series
      * Returns object with hardware items and their quantities
@@ -636,31 +639,108 @@ function calculateWindowHardware(window) {
     const siliconBottles = Math.ceil(perimeter / 1000);
     
     let hardware = {};
+    const INCHES_TO_METERS = 0.0254;
     
     if (series === 'Domal') {
         // Domal Series: 7 hardware items
+        let woolPile = 0;
+        
+        // Calculate wool pile from optimization results if available
+        if (optimizationResults && optimizationResults.results) {
+            let domalShutterLength = 0;
+            let domalClipLength = 0;
+            
+            // Sum total used lengths for Domal Shutter and Domal Clip from optimization plans
+            for (const [material, plans] of Object.entries(optimizationResults.results)) {
+                if (material.includes('Domal Shutter')) {
+                    plans.forEach(plan => {
+                        plan.pieces.forEach(piece => {
+                            domalShutterLength += piece.length;
+                        });
+                    });
+                }
+                if (material.includes('Domal Clip') || material.includes('Domal Interlock')) {
+                    plans.forEach(plan => {
+                        plan.pieces.forEach(piece => {
+                            domalClipLength += piece.length;
+                        });
+                    });
+                }
+            }
+            
+            // Convert to meters: (Domal Shutter × 2) + Domal Clip
+            const totalInches = (domalShutterLength * 2) + domalClipLength;
+            woolPile = totalInches * INCHES_TO_METERS;
+        } else {
+            // Fallback to perimeter-based calculation
+            woolPile = ((2 * perimeter * shutters) + (2 * perimeter * mosquitoShutters) + (shutters + mosquitoShutters));
+        }
+
+        
         hardware = {
-            'Domal Shutter Lock': (2 * shutters) + (1 * mosquitoShutters),
-            'Domal Wool Pile Weather Strip': 2 * perimeter,  // 2 per inch (top + bottom, left + right)
+            'Domal Shutter Lock': 2 + (mosquitoShutters > 0 ? 1 : 0),  // 2 per window + 1 if mosquito shutter
+            'Domal Wool Pile Weather Strip': woolPile,  // Actual used length in meters
             'Domal Bearing': 2 * (shutters + mosquitoShutters),
             'Silicon': siliconBottles,
-            'Corner Cleat': 4,  // 4 corners per window
-            'Shutter Wing Connector': 2 * shutters,  // 2 per shutter
+            'Corner Cleat': 4 * (shutters + mosquitoShutters),  // 4 nos per shutter and mosquito shutter
+            'Shutter Wing Connector': 8 * shutters + 8 * mosquitoShutters,  // 8 per shutter and 8 per mosquito shutter
             'Interlock Cap': shutters + mosquitoShutters  // 1 per shutter
         };
     } else if (series === '3/4') {
         // 3/4" Series: 4 hardware items
+        const trackPerimeter = (width + height) * 2;  // (height + width) × 2
+        let woolPile34 = trackPerimeter * window.tracks;
+        
+        // Add interlock length from optimization results if available
+        if (optimizationResults && optimizationResults.results) {
+            let interlock34Length = 0;
+            
+            for (const [material, plans] of Object.entries(optimizationResults.results)) {
+                if (material.includes('Interlock') && material.includes('3/4')) {
+                    plans.forEach(plan => {
+                        plan.pieces.forEach(piece => {
+                            interlock34Length += piece.length;
+                        });
+                    });
+                }
+            }
+            
+            // Convert interlock length from inches to meters and add to wool pile
+            woolPile34 += (interlock34Length * INCHES_TO_METERS);
+        }
+        
         hardware = {
-            '3/4 Sliding Shutter Lock': (2 * shutters) + (1 * mosquitoShutters),
-            '3/4 Wool Pile Weather Strip': 2 * perimeter,
+            '3/4 Sliding Shutter Lock': 2 + (mosquitoShutters > 0 ? 1 : 0),  // 2 per window + 1 if mosquito shutter
+            '3/4 Wool Pile Weather Strip': woolPile34,  // (height + width) × 2 × number of tracks + Interlock length
             '3/4 Bearing': 2 * (shutters + mosquitoShutters),
             'Silicon': siliconBottles
         };
     } else if (series === '1') {
         // 1" Series: 4 hardware items
+        const trackPerimeter = (width + height) * 2;  // (height + width) × 2
+        let woolPile1 = trackPerimeter * window.tracks;
+        
+        // Add interlock length from optimization results if available
+        if (optimizationResults && optimizationResults.results) {
+            let interlock1Length = 0;
+            
+            for (const [material, plans] of Object.entries(optimizationResults.results)) {
+                if (material.includes('Interlock') && material.includes('1"')) {
+                    plans.forEach(plan => {
+                        plan.pieces.forEach(piece => {
+                            interlock1Length += piece.length;
+                        });
+                    });
+                }
+            }
+            
+            // Convert interlock length from inches to meters and add to wool pile
+            woolPile1 += (interlock1Length * INCHES_TO_METERS);
+        }
+        
         hardware = {
-            '1" Sliding Shutter Lock': (2 * shutters) + (1 * mosquitoShutters),
-            '1" Wool Pile Weather Strip': 2 * perimeter,
+            '1" Sliding Shutter Lock': 2 + (mosquitoShutters > 0 ? 1 : 0),  // 2 per window + 1 if mosquito shutter
+            '1" Wool Pile Weather Strip': woolPile1,  // (height + width) × 2 × number of tracks + Interlock length
             '1" Bearing': 2 * (shutters + mosquitoShutters),
             'Silicon': siliconBottles
         };
@@ -669,7 +749,7 @@ function calculateWindowHardware(window) {
     return hardware;
 }
 
-function aggregateProjectHardware(projectWindows) {
+function aggregateProjectHardware(projectWindows, optimizationResults = null) {
     /**
      * Aggregate hardware quantities for all windows in a project
      * Returns aggregated totals for each hardware item
@@ -677,7 +757,7 @@ function aggregateProjectHardware(projectWindows) {
     const aggregated = {};
     
     projectWindows.forEach(window => {
-        const windowHardware = calculateWindowHardware(window);
+        const windowHardware = calculateWindowHardware(window, optimizationResults);
         
         Object.entries(windowHardware).forEach(([item, qty]) => {
             if (!aggregated[item]) {
@@ -690,12 +770,12 @@ function aggregateProjectHardware(projectWindows) {
     return aggregated;
 }
 
-function generatePurchaseListTable(projectWindows) {
+function generatePurchaseListTable(projectWindows, optimizationResults = null) {
     /**
      * Generate purchase list showing hardware items with quantities and costs
      * Returns array suitable for jsPDF autoTable
      */
-    const aggregatedHardware = aggregateProjectHardware(projectWindows);
+    const aggregatedHardware = aggregateProjectHardware(projectWindows, optimizationResults);
     const purchaseListData = [];
     
     Object.entries(aggregatedHardware).forEach(([hardwareName, quantity]) => {
@@ -710,13 +790,19 @@ function generatePurchaseListTable(projectWindows) {
             if (found) {
                 unit = found.unit;
                 rate = found.rate;
-                cost = quantity * rate;
+                // For Wool Pile (in meters), calculate cost directly
+                // For other items (in Nos), round up the quantity
+                if (hardwareName.includes('Wool Pile')) {
+                    cost = quantity * rate;
+                } else {
+                    cost = Math.ceil(quantity) * rate;
+                }
             }
         });
         
         purchaseListData.push([
             hardwareName,
-            Math.ceil(quantity),  // Round up quantities
+            hardwareName.includes('Wool Pile') ? quantity.toFixed(2) : Math.ceil(quantity),  // Keep decimals for Wool Pile
             unit,
             `${rate}`,
             `Rs. ${cost.toFixed(0)}`
@@ -729,11 +815,11 @@ function generatePurchaseListTable(projectWindows) {
     return purchaseListData;
 }
 
-function calculatePurchaseListTotal(projectWindows) {
+function calculatePurchaseListTotal(projectWindows, optimizationResults = null) {
     /**
      * Calculate total hardware cost for the project
      */
-    const aggregatedHardware = aggregateProjectHardware(projectWindows);
+    const aggregatedHardware = aggregateProjectHardware(projectWindows, optimizationResults);
     let totalHardwareCost = 0;
     
     Object.entries(aggregatedHardware).forEach(([hardwareName, quantity]) => {
