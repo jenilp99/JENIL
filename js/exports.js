@@ -464,3 +464,133 @@ function exportFullResultsPDF() {
     
     doc.save(`${r.project}_Full_Results.pdf`);
 }
+
+// function generateQuotation() {
+//     const projectSelector = document.getElementById('projectSelector');
+//     const selectedProject = projectSelector.value;
+    
+//     if (!selectedProject) {
+//         alert('⚠️ Please select a project first!');
+//         return;
+//     }
+    
+//     const projectWindows = windows.filter(w => w.projectName === selectedProject);
+//     if (projectWindows.length === 0) {
+//         alert('⚠️ No windows found for this project!');
+//         return;
+//     }
+    
+//     const { jsPDF } = window.jspdf;
+//     const doc = new jsPDF();
+    
+//     // Company logo (text-based)
+//     doc.setFontSize(20);
+//     doc.setFont('helvetica', 'bold');
+//     doc.text('🏭 NIRUMA', 14, 20);
+//     doc.setFontSize(14);
+//     doc.text('ALUMINUM SECTIONS', 14, 30);
+//     doc.setFontSize(10);
+//     doc.text('Quality Aluminum Profiles Since 2025', 14, 35);
+    
+//     // Company details
+//     doc.setFontSize(10);
+//     doc.text('123 Industrial Area, City, State - 123456', 120, 20);
+//     doc.text('Phone: +91-9876543210', 120, 25);
+//     doc.text('Email: info@niruma.com', 120, 30);
+//     doc.text('GST: 22AAAAA0000A1Z5', 120, 35);
+    
+//     // Quotation header
+//     doc.setFontSize(18);
+//     doc.text('QUOTATION', 14, 50);
+//     doc.setFontSize(12);
+//     doc.text(`Quotation No: QT-${Date.now()}`, 14, 60);
+//     doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 65);
+//     doc.text(`Project: ${selectedProject}`, 14, 70);
+    
+//     // Client details (placeholder)
+//     doc.text('Client: [Client Name]', 120, 60);
+//     doc.text('Address: [Client Address]', 120, 65);
+    
+//     // Window details
+//     let yPos = 80;
+//     doc.setFontSize(14);
+//     doc.text('Window Details:', 14, yPos);
+//     yPos += 10;
+    
+//     const windowData = projectWindows.map((w, idx) => [
+//         idx + 1,
+//         w.configId,
+//         w.description,
+//         `${w.width}" × ${w.height}"`,
+//         w.tracks,
+//         w.shutters,
+//         w.mosquitoShutters,
+//         w.series
+//     ]);
+    
+//     doc.autoTable({
+//         startY: yPos,
+//         head: [['#', 'Config ID', 'Description', 'Size', 'Tracks', 'Shutters', 'MS', 'Series']],
+//         body: windowData,
+//         theme: 'grid',
+//         headStyles: { fillColor: [52, 152, 219] },
+//         styles: { fontSize: 8 }
+//     });
+    
+//     yPos = doc.lastAutoTable.finalY + 10;
+    
+//     // Cost summary (if optimization results exist)
+//     if (optimizationResults && optimizationResults.project === selectedProject) {
+//         const r = optimizationResults;
+//         doc.setFontSize(14);
+//         doc.text('Cost Summary:', 14, yPos);
+//         yPos += 10;
+        
+//         const materialCost = parseFloat(r.stats.totalCost || 0);
+//         const wastePercentage = parseFloat(r.stats.totalWaste || 0) / (parseFloat(r.stats.totalUsed || 1) + parseFloat(r.stats.totalWaste || 0));
+//         const wasteCost = (materialCost * wastePercentage).toFixed(0);
+//         const usedCost = (materialCost - wasteCost).toFixed(0);
+        
+//         doc.autoTable({
+//             startY: yPos,
+//             head: [['Item', 'Amount (₹)']],
+//             body: [
+//                 ['Material Cost (Used)', usedCost],
+//                 ['Material Cost (Waste)', wasteCost],
+//                 ['Total Material Cost', r.stats.totalCost],
+//                 ['Labor Charges (10%)', (parseFloat(r.stats.totalCost) * 0.1).toFixed(0)],
+//                 ['Transportation (5%)', (parseFloat(r.stats.totalCost) * 0.05).toFixed(0)],
+//                 ['GST (18%)', (parseFloat(r.stats.totalCost) * 1.15 * 0.18).toFixed(0)],
+//                 ['Grand Total', (parseFloat(r.stats.totalCost) * 1.15 * 1.18).toFixed(0)]
+//             ],
+//             theme: 'grid',
+//             headStyles: { fillColor: [46, 125, 50] }
+//         });
+        
+//         yPos = doc.lastAutoTable.finalY + 10;
+//     } else {
+//         doc.setFontSize(12);
+//         doc.text('Note: Please run optimization first for accurate cost estimates.', 14, yPos);
+//         yPos += 10;
+//     }
+    
+//     // Terms and conditions
+//     doc.setFontSize(10);
+//     doc.text('Terms & Conditions:', 14, yPos);
+//     yPos += 5;
+//     doc.text('1. Prices are valid for 30 days from the date of quotation.', 14, yPos);
+//     yPos += 5;
+//     doc.text('2. Payment terms: 50% advance, 50% before delivery.', 14, yPos);
+//     yPos += 5;
+//     doc.text('3. Delivery within 15-20 working days after confirmation.', 14, yPos);
+//     yPos += 5;
+//     doc.text('4. All disputes subject to [City] jurisdiction.', 14, yPos);
+    
+//     // Footer
+//     const pageHeight = doc.internal.pageSize.height;
+//     doc.setFontSize(8);
+//     doc.text('Thank you for your business!', 14, pageHeight - 20);
+//     doc.text('Niruma Aluminum Sections - Quality You Can Trust', 14, pageHeight - 15);
+    
+//     doc.save(`Quotation_${selectedProject}_${Date.now()}.pdf`);
+// }

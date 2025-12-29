@@ -1,18 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Niruma Aluminum Profile Optimizer</title>
-    
+
     <!-- CSS -->
     <link rel="stylesheet" href="css/styles.css">
-    
+
     <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Existing jsPDF scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Add this new library for SVG support -->
+    <script src="https://cdn.jsdelivr.net/npm/svg2pdf.js@2.2.1/dist/svg2pdf.min.js"></script>
+
 </head>
+
 <body>
     <div class="container">
         <div class="header">
@@ -113,7 +121,8 @@
         <div id="formulas" class="tab-content">
             <h2 style="color: #2c3e50; margin-bottom: 20px;">Series Formulas Configuration</h2>
             <div class="alert alert-info">
-                <strong>ℹ️ Formula Variables:</strong> W = Width, H = Height, S = Shutters, T = Tracks, MS = Mosquito Shutters
+                <strong>ℹ️ Formula Variables:</strong> W = Width, H = Height, S = Shutters, T = Tracks, MS = Mosquito
+                Shutters
             </div>
             <div id="formulasList"></div>
             <div class="section-header">
@@ -217,11 +226,16 @@
                 </p>
             </div>
             <div style="text-align: center; padding: 40px;">
-                <button class="btn btn-success" onclick="runOptimization()" style="font-size: 20px; padding: 20px 50px;">
+                <button class="btn btn-success" onclick="runOptimization()"
+                    style="font-size: 20px; padding: 20px 50px;">
                     🚀 RUN SMART OPTIMIZATION
                 </button>
             </div>
             <div style="text-align: center; margin-top: 20px;">
+                <button class="btn btn-primary" onclick="generateQuotation()"
+                    style="font-size: 16px; padding: 15px 30px;">
+                    📄 Generate Quotation
+                </button>
                 <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Saved Data</button>
             </div>
         </div>
@@ -248,7 +262,8 @@
                 <div class="form-group">
                     <label>Quantity Formula</label>
                     <input type="text" id="modalComponentQty" placeholder="e.g., 2*S or 4" required>
-                    <small style="color: #7f8c8d;">Use variables: W (width), H (height), S (shutters), MS (mosquito)</small>
+                    <small style="color: #7f8c8d;">Use variables: W (width), H (height), S (shutters), MS
+                        (mosquito)</small>
                 </div>
                 <div class="form-group">
                     <label>Length Formula</label>
@@ -395,6 +410,8 @@
     <script src="js/app.js"></script>
     <script src="js/optimization.js"></script>
     <script src="js/exports.js"></script>
-</body>
-</html>
+    <script src="js/quotation.js"></script>
 
+</body>
+
+</html>
