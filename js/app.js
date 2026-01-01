@@ -144,19 +144,43 @@ function initializeDefaults() {
 // UI MANAGEMENT
 // ============================================================================
 
-function showTab(tabName) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
-    document.getElementById(tabName).classList.add('active');
-    
-    if (tabName === 'windows') displayWindows();
-    if (tabName === 'formulas') refreshFormulasDisplay();
-    if (tabName === 'stock') {
-        refreshStockMaster();
-        refreshHardwareMaster();
+// Smooth scroll to sections - called from navigation links
+function scrollToSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        // Refresh content based on which section we're scrolling to
+        const sectionName = sectionId.replace('section-', '');
+        
+        if (sectionName === 'window-list') {
+            displayWindows();
+        } else if (sectionName === 'formulas') {
+            refreshFormulasDisplay();
+        } else if (sectionName === 'stock') {
+            refreshStockMaster();
+            refreshHardwareMaster();
+        } else if (sectionName === 'optimize') {
+            refreshProjectSelector();
+        }
+        
+        // Smooth scroll with native behavior
+        section.scrollIntoView({ behavior: 'smooth' });
     }
-    if (tabName === 'optimize') refreshProjectSelector();
+}
+
+// Keep showTab for backward compatibility (for any inline onclick handlers)
+function showTab(tabName) {
+    // Map old tab names to new section IDs
+    const sectionMap = {
+        'input': 'section-add-windows',
+        'windows': 'section-window-list',
+        'formulas': 'section-formulas',
+        'stock': 'section-stock',
+        'optimize': 'section-optimize',
+        'results': 'section-results'
+    };
+    
+    const sectionId = sectionMap[tabName] || 'section-' + tabName;
+    scrollToSection(sectionId);
 }
 
 function refreshAllUI() {
@@ -209,6 +233,16 @@ function convertFromInches(value) {
 
 function toggleUnit() {
     unitMode = unitMode === 'inch' ? 'mm' : 'inch';
+    
+    // Sync all unit toggle checkboxes
+    const allUnitToggles = document.querySelectorAll('input[id*="unitToggle"]');
+    const isMetric = unitMode === 'mm';
+    allUnitToggles.forEach(toggle => {
+        if (toggle) {
+            toggle.checked = isMetric;
+        }
+    });
+    
     updateUnitLabels();
     displayWindows();
     if (optimizationResults) displayResults();

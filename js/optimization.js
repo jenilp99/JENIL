@@ -60,8 +60,7 @@ function runOptimization() {
     
     autoSaveResults();
     displayResults();
-    showTab('results');
-    document.querySelectorAll('.tab')[5].classList.add('active');
+    scrollToSection('section-results');
 }
 
 // ============================================================================

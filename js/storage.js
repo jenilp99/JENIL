@@ -197,8 +197,22 @@ function loadAllData() {
 
     kerf = settings.kerf;
     unitMode = settings.unit;
-    document.getElementById('kerfGlobal').value = kerf;
-    document.getElementById('unitToggle').checked = (unitMode === 'mm');
+    
+    // Update kerf if element exists
+    const kerfElement = document.getElementById('kerfGlobal');
+    if (kerfElement) {
+        kerfElement.value = kerf;
+    }
+    
+    // Update all unit toggle checkboxes
+    const isMetric = (unitMode === 'mm');
+    const unitToggles = document.querySelectorAll('input[id*="unitToggle"]');
+    unitToggles.forEach(toggle => {
+        if (toggle) {
+            toggle.checked = isMetric;
+        }
+    });
+    
     console.log('✅ Loaded settings from storage');
 
     if (loadedResults) {
