@@ -6,37 +6,50 @@
 
 function runOptimization() {
     const selectedProject = document.getElementById('projectSelector').value;
-    
+
     if (!selectedProject) {
-        alert('❌ Please select a project first!');
+        showAlert('❌ Please select a project first!');
         return;
     }
-    
+
     const piecesByMaterial = calculatePieces(selectedProject);
-    
+
     if (Object.keys(piecesByMaterial).length === 0) {
-        alert('❌ No pieces calculated for this project!');
+        showAlert('❌ No pieces calculated for this project!');
         return;
     }
-    
+
     const results = {};
     let totalSticks = 0;
     let totalUsed = 0;
     let totalWaste = 0;
     let totalCost = 0;
-    
+
     for (const [material, pieces] of Object.entries(piecesByMaterial)) {
-        const projectSeries = windows.find(w => w.projectName === selectedProject).series;
-        const stockInfo = stockMaster[projectSeries].find(s => s.material === material);
-        
+        let projectSeries = windows.find(w => w.projectName === selectedProject).series;
+        let stockList = stockMaster[projectSeries];
+
+        // Fallback for series name migration
+        if (!stockList) {
+            if (projectSeries === '1') stockList = stockMaster['1"'];
+            else if (projectSeries === '1"') stockList = stockMaster['1'];
+        }
+
+        if (!stockList) {
+            console.warn('No stock list for series:', projectSeries);
+            continue;
+        }
+
+        const stockInfo = stockList.find(s => s.material === material);
+
         if (!stockInfo) {
             console.warn('No stock info for:', material);
             continue;
         }
-        
+
         const plans = optimizeMaterialSmart(pieces, stockInfo, kerf);
         results[material] = plans;
-        
+
         plans.forEach(plan => {
             totalSticks++;
             totalUsed += plan.used;
@@ -44,7 +57,7 @@ function runOptimization() {
             totalCost += plan.cost;
         });
     }
-    
+
     optimizationResults = {
         project: selectedProject,
         results: results,
@@ -57,7 +70,7 @@ function runOptimization() {
         },
         config: { kerf }
     };
-    
+
     autoSaveResults();
     displayResults();
     scrollToSection('section-results');
@@ -70,7 +83,7 @@ function runOptimization() {
 function calculatePieces(selectedProject) {
     const pieces = {};
     const projectWindows = windows.filter(w => w.projectName === selectedProject);
-    
+
     projectWindows.forEach(win => {
         const W = win.width;
         const H = win.height;
@@ -78,18 +91,26 @@ function calculatePieces(selectedProject) {
         const MS = win.mosquitoShutters;
         const T = win.tracks;
         const id = win.configId;
-        
-        const formulas = seriesFormulas[win.series];
+
+        let seriesName = win.series;
+        let formulas = seriesFormulas[seriesName];
+
+        // Fallback for series name migration (1 vs 1")
+        if (!formulas) {
+            if (seriesName === '1') formulas = seriesFormulas['1"'];
+            else if (seriesName === '1"') formulas = seriesFormulas['1'];
+        }
+
         if (!formulas) return;
-        
+
         formulas.forEach(formula => {
             try {
                 let qtyVal = eval(formula.qty);
                 let lenVal = eval(formula.length);
-                
+
                 const qty = parseInt(qtyVal, 10);
                 const length = parseFloat(lenVal);
-                
+
                 if (qty > 0 && length > 0) {
                     addPieces(pieces, formula.component, length, id + ' - ' + formula.desc, qty);
                 }
@@ -98,7 +119,7 @@ function calculatePieces(selectedProject) {
             }
         });
     });
-    
+
     return pieces;
 }
 
@@ -106,7 +127,7 @@ function addPieces(pieces, material, length, label, qty) {
     if (!pieces[material]) {
         pieces[material] = [];
     }
-    
+
     for (let i = 0; i < qty; i++) {
         pieces[material].push({ length: length, label: label });
     }
@@ -118,30 +139,30 @@ function addPieces(pieces, material, length, label, qty) {
 
 function optimizeMaterialSmart(pieces, stockInfo, kerf) {
     pieces.sort((a, b) => b.length - a.length);
-    
+
     const strategies = [];
-    
+
     // Strategy 1: Only Stock 1
     strategies.push(solveSpecificStock(pieces, stockInfo.stock1, stockInfo.stock1Cost, kerf));
-    
+
     // Strategy 2: Only Stock 2 (if different)
     if (stockInfo.stock2 && stockInfo.stock2 !== stockInfo.stock1) {
         strategies.push(solveSpecificStock(pieces, stockInfo.stock2, stockInfo.stock2Cost, kerf));
     }
-    
+
     // Strategy 3: Smart Cost Focused
     strategies.push(optimizeCostFocused(pieces, stockInfo, kerf));
-    
+
     // Strategy 4: Greedy Efficiency
     strategies.push(optimizeGreedy(pieces, stockInfo, kerf));
-    
+
     // Find best strategy (lowest cost)
     let bestPlan = null;
     let minCost = Infinity;
-    
+
     strategies.forEach(plan => {
         const currentCost = plan.reduce((sum, stick) => sum + stick.cost, 0);
-        
+
         if (currentCost < minCost) {
             minCost = currentCost;
             bestPlan = plan;
@@ -151,7 +172,7 @@ function optimizeMaterialSmart(pieces, stockInfo, kerf) {
             }
         }
     });
-    
+
     return bestPlan;
 }
 
@@ -162,19 +183,19 @@ function optimizeMaterialSmart(pieces, stockInfo, kerf) {
 function solveSpecificStock(pieces, stockLength, stockCost, kerf) {
     const plan = [];
     const remaining = [...pieces];
-    
+
     while (remaining.length > 0) {
         const pattern = findBestPattern(remaining, stockLength, kerf);
-        
+
         if (pattern.pieces.length === 0) {
             break;
         }
-        
+
         pattern.pieces.forEach(p => {
             const idx = remaining.indexOf(p);
             if (idx !== -1) remaining.splice(idx, 1);
         });
-        
+
         plan.push({
             stock: stockLength + '"',
             pieces: pattern.pieces,
@@ -184,7 +205,7 @@ function solveSpecificStock(pieces, stockLength, stockCost, kerf) {
             efficiency: ((pattern.used / stockLength) * 100).toFixed(1)
         });
     }
-    
+
     return plan;
 }
 
@@ -195,10 +216,10 @@ function solveSpecificStock(pieces, stockLength, stockCost, kerf) {
 function optimizeGreedy(pieces, stockInfo, kerf) {
     const plans = [];
     const remaining = [...pieces];
-    
+
     while (remaining.length > 0) {
         const strategies = [];
-        
+
         const fillStock1 = findBestPattern(remaining, stockInfo.stock1, kerf);
         if (fillStock1.pieces.length > 0) {
             strategies.push({
@@ -209,7 +230,7 @@ function optimizeGreedy(pieces, stockInfo, kerf) {
                 costPerInch: stockInfo.stock1Cost / fillStock1.used
             });
         }
-        
+
         const fillStock2 = findBestPattern(remaining, stockInfo.stock2, kerf);
         if (fillStock2.pieces.length > 0) {
             strategies.push({
@@ -220,9 +241,9 @@ function optimizeGreedy(pieces, stockInfo, kerf) {
                 costPerInch: stockInfo.stock2Cost / fillStock2.used
             });
         }
-        
+
         if (strategies.length === 0) break;
-        
+
         strategies.sort((a, b) => {
             if (a.efficiency >= 0.7 && b.efficiency < 0.7) return -1;
             if (b.efficiency >= 0.7 && a.efficiency < 0.7) return 1;
@@ -231,14 +252,14 @@ function optimizeGreedy(pieces, stockInfo, kerf) {
             }
             return a.pattern.waste - b.pattern.waste;
         });
-        
+
         const bestStrategy = strategies[0];
-        
+
         bestStrategy.pattern.pieces.forEach(p => {
             const idx = remaining.findIndex(r => r.length === p.length && r.label === p.label);
             if (idx !== -1) remaining.splice(idx, 1);
         });
-        
+
         plans.push({
             stock: bestStrategy.stock + '"',
             pieces: bestStrategy.pattern.pieces,
@@ -248,7 +269,7 @@ function optimizeGreedy(pieces, stockInfo, kerf) {
             efficiency: (bestStrategy.efficiency * 100).toFixed(1)
         });
     }
-    
+
     return plans;
 }
 
@@ -259,10 +280,10 @@ function optimizeGreedy(pieces, stockInfo, kerf) {
 function optimizeCostFocused(pieces, stockInfo, kerf) {
     const plans = [];
     const remaining = [...pieces];
-    
+
     while (remaining.length > 0) {
         const scenarios = [];
-        
+
         // Single stock 1
         const s1Result = findBestPattern(remaining, stockInfo.stock1, kerf);
         if (s1Result.pieces.length > 0) {
@@ -277,7 +298,7 @@ function optimizeCostFocused(pieces, stockInfo, kerf) {
                 twoStocks: false
             });
         }
-        
+
         // Single stock 2
         const s2Result = findBestPattern(remaining, stockInfo.stock2, kerf);
         if (s2Result.pieces.length > 0) {
@@ -292,20 +313,20 @@ function optimizeCostFocused(pieces, stockInfo, kerf) {
                 twoStocks: false
             });
         }
-        
+
         // Two stock 1s (if smaller than stock 2)
         if (stockInfo.stock1 < stockInfo.stock2) {
             const firstStock1 = findBestPattern(remaining, stockInfo.stock1, kerf);
             if (firstStock1.pieces.length > 0) {
                 const temp1Remaining = remaining.filter(r => !firstStock1.pieces.includes(r));
                 const secondStock1 = findBestPattern(temp1Remaining, stockInfo.stock1, kerf);
-                
+
                 if (secondStock1.pieces.length > 0) {
                     const totalCost = stockInfo.stock1Cost * 2;
                     const totalUsed = firstStock1.used + secondStock1.used;
                     const finalRemaining = temp1Remaining.filter(r => !secondStock1.pieces.includes(r));
                     const avgEfficiency = totalUsed / (stockInfo.stock1 * 2);
-                    
+
                     if (avgEfficiency > 0.5) {
                         scenarios.push({
                             twoStocks: true,
@@ -329,16 +350,16 @@ function optimizeCostFocused(pieces, stockInfo, kerf) {
                 }
             }
         }
-        
+
         if (scenarios.length === 0) break;
-        
+
         // Find best scenario
         let bestScenario = null;
         let bestScore = Infinity;
-        
+
         scenarios.forEach(scenario => {
             let cost, efficiency;
-            
+
             if (scenario.twoStocks) {
                 cost = scenario.totalCost;
                 efficiency = scenario.avgEfficiency;
@@ -346,17 +367,17 @@ function optimizeCostFocused(pieces, stockInfo, kerf) {
                 cost = scenario.firstCut.cost;
                 efficiency = scenario.firstCut.pattern.used / scenario.firstCut.stock;
             }
-            
+
             let score = cost;
             if (efficiency < 0.5) score *= 1.5;
             if (efficiency < 0.3) score *= 2.0;
-            
+
             if (score < bestScore) {
                 bestScore = score;
                 bestScenario = scenario;
             }
         });
-        
+
         // Apply best scenario
         if (bestScenario.twoStocks) {
             bestScenario.cuts.forEach(cut => {
@@ -385,7 +406,7 @@ function optimizeCostFocused(pieces, stockInfo, kerf) {
             remaining.push(...bestScenario.remaining);
         }
     }
-    
+
     return plans;
 }
 
@@ -397,16 +418,16 @@ function findBestPattern(pieces, stockLen, kerf) {
     let bestPattern = { pieces: [], used: 0, waste: stockLen };
     let used = 0;
     let pattern = [];
-    
+
     for (const piece of pieces) {
         const needed = piece.length + (pattern.length > 0 ? kerf : 0);
-        
+
         if (used + needed <= stockLen) {
             pattern.push(piece);
             used += needed;
         }
     }
-    
+
     if (used > bestPattern.used) {
         bestPattern = {
             pieces: pattern,
@@ -414,7 +435,7 @@ function findBestPattern(pieces, stockLen, kerf) {
             waste: stockLen - used
         };
     }
-    
+
     return bestPattern;
 }
 
@@ -426,39 +447,39 @@ function generateCuttingDiagram(plan, maxLength) {
     const svgWidth = 800;
     const svgHeight = 60;
     const scale = svgWidth / maxLength;
-    
+
     let svg = `<svg width="${svgWidth}" height="${svgHeight}" style="border: 1px solid #ddd; background: white;">`;
     svg += `<rect x="0" y="10" width="${maxLength * scale}" height="40" fill="#ecf0f1" stroke="#95a5a6" stroke-width="2"/>`;
-    
+
     let currentX = 0;
     const colors = ['#3498db', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c', '#34495e'];
-    
+
     plan.pieces.forEach((piece, idx) => {
         const pieceWidth = piece.length * scale;
         const color = colors[idx % colors.length];
-        
+
         svg += `<rect x="${currentX}" y="10" width="${pieceWidth}" height="40" fill="${color}" opacity="0.7" stroke="white" stroke-width="1"/>`;
-        
+
         const label = `${piece.length.toFixed(1)}"`;
         const windowId = piece.label.split(' - ')[0];
-        
-        svg += `<text x="${currentX + pieceWidth/2}" y="25" font-size="10" fill="white" text-anchor="middle" font-weight="bold">${windowId}</text>`;
-        svg += `<text x="${currentX + pieceWidth/2}" y="40" font-size="9" fill="white" text-anchor="middle">${label}</text>`;
-        
+
+        svg += `<text x="${currentX + pieceWidth / 2}" y="25" font-size="10" fill="white" text-anchor="middle" font-weight="bold">${windowId}</text>`;
+        svg += `<text x="${currentX + pieceWidth / 2}" y="40" font-size="9" fill="white" text-anchor="middle">${label}</text>`;
+
         currentX += pieceWidth;
-        
+
         if (idx < plan.pieces.length - 1) {
             svg += `<rect x="${currentX}" y="10" width="${kerf * scale}" height="40" fill="#e74c3c"/>`;
             currentX += kerf * scale;
         }
     });
-    
+
     if (plan.waste > 0) {
         const wasteWidth = plan.waste * scale;
         svg += `<rect x="${currentX}" y="10" width="${wasteWidth}" height="40" fill="#95a5a6" opacity="0.5"/>`;
-        svg += `<text x="${currentX + wasteWidth/2}" y="35" font-size="10" fill="#2c3e50" text-anchor="middle">Waste: ${plan.waste.toFixed(1)}"</text>`;
+        svg += `<text x="${currentX + wasteWidth / 2}" y="35" font-size="10" fill="#2c3e50" text-anchor="middle">Waste: ${plan.waste.toFixed(1)}"</text>`;
     }
-    
+
     svg += '</svg>';
     return svg;
 }

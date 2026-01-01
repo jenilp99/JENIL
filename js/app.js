@@ -6,25 +6,25 @@
 
 let hardwareMaster = {
     'Domal': [
-        { hardware: 'Domal Shutter Lock', unit: 'Nos', rate: 150 },
-        { hardware: 'Domal Wool Pile Weather Strip', unit: 'Meter', rate: 50 },
-        { hardware: 'Domal Bearing', unit: 'Nos', rate: 20 },
-        { hardware: 'Silicon', unit: 'Bottle', rate: 80 },
-        { hardware: 'Corner Cleat', unit: 'Nos', rate: 10 },
-        { hardware: 'Shutter Wing Connector', unit: 'Nos', rate: 5 },
-        { hardware: 'Interlock Cap', unit: 'Nos', rate: 15 }
+        { hardware: 'Domal Shutter Lock', unit: 'Nos', rate: 150, formula: '2 + (MS > 0 ? 1 : 0)' },
+        { hardware: 'Domal Wool Pile Weather Strip', unit: 'Meter', rate: 50, formula: '((GL("Domal Shutter") * 2) + GL("Domal Clip")) * 0.0254' },
+        { hardware: 'Domal Bearing', unit: 'Nos', rate: 20, formula: '2 * (S + MS)' },
+        { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' },
+        { hardware: 'Corner Cleat', unit: 'Nos', rate: 10, formula: '4 * (S + MS)' },
+        { hardware: 'Shutter Wing Connector', unit: 'Nos', rate: 5, formula: '8 * S + 8 * MS' },
+        { hardware: 'Interlock Cap', unit: 'Nos', rate: 15, formula: 'S + MS' }
     ],
     '3/4': [
-        { hardware: '3/4 Sliding Shutter Lock', unit: 'Nos', rate: 120 },
-        { hardware: '3/4 Wool Pile Weather Strip', unit: 'Meter', rate: 45 },
-        { hardware: '3/4 Bearing', unit: 'Nos', rate: 18 },
-        { hardware: 'Silicon', unit: 'Bottle', rate: 80 }
+        { hardware: '3/4 Sliding Shutter Lock', unit: 'Nos', rate: 120, formula: '2 + (MS > 0 ? 1 : 0)' },
+        { hardware: '3/4 Wool Pile Weather Strip', unit: 'Meter', rate: 45, formula: '(P * T + GL("Interlock")) * 0.0254' },
+        { hardware: '3/4 Bearing', unit: 'Nos', rate: 18, formula: '2 * (S + MS)' },
+        { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' }
     ],
-    '1': [
-        { hardware: '1" Sliding Shutter Lock', unit: 'Nos', rate: 130 },
-        { hardware: '1" Wool Pile Weather Strip', unit: 'Meter', rate: 48 },
-        { hardware: '1" Bearing', unit: 'Nos', rate: 20 },
-        { hardware: 'Silicon', unit: 'Bottle', rate: 80 }
+    '1"': [
+        { hardware: '1" Sliding Shutter Lock', unit: 'Nos', rate: 130, formula: '2 + (MS > 0 ? 1 : 0)' },
+        { hardware: '1" Wool Pile Weather Strip', unit: 'Meter', rate: 48, formula: '(P * T + GL("Interlock")) * 0.0254' },
+        { hardware: '1" Bearing', unit: 'Nos', rate: 20, formula: '2 * (S + MS)' },
+        { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' }
     ]
 };
 
@@ -33,7 +33,6 @@ let hardwareMaster = {
 let windows = [];
 let seriesFormulas = {};
 let stockMaster = {};
-let hardwareMaster = {};
 let optimizationResults = null;
 let kerf = 0.125;
 let unitMode = 'inch';
@@ -75,7 +74,7 @@ function initializeDefaults() {
                 { component: '3/4 C-channel', qty: '2*MS', length: 'H-1.5', desc: 'MS C-channel Vertical' },
                 { component: '3/4 C-channel', qty: '2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS C-channel Horizontal' }
             ],
-            '1': [
+            '1"': [
                 { component: '1" Handle', qty: '2', length: 'H-1.125', desc: 'Handles' },
                 { component: '1" Interlock', qty: '2*S-2', length: 'H-1.125', desc: 'Interlocks' },
                 { component: '1" Bearing Bottom', qty: '2*S', length: '(W-5-2*(S-1))/S', desc: 'Bearing Bottom' },
@@ -107,7 +106,7 @@ function initializeDefaults() {
                 { material: '3/4 Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '3/4 C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
             ],
-            '1': [
+            '1"': [
                 { material: '1" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '1" Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '1" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
@@ -119,36 +118,54 @@ function initializeDefaults() {
     }
 
     // Initialize Hardware Master
+    // Initialize Hardware Master
+    const defaultHardwareMaster = {
+        'Domal': [
+            { hardware: 'Domal Shutter Lock', unit: 'Nos', rate: 150, formula: '2 + (MS > 0 ? 1 : 0)' },
+            { hardware: 'Domal Wool Pile Weather Strip', unit: 'Meter', rate: 50, formula: '((GL("Domal Shutter") * 2) + GL("Domal Clip")) * 0.0254' },
+            { hardware: 'Domal Bearing', unit: 'Nos', rate: 20, formula: '2 * (S + MS)' },
+            { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' },
+            { hardware: 'Corner Cleat', unit: 'Nos', rate: 10, formula: '4 * (S + MS)' },
+            { hardware: 'Shutter Wing Connector', unit: 'Nos', rate: 5, formula: '8 * S + 8 * MS' },
+            { hardware: 'Interlock Cap', unit: 'Nos', rate: 15, formula: 'S + MS' }
+        ],
+        '3/4': [
+            { hardware: '3/4 Sliding Shutter Lock', unit: 'Nos', rate: 120, formula: '2 + (MS > 0 ? 1 : 0)' },
+            { hardware: '3/4 Wool Pile Weather Strip', unit: 'Meter', rate: 45, formula: '(P * T + GL("Interlock")) * 0.0254' },
+            { hardware: '3/4 Bearing', unit: 'Nos', rate: 18, formula: '2 * (S + MS)' },
+            { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' }
+        ],
+        '1"': [
+            { hardware: '1" Sliding Shutter Lock', unit: 'Nos', rate: 130, formula: '2 + (MS > 0 ? 1 : 0)' },
+            { hardware: '1" Wool Pile Weather Strip', unit: 'Meter', rate: 48, formula: '(P * T + GL("Interlock")) * 0.0254' },
+            { hardware: '1" Bearing', unit: 'Nos', rate: 20, formula: '2 * (S + MS)' },
+            { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' }
+        ]
+    };
+
     if (!localStorage.getItem('hardwareMaster')) {
-        const hardwareMaster = {
-            'Domal': [
-                { hardware: 'Domal Shutter Lock', unit: 'Nos', rate: 50 },
-                { hardware: 'Domal Wool Pile Weather Strip', unit: 'Meter', rate: 25 },
-                { hardware: 'Domal Bearing', unit: 'Nos', rate: 30 },
-                { hardware: 'Silicon', unit: 'Bottle', rate: 150 },
-                { hardware: 'Corner Cleat', unit: 'Nos', rate: 15 },
-                { hardware: 'Shutter Wing Connector', unit: 'Nos', rate: 20 },
-                { hardware: 'Interlock Cap', unit: 'Nos', rate: 10 }
-            ],
-            '3/4': [
-                { hardware: '3/4 Sliding Shutter Lock', unit: 'Nos', rate: 45 },
-                { hardware: '3/4 Wool Pile Weather Strip', unit: 'Meter', rate: 22 },
-                { hardware: '3/4 Bearing', unit: 'Nos', rate: 28 },
-                { hardware: 'Silicon', unit: 'Bottle', rate: 150 }
-            ],
-            '1': [
-                { hardware: '1" Sliding Shutter Lock', unit: 'Nos', rate: 48 },
-                { hardware: '1" Wool Pile Weather Strip', unit: 'Meter', rate: 24 },
-                { hardware: '1" Bearing', unit: 'Nos', rate: 32 },
-                { hardware: 'Silicon', unit: 'Bottle', rate: 150 }
-            ]
-        };
+        hardwareMaster = JSON.parse(JSON.stringify(defaultHardwareMaster));
         localStorage.setItem('hardwareMaster', JSON.stringify(hardwareMaster));
     } else {
-        // Load hardwareMaster from localStorage
         const savedHardwareMaster = localStorage.getItem('hardwareMaster');
         if (savedHardwareMaster) {
             hardwareMaster = JSON.parse(savedHardwareMaster);
+            // Migration: Rename "1" to "1\""
+            if (hardwareMaster['1']) {
+                hardwareMaster['1"'] = hardwareMaster['1'];
+                delete hardwareMaster['1'];
+            }
+            // Migration: Add formulas to existing items if missing
+            Object.entries(hardwareMaster).forEach(([series, items]) => {
+                const defaults = defaultHardwareMaster[series] || [];
+                items.forEach(item => {
+                    if (!item.formula) {
+                        const defaultItem = defaults.find(d => d.hardware === item.hardware);
+                        if (defaultItem) item.formula = defaultItem.formula;
+                    }
+                });
+            });
+            localStorage.setItem('hardwareMaster', JSON.stringify(hardwareMaster));
         }
     }
 
@@ -179,18 +196,21 @@ function scrollToSection(sectionId) {
     if (section) {
         // Refresh content based on which section we're scrolling to
         const sectionName = sectionId.replace('section-', '');
-        
-        if (sectionName === 'window-list') {
-            displayWindows();
-        } else if (sectionName === 'formulas') {
-            refreshFormulasDisplay();
-        } else if (sectionName === 'stock') {
-            refreshStockMaster();
-            refreshHardwareMaster();
-        } else if (sectionName === 'optimize') {
-            refreshProjectSelector();
+        refreshSectionContent(sectionName);
+
+        // Ensure section is expanded if it was collapsed
+        const header = section.querySelector('.collapsible-header');
+        const content = section.querySelector('.collapsible-content');
+        if (header && header.classList.contains('collapsed')) {
+            header.classList.remove('collapsed');
         }
-        
+        if (content && content.classList.contains('collapsed-content')) {
+            content.classList.remove('collapsed-content');
+        }
+        if (section.classList.contains('collapsed-section')) {
+            section.classList.remove('collapsed-section');
+        }
+
         // Smooth scroll with native behavior
         section.scrollIntoView({ behavior: 'smooth' });
     }
@@ -204,20 +224,85 @@ function showTab(tabName) {
         'windows': 'section-window-list',
         'formulas': 'section-formulas',
         'stock': 'section-stock',
+        'hardware': 'section-hardware',
         'optimize': 'section-optimize',
         'results': 'section-results'
     };
-    
+
     const sectionId = sectionMap[tabName] || 'section-' + tabName;
     scrollToSection(sectionId);
+}
+
+/**
+ * Toggles a collapsible section
+ * @param {HTMLElement} header - The header element of the section
+ */
+function toggleSection(header) {
+    const section = header.parentElement;
+    const content = header.nextElementSibling;
+
+    if (!content || !content.classList.contains('collapsible-content')) {
+        console.warn('No collapsible content found after header');
+        return;
+    }
+
+    const isExpanding = header.classList.contains('collapsed');
+
+    header.classList.toggle('collapsed');
+    content.classList.toggle('collapsed-content');
+    section.classList.toggle('collapsed-section');
+
+    // If expanding, refresh the content inside
+    if (isExpanding) {
+        const sectionId = section.getAttribute('id') || '';
+        const sectionName = sectionId.replace('section-', '');
+        refreshSectionContent(sectionName);
+    }
+}
+
+// Global helper to refresh specific section data
+function refreshSectionContent(sectionName) {
+    if (sectionName === 'window-list') {
+        displayWindows();
+    } else if (sectionName === 'formulas') {
+        refreshFormulasDisplay();
+    } else if (sectionName === 'stock') {
+        refreshStockMaster();
+    } else if (sectionName === 'hardware') {
+        refreshHardwareMaster();
+    } else if (sectionName === 'optimize') {
+        refreshProjectSelector();
+    } else if (sectionName === 'results') {
+        if (typeof displayResults === 'function') displayResults();
+    }
+}
+
+/**
+ * Updates the statistics shown on the dashbaord tiles
+ */
+function updateDashboardStats() {
+    const windowCountEl = document.getElementById('stat-window-count');
+    const stockCountEl = document.getElementById('stat-stock-count');
+
+    if (windowCountEl) {
+        windowCountEl.textContent = `${windows.length} Windows Added`;
+    }
+
+    if (stockCountEl) {
+        let totalMaterials = 0;
+        Object.values(stockMaster).forEach(list => totalMaterials += list.length);
+        stockCountEl.textContent = `${totalMaterials} Stock Items`;
+    }
 }
 
 function refreshAllUI() {
     refreshSeriesDropdown();
     refreshFormulasDisplay();
+    refreshWindowList();
     refreshStockMaster();
+    refreshHardwareMaster();
     refreshProjectSelector();
-    displayWindows();
+    updateDashboardStats();
 }
 
 function refreshSeriesDropdown() {
@@ -226,7 +311,7 @@ function refreshSeriesDropdown() {
         document.getElementById('editSeries'),
         document.getElementById('newStockSeries')
     ];
-    
+
     selects.forEach(select => {
         if (select) {
             select.innerHTML = '';
@@ -262,7 +347,7 @@ function convertFromInches(value) {
 
 function toggleUnit() {
     unitMode = unitMode === 'inch' ? 'mm' : 'inch';
-    
+
     // Sync all unit toggle checkboxes
     const allUnitToggles = document.querySelectorAll('input[id*="unitToggle"]');
     const isMetric = unitMode === 'mm';
@@ -271,7 +356,7 @@ function toggleUnit() {
             toggle.checked = isMetric;
         }
     });
-    
+
     updateUnitLabels();
     displayWindows();
     if (optimizationResults) displayResults();
@@ -284,7 +369,7 @@ function toggleUnit() {
 
 function addWindow(event) {
     event.preventDefault();
-    
+
     const window = {
         configId: document.getElementById('configId').value,
         projectName: document.getElementById('projectName').value,
@@ -296,14 +381,14 @@ function addWindow(event) {
         series: document.getElementById('series').value,
         description: document.getElementById('description').value
     };
-    
+
     windows.push(window);
     autoSaveWindows();
-    
+
     const lastNum = parseInt(window.configId.substring(1));
     document.getElementById('configId').value = 'W' + String(lastNum + 1).padStart(2, '0');
-    
-    alert('✅ Window ' + window.configId + ' added successfully!');
+
+    showAlert('✅ Window ' + window.configId + ' added successfully!');
     refreshProjectSelector();
 }
 
@@ -315,12 +400,12 @@ function clearForm() {
 
 function displayWindows() {
     const container = document.getElementById('windowList');
-    
+
     if (windows.length === 0) {
         container.innerHTML = '<p style="color: #7f8c8d; text-align: center; padding: 40px;">No windows added yet.</p>';
         return;
     }
-    
+
     let html = '';
     windows.forEach((w, idx) => {
         html += `<div class="window-card">
@@ -341,7 +426,7 @@ function displayWindows() {
             </div>
         </div>`;
     });
-    
+
     container.innerHTML = html;
 }
 
@@ -367,7 +452,7 @@ function closeEditWindowModal() {
 function saveWindowEdit(event) {
     event.preventDefault();
     const idx = parseInt(document.getElementById('editWindowIndex').value);
-    
+
     windows[idx] = {
         configId: document.getElementById('editConfigId').value,
         projectName: document.getElementById('editProjectName').value,
@@ -379,12 +464,12 @@ function saveWindowEdit(event) {
         series: document.getElementById('editSeries').value,
         description: document.getElementById('editDescription').value
     };
-    
+
     autoSaveWindows();
     closeEditWindowModal();
     displayWindows();
     refreshProjectSelector();
-    alert('✅ Window updated successfully!');
+    showAlert('✅ Window updated successfully!');
 }
 
 function deleteWindow(idx) {
@@ -403,14 +488,14 @@ function deleteWindow(idx) {
 function refreshFormulasDisplay() {
     const container = document.getElementById('formulasList');
     let html = '';
-    
+
     Object.entries(seriesFormulas).forEach(([series, formulas]) => {
         html += `<div class="formula-card">
             <h3>${series} Series
                 <button class="btn btn-success btn-sm" style="float: right; margin-left: 10px;" onclick="showAddComponentModal('${series}')">➕ Add Component</button>
                 <button class="btn btn-danger btn-sm" style="float: right;" onclick="deleteSeries('${series}')">🗑️ Delete Series</button>
             </h3>`;
-        
+
         formulas.forEach((f, idx) => {
             html += `<div class="formula-item">
                 <div class="formula-content">
@@ -425,10 +510,10 @@ function refreshFormulasDisplay() {
                 </div>
             </div>`;
         });
-        
+
         html += '</div>';
     });
-    
+
     container.innerHTML = html;
 }
 
@@ -452,16 +537,16 @@ function saveNewComponent(event) {
     const qty = document.getElementById('modalComponentQty').value;
     const length = document.getElementById('modalComponentLength').value;
     const desc = document.getElementById('modalComponentDesc').value;
-    
+
     if (!seriesFormulas[series]) {
         seriesFormulas[series] = [];
     }
-    
+
     seriesFormulas[series].push({ component, qty, length, desc });
     autoSaveFormulas();
     closeAddComponentModal();
     refreshFormulasDisplay();
-    alert('✅ Component added successfully!');
+    showAlert('✅ Component added successfully!');
 }
 
 function editFormula(series, idx) {
@@ -483,18 +568,18 @@ function saveFormulaEdit(event) {
     event.preventDefault();
     const series = document.getElementById('editFormulaSeries').value;
     const idx = parseInt(document.getElementById('editFormulaIndex').value);
-    
+
     seriesFormulas[series][idx] = {
         component: document.getElementById('editFormulaComponent').value,
         desc: document.getElementById('editFormulaDesc').value,
         qty: document.getElementById('editFormulaQty').value,
         length: document.getElementById('editFormulaLength').value
     };
-    
+
     autoSaveFormulas();
     closeEditFormulaModal();
     refreshFormulasDisplay();
-    alert('✅ Formula updated successfully!');
+    showAlert('✅ Formula updated successfully!');
 }
 
 function deleteFormula(series, idx) {
@@ -508,22 +593,22 @@ function deleteFormula(series, idx) {
 function addNewSeries(event) {
     event.preventDefault();
     const seriesName = document.getElementById('newSeriesName').value;
-    
+
     if (!seriesFormulas[seriesName]) {
         seriesFormulas[seriesName] = [];
         stockMaster[seriesName] = [];
     }
-    
+
     seriesFormulas[seriesName].push({
         component: document.getElementById('newComponentName').value,
         qty: document.getElementById('newQtyFormula').value,
         length: document.getElementById('newLengthFormula').value,
         desc: document.getElementById('newComponentDesc').value
     });
-    
+
     autoSaveFormulas();
     autoSaveStock();
-    alert('✅ Component added to ' + seriesName + ' series!');
+    showAlert('✅ Component added to ' + seriesName + ' series!');
     document.getElementById('newSeriesForm').reset();
     refreshAllUI();
 }
@@ -545,7 +630,7 @@ function deleteSeries(series) {
 function refreshStockMaster() {
     const container = document.getElementById('stockMasterList');
     let html = '';
-    
+
     Object.entries(stockMaster).forEach(([series, stocks]) => {
         html += `<div class="stock-material-card">
             <h4>${series} Series Materials</h4>
@@ -561,7 +646,7 @@ function refreshStockMaster() {
                     </tr>
                 </thead>
                 <tbody>`;
-        
+
         stocks.forEach((stock, idx) => {
             html += `<tr>
                 <td>${stock.material}</td>
@@ -572,21 +657,21 @@ function refreshStockMaster() {
                 <td><button class="btn btn-danger btn-sm" onclick="deleteStock('${series}', ${idx})">🗑️</button></td>
             </tr>`;
         });
-        
+
         html += '</tbody></table></div>';
     });
-    
+
     container.innerHTML = html;
 }
 
 function addNewStock(event) {
     event.preventDefault();
     const series = document.getElementById('newStockSeries').value;
-    
+
     if (!stockMaster[series]) {
         stockMaster[series] = [];
     }
-    
+
     stockMaster[series].push({
         material: document.getElementById('newStockMaterial').value,
         stock1: parseFloat(document.getElementById('newStock1').value),
@@ -594,9 +679,9 @@ function addNewStock(event) {
         stock2: parseFloat(document.getElementById('newStock2').value),
         stock2Cost: parseFloat(document.getElementById('newStock2Cost').value)
     });
-    
+
     autoSaveStock();
-    alert('✅ Stock material added!');
+    showAlert('✅ Stock material added!');
     document.getElementById('newStockForm').reset();
     refreshStockMaster();
 }
@@ -625,91 +710,92 @@ function updateKerf() {
 
 function refreshHardwareMaster() {
     const container = document.getElementById('hardwareMasterList');
+    if (!container) return;
     let html = '';
-    
+
     Object.entries(hardwareMaster).forEach(([series, hardwareItems]) => {
         html += `<div class="stock-material-card">
-            <h4>${series} Series Hardware</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Hardware Item</th>
-                        <th>Unit</th>
-                        <th>Rate (₹)</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-        
+            <h4>${series} Series Hardware
+                <button class="btn btn-success btn-sm" style="float: right;" onclick="showAddHardwareModal('${series}')">➕ Add Item</button>
+            </h4>
+            <div style="overflow-x: auto;">
+                <table class="hardware-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 25%">Hardware Item</th>
+                            <th style="width: 10%">Unit</th>
+                            <th style="width: 40%">Quantity Formula</th>
+                            <th style="width: 15%">Rate (₹)</th>
+                            <th style="width: 10%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
         hardwareItems.forEach((item, idx) => {
             html += `<tr>
                 <td>${item.hardware}</td>
-                <td>${item.unit}</td>
-                <td><input type="number" value="${item.rate}" onchange="updateHardwareRate('${series}', ${idx}, this.value)" style="width: 100px; padding: 5px;"></td>
-                <td><button class="btn btn-secondary btn-sm" onclick="resetHardwareRate('${series}', ${idx})">🔄</button></td>
+                <td><input type="text" value="${item.unit || 'Nos'}" onchange="updateHardwareField('${series}', ${idx}, 'unit', this.value)" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                <td><input type="text" value="${item.formula || ''}" onchange="updateHardwareField('${series}', ${idx}, 'formula', this.value)" style="width: 100%; font-family: monospace; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                <td><input type="number" value="${item.rate}" onchange="updateHardwareField('${series}', ${idx}, 'rate', this.value)" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteHardwareItem('${series}', ${idx})">🗑️</button></td>
             </tr>`;
         });
-        
-        html += '</tbody></table></div>';
+
+        html += '</tbody></table></div></div>';
     });
-    
+
     container.innerHTML = html;
 }
 
-function updateHardwareRate(series, idx, newRate) {
-    hardwareMaster[series][idx].rate = parseFloat(newRate);
+function updateHardwareField(series, idx, field, value) {
+    if (field === 'rate') {
+        hardwareMaster[series][idx][field] = parseFloat(value);
+    } else {
+        hardwareMaster[series][idx][field] = value;
+    }
     autoSaveHardwareMaster();
 }
 
-function resetHardwareRate(series, idx) {
-    if (confirm('Reset this hardware rate to default?')) {
-        // Get default from initialization
-        const defaultRates = {
-            'Domal': [
-                { hardware: 'Domal Shutter Lock', unit: 'Nos', rate: 50 },
-                { hardware: 'Domal Wool Pile Weather Strip', unit: 'Meter', rate: 25 },
-                { hardware: 'Domal Bearing', unit: 'Nos', rate: 30 },
-                { hardware: 'Silicon', unit: 'Bottle', rate: 150 },
-                { hardware: 'Corner Cleat', unit: 'Nos', rate: 15 },
-                { hardware: 'Shutter Wing Connector', unit: 'Nos', rate: 20 },
-                { hardware: 'Interlock Cap', unit: 'Nos', rate: 10 }
-            ],
-            '3/4': [
-                { hardware: '3/4 Sliding Shutter Lock', unit: 'Nos', rate: 45 },
-                { hardware: '3/4 Wool Pile Weather Strip', unit: 'Meter', rate: 22 },
-                { hardware: '3/4 Bearing', unit: 'Nos', rate: 28 },
-                { hardware: 'Silicon', unit: 'Bottle', rate: 150 }
-            ],
-            '1': [
-                { hardware: '1" Sliding Shutter Lock', unit: 'Nos', rate: 48 },
-                { hardware: '1" Wool Pile Weather Strip', unit: 'Meter', rate: 24 },
-                { hardware: '1" Bearing', unit: 'Nos', rate: 32 },
-                { hardware: 'Silicon', unit: 'Bottle', rate: 150 }
-            ]
-        };
-        
-        hardwareMaster[series][idx].rate = defaultRates[series][idx].rate;
+function showAddHardwareModal(series) {
+    document.getElementById('addHardwareSeries').value = series;
+    document.getElementById('modalHardwareName').value = '';
+    document.getElementById('modalHardwareUnit').value = 'Nos';
+    document.getElementById('modalHardwareFormula').value = '';
+    document.getElementById('modalHardwareRate').value = '';
+    document.getElementById('addHardwareModal').classList.add('active');
+}
+
+function closeAddHardwareModal() {
+    document.getElementById('addHardwareModal').classList.remove('active');
+}
+
+function saveNewHardwareItem(event) {
+    event.preventDefault();
+    const series = document.getElementById('addHardwareSeries').value;
+    const hardware = document.getElementById('modalHardwareName').value;
+    const unit = document.getElementById('modalHardwareUnit').value;
+    const formula = document.getElementById('modalHardwareFormula').value;
+    const rate = parseFloat(document.getElementById('modalHardwareRate').value) || 0;
+
+    if (!hardwareMaster[series]) hardwareMaster[series] = [];
+
+    hardwareMaster[series].push({ hardware, unit, formula, rate });
+    autoSaveHardwareMaster();
+    closeAddHardwareModal();
+    refreshHardwareMaster();
+    showAlert('✅ Hardware item added!');
+}
+
+function deleteHardwareItem(series, idx) {
+    showConfirm(`Delete ${hardwareMaster[series][idx].hardware}?`, () => {
+        hardwareMaster[series].splice(idx, 1);
         autoSaveHardwareMaster();
         refreshHardwareMaster();
-        alert('✅ Hardware rate reset to default!');
-    }
+    });
 }
 
 function autoSaveHardwareMaster() {
     localStorage.setItem('hardwareMaster', JSON.stringify(hardwareMaster));
-}
-
-function toggleHardwareFormulas() {
-    const formulasRef = document.getElementById('hardwareFormulasRef');
-    const toggle = document.getElementById('formulasToggle');
-    
-    if (formulasRef.style.display === 'none') {
-        formulasRef.style.display = 'block';
-        toggle.textContent = '▲';
-    } else {
-        formulasRef.style.display = 'none';
-        toggle.textContent = '▼';
-    }
 }
 
 // ============================================================================
@@ -719,14 +805,14 @@ function toggleHardwareFormulas() {
 function refreshProjectSelector() {
     const select = document.getElementById('projectSelector');
     const projects = [...new Set(windows.map(w => w.projectName))];
-    
+
     select.innerHTML = '<option value="">-- Select Project --</option>';
     projects.forEach(proj => {
         const count = windows.filter(w => w.projectName === proj).length;
         select.innerHTML += `<option value="${proj}">${proj} (${count} windows)</option>`;
     });
-    
-    select.onchange = function() {
+
+    select.onchange = function () {
         const info = document.getElementById('projectInfo');
         if (this.value) {
             const count = windows.filter(w => w.projectName === this.value).length;
@@ -743,18 +829,74 @@ function refreshProjectSelector() {
 // ============================================================================
 
 // ----------------------------
-// Confirm modal helper
+// Custom themed alert & confirm modals
 // ----------------------------
 let __confirmCallback = null;
+
+function showAlert(message, type = 'info', title = 'Notification') {
+    const modal = document.getElementById('alertModal');
+    const msgEl = document.getElementById('alertModalMessage');
+    const titleEl = document.getElementById('alertModalTitle');
+    const iconEl = document.getElementById('alertModalIcon');
+    const okBtn = modal ? modal.querySelector('.btn-modal-success') : null;
+
+    if (!modal || !msgEl) {
+        alert(message);
+        return;
+    }
+
+    // Set content
+    msgEl.textContent = message;
+    if (titleEl) titleEl.textContent = title;
+
+    // Handle icons & button colors based on type
+    if (iconEl) {
+        if (message.includes('✅') || type === 'success') iconEl.textContent = '✅';
+        else if (message.includes('⚠️') || type === 'warning') iconEl.textContent = '⚠️';
+        else if (message.includes('❌') || type === 'error') iconEl.textContent = '❌';
+        else iconEl.textContent = 'ℹ️';
+    }
+
+    if (okBtn) {
+        // Reset classes
+        okBtn.className = 'btn-modal';
+        if (type === 'error' || message.includes('❌')) okBtn.classList.add('btn-modal-confirm');
+        else okBtn.classList.add('btn-modal-success');
+    }
+
+    // Strip leading icon if found in text to avoid duplication
+    msgEl.textContent = message.replace(/^[✅⚠️❌ℹ️]\s*/, '');
+
+    modal.classList.add('active');
+}
+
+function closeAlertModal() {
+    const modal = document.getElementById('alertModal');
+    if (modal) modal.classList.remove('active');
+}
+
 function showConfirm(message, onConfirm) {
     const modal = document.getElementById('confirmModal');
     const msg = document.getElementById('confirmModalMessage');
+    const iconEl = document.getElementById('confirmModalIcon');
+
     if (!modal || !msg) {
-        // Fallback to browser confirm
         if (confirm(message)) onConfirm && onConfirm();
         return;
     }
+
     msg.textContent = message;
+
+    // Auto-detect warning icon
+    if (iconEl) {
+        if (message.includes('⚠️')) iconEl.textContent = '⚠️';
+        else if (message.includes('🗑️')) iconEl.textContent = '🗑️';
+        else iconEl.textContent = '❓';
+    }
+
+    // Strip icon from text
+    msg.textContent = message.replace(/^[⚠️🗑️❓]\s*/, '');
+
     __confirmCallback = onConfirm;
     modal.classList.add('active');
 }
@@ -772,7 +914,7 @@ function _wireConfirmButtons() {
     if (ok) {
         // avoid attaching multiple handlers
         ok.removeEventListener && ok.removeEventListener('click', ok._confirmHandler);
-        ok._confirmHandler = function() {
+        ok._confirmHandler = function () {
             const cb = __confirmCallback; // capture before closing
             closeConfirmModal();
             if (typeof cb === 'function') cb();
@@ -781,7 +923,7 @@ function _wireConfirmButtons() {
     }
     if (cancel) {
         cancel.removeEventListener && cancel.removeEventListener('click', cancel._cancelHandler);
-        cancel._cancelHandler = function() {
+        cancel._cancelHandler = function () {
             closeConfirmModal();
         };
         cancel.addEventListener('click', cancel._cancelHandler);
@@ -805,7 +947,7 @@ function clearAllData() {
 // INITIALIZATION ON PAGE LOAD
 // ============================================================================
 
-window.onload = function() {
+window.onload = function () {
     loadAllData();
     initializeDefaults();
     refreshAllUI();

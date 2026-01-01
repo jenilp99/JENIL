@@ -197,13 +197,13 @@ function loadAllData() {
 
     kerf = settings.kerf;
     unitMode = settings.unit;
-    
+
     // Update kerf if element exists
     const kerfElement = document.getElementById('kerfGlobal');
     if (kerfElement) {
         kerfElement.value = kerf;
     }
-    
+
     // Update all unit toggle checkboxes
     const isMetric = (unitMode === 'mm');
     const unitToggles = document.querySelectorAll('input[id*="unitToggle"]');
@@ -212,11 +212,46 @@ function loadAllData() {
             toggle.checked = isMetric;
         }
     });
-    
+
     console.log('✅ Loaded settings from storage');
 
     if (loadedResults) {
         optimizationResults = loadedResults;
         console.log('✅ Loaded previous results');
+    }
+
+    // --- MIGRATION LOGIC: Update "1" to "1\"" ---
+    let migrated = false;
+
+    // 1. Migrate Windows
+    windows.forEach(win => {
+        if (win.series == '1') {
+            win.series = '1"';
+            migrated = true;
+        }
+    });
+
+    // 2. Migrate Formulas
+    if (seriesFormulas && seriesFormulas['1']) {
+        seriesFormulas['1"'] = seriesFormulas['1'];
+        delete seriesFormulas['1'];
+        migrated = true;
+    }
+
+    // 3. Migrate Stock
+    if (stockMaster && stockMaster['1']) {
+        stockMaster['1"'] = stockMaster['1'];
+        delete stockMaster['1'];
+        migrated = true;
+    }
+
+    if (migrated) {
+        console.log('🔄 Data migrated: Renamed series "1" to "1\""');
+        // Save migrated data immediately
+        autoSaveWindows();
+        autoSaveFormulas();
+        autoSaveStock();
+    } else {
+        console.log('ℹ️ No data needed migration.');
     }
 }

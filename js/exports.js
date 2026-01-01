@@ -140,7 +140,7 @@ function exportProject() {
     link.click();
     URL.revokeObjectURL(url);
     
-    alert('✅ Project exported successfully!');
+    showAlert('✅ Project exported successfully!');
 }
 
 function importProject() {
@@ -177,9 +177,9 @@ function importProject() {
                 autoSaveSettings();
                 
                 refreshAllUI();
-                alert(`✅ Project imported successfully!\n${windows.length} windows loaded.`);
+                showAlert(`✅ Project imported successfully!\n${windows.length} windows loaded.`);
             } catch (error) {
-                alert('❌ Error importing project: ' + error.message);
+                showAlert('❌ Error importing project: ' + error.message);
             }
         };
         reader.readAsText(file);
@@ -194,7 +194,7 @@ function importProject() {
 
 function shareViaWhatsApp() {
     if (!optimizationResults) {
-        alert('⚠️ Please run optimization first!');
+        showAlert('⚠️ Please run optimization first!');
         return;
     }
     
@@ -223,7 +223,7 @@ function shareViaWhatsApp() {
 
 function shareViaEmail() {
     if (!optimizationResults) {
-        alert('⚠️ Please run optimization first!');
+        showAlert('⚠️ Please run optimization first!');
         return;
     }
     
@@ -252,7 +252,7 @@ function shareViaEmail() {
 
 function generatePrintableLabels() {
     if (!optimizationResults) {
-        alert('⚠️ Please run optimization first!');
+        showAlert('⚠️ Please run optimization first!');
         return;
     }
     
@@ -301,7 +301,7 @@ body { font-family: 'Courier New', monospace; }
 
 function exportFullResultsExcel() {
     if (!optimizationResults) {
-        alert('⚠️ No results to export!');
+        showAlert('⚠️ No results to export!');
         return;
     }
     
@@ -374,7 +374,7 @@ function exportFullResultsExcel() {
 
 function exportFullResultsPDF() {
     if (!optimizationResults) {
-        alert('⚠️ No results to export!');
+        showAlert('⚠️ No results to export!');
         return;
     }
     

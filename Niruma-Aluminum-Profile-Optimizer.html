@@ -29,13 +29,22 @@
                 <h2>🗏️ Niruma Optimizer</h2>
             </div>
             <div class="navbar-menu">
-                <a href="#section-hero" class="nav-link" onclick="scrollToSection('section-hero'); return false;">Home</a>
-                <a href="#section-add-windows" class="nav-link" onclick="scrollToSection('section-add-windows'); return false;">Add Windows</a>
-                <a href="#section-window-list" class="nav-link" onclick="scrollToSection('section-window-list'); return false;">Windows</a>
-                <a href="#section-formulas" class="nav-link" onclick="scrollToSection('section-formulas'); return false;">Formulas</a>
-                <a href="#section-stock" class="nav-link" onclick="scrollToSection('section-stock'); return false;">Stock</a>
-                <a href="#section-optimize" class="nav-link" onclick="scrollToSection('section-optimize'); return false;">Optimize</a>
-                <a href="#section-results" class="nav-link" onclick="scrollToSection('section-results'); return false;">Results</a>
+                <a href="#section-hero" class="nav-link" onclick="scrollToSection('section-hero'); return false;">🏠
+                    Home</a>
+                <a href="#section-add-windows" class="nav-link"
+                    onclick="scrollToSection('section-add-windows'); return false;">➕ Add Windows</a>
+                <a href="#section-window-list" class="nav-link"
+                    onclick="scrollToSection('section-window-list'); return false;">🪟 Windows</a>
+                <a href="#section-formulas" class="nav-link"
+                    onclick="scrollToSection('section-formulas'); return false;">🧪 Formulas</a>
+                <a href="#section-stock" class="nav-link" onclick="scrollToSection('section-stock'); return false;">📦
+                    Stock</a>
+                <a href="#section-hardware" class="nav-link"
+                    onclick="scrollToSection('section-hardware'); return false;">🔩 Hardware</a>
+                <a href="#section-optimize" class="nav-link"
+                    onclick="scrollToSection('section-optimize'); return false;">⚡ Optimize</a>
+                <a href="#section-results" class="nav-link"
+                    onclick="scrollToSection('section-results'); return false;">📊 Results</a>
             </div>
             <div class="unit-toggle-compact">
                 <span><strong>inches</strong></span>
@@ -51,326 +60,304 @@
     <!-- Main Container -->
     <div class="container">
         <!-- Hero Section -->
-        <section id="section-hero" class="section section-hero">
+        <section id="section-hero" class="section-hero">
             <div class="header">
-                <h1>🗏️ Niruma Aluminum Profile Optimizer</h1>
-                <p>Intelligent Cutting with Cost-Aware Algorithm</p>
+                <h1 style="font-weight: 800; text-transform: uppercase; letter-spacing: 2px;">Niruma Optimizer</h1>
+                <p>Advanced Aluminum Window Profile Optimization System</p>
             </div>
             <div class="section-intro">
-                <h2>Welcome to Your Aluminum Optimization Tool</h2>
-                <p>Start by adding your window configurations, then optimize your cutting patterns to minimize waste and cost.</p>
-                <div class="quick-actions">
-                    <a href="#section-add-windows" class="btn btn-primary" onclick="scrollToSection('section-add-windows'); return false;">➕ Add Windows</a>
-                    <a href="#section-optimize" class="btn btn-success" onclick="scrollToSection('section-optimize'); return false;">🚀 Run Optimization</a>
-                </div>
+                <h2>Welcome to Project Dashboard</h2>
+                <p>Manage your window configurations, stock inventory, and optimize your cutting patterns with ease.</p>
             </div>
         </section>
 
+        <!-- Command Center Dashboard -->
+        <h2
+            style="text-align: center; margin-top: 40px; color: #2c3e50; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
+            🎮 Project Command Center</h2>
+        <div class="dashboard-grid">
+            <div class="tile tile-blue" onclick="scrollToSection('section-add-windows')">
+                <div class="tile-icon">➕</div>
+                <div class="tile-title">Add Window</div>
+                <div class="tile-status">Configure New</div>
+            </div>
+            <div class="tile tile-green" onclick="scrollToSection('section-window-list')">
+                <div class="tile-icon">🪟</div>
+                <div class="tile-title">Window List</div>
+                <div id="stat-window-count" class="tile-status">0 Windows</div>
+            </div>
+            <div class="tile tile-purple" onclick="scrollToSection('section-formulas')">
+                <div class="tile-icon">🧪</div>
+                <div class="tile-title">Formulas</div>
+                <div class="tile-status">Series Logic</div>
+            </div>
+            <div class="tile tile-orange" onclick="scrollToSection('section-stock')">
+                <div class="tile-icon">📦</div>
+                <div class="tile-title">Stock Master</div>
+                <div id="stat-stock-count" class="tile-status">Manage Inventory</div>
+            </div>
+            <div class="tile tile-navy" onclick="scrollToSection('section-hardware')">
+                <div class="tile-icon">🔩</div>
+                <div class="tile-title">Hardware Master</div>
+                <div class="tile-status">Manage Items</div>
+            </div>
+            <div class="tile tile-red" onclick="scrollToSection('section-optimize')">
+                <div class="tile-icon">⚡</div>
+                <div class="tile-title">Optimize</div>
+                <div class="tile-status">Run Analysis</div>
+            </div>
+            <div class="tile tile-teal" onclick="scrollToSection('section-results')">
+                <div class="tile-icon">📊</div>
+                <div class="tile-title">Results</div>
+                <div class="tile-status">View Reports</div>
+            </div>
+        </div>
+
         <!-- Section 1: Add Windows -->
         <section id="section-add-windows" class="section">
-            <h2 style="color: #2c3e50; margin-bottom: 20px;">Add Window Configuration</h2>
-            <form id="windowForm" onsubmit="addWindow(event)">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Config ID</label>
-                        <input type="text" id="configId" value="W01" required>
+            <h2 class="collapsible-header" onclick="toggleSection(this)">
+                ➕ Add Window Configuration <span class="toggle-indicator">▼</span>
+            </h2>
+            <div class="collapsible-content">
+                <form id="windowForm" onsubmit="addWindow(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Config ID</label>
+                            <input type="text" id="configId" value="W01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Project Name</label>
+                            <input type="text" id="projectName" value="check" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Project Name</label>
-                        <input type="text" id="projectName" value="check" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Width <span class="unit-label">(inches)</span></label>
+                            <input type="number" id="width" step="0.25" value="65" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Height <span class="unit-label">(inches)</span></label>
+                            <input type="number" id="height" step="0.25" value="56" required>
+                        </div>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Width <span class="unit-label">(inches)</span></label>
-                        <input type="number" id="width" step="0.25" value="65" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tracks</label>
+                            <select id="tracks" required>
+                                <option value="2">2 Tracks</option>
+                                <option value="3" selected>3 Tracks</option>
+                                <option value="4">4 Tracks</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Glass Shutters (S)</label>
+                            <select id="shutters" required>
+                                <option value="1">1 Shutter</option>
+                                <option value="2">2 Shutters</option>
+                                <option value="3" selected>3 Shutters</option>
+                                <option value="4">4 Shutters</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Mosquito Shutters (MS)</label>
+                            <select id="mosquitoShutters" required>
+                                <option value="0" selected>0 Mosquito Shutter</option>
+                                <option value="1">1 Mosquito Shutter</option>
+                                <option value="2">2 Mosquito Shutters</option>
+                                <option value="3">3 Mosquito Shutters</option>
+                                <option value="4">4 Mosquito Shutters</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Height <span class="unit-label">(inches)</span></label>
-                        <input type="number" id="height" step="0.25" value="56" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Series Type</label>
+                            <select id="series" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="description" value="Living Room" required>
+                        </div>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Tracks</label>
-                        <select id="tracks" required>
-                            <option value="2">2 Tracks</option>
-                            <option value="3" selected>3 Tracks</option>
-                            <option value="4">4 Tracks</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Glass Shutters (S)</label>
-                        <select id="shutters" required>
-                            <option value="1">1 Shutter</option>
-                            <option value="2">2 Shutters</option>
-                            <option value="3" selected>3 Shutters</option>
-                            <option value="4">4 Shutters</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Mosquito Shutters (MS)</label>
-                        <select id="mosquitoShutters" required>
-                            <option value="0" selected>0 Mosquito Shutter</option>
-                            <option value="1">1 Mosquito Shutter</option>
-                            <option value="2">2 Mosquito Shutters</option>
-                            <option value="3">3 Mosquito Shutters</option>
-                            <option value="4">4 Mosquito Shutters</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Series Type</label>
-                        <select id="series" required></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <input type="text" id="description" value="Living Room" required>
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary">➕ Add Window</button>
-                <button type="button" class="btn btn-danger" onclick="clearForm()">🔄 Clear Form</button>
-            </form>
+                    <button type="submit" class="btn btn-primary">➕ Add Window</button>
+                    <button type="button" class="btn btn-danger" onclick="clearForm()">🔄 Clear Form</button>
+                </form>
+            </div>
         </section>
 
         <!-- Section 2: Window List -->
         <section id="section-window-list" class="section">
-            <h2 style="color: #2c3e50; margin-bottom: 20px;">Window Configurations</h2>
-            <div id="windowList" class="window-list"></div>
+            <h2 class="collapsible-header" onclick="toggleSection(this)">
+                🪟 Window Configurations <span class="toggle-indicator">▼</span>
+            </h2>
+            <div class="collapsible-content">
+                <div id="windowList" class="window-list"></div>
+            </div>
         </section>
 
         <!-- Section 3: Formulas -->
         <section id="section-formulas" class="section">
-            <h2 style="color: #2c3e50; margin-bottom: 20px;">Series Formulas Configuration</h2>
-            <div class="alert alert-info">
-                <strong>ℹ️ Formula Variables:</strong> W = Width, H = Height, S = Shutters, T = Tracks, MS = Mosquito
-                Shutters
-            </div>
-            <div id="formulasList"></div>
-            <div class="section-header">
-                <h3>➕ Add New Series / Component</h3>
-            </div>
-            <form id="newSeriesForm" onsubmit="addNewSeries(event)">
-                <div class="form-group">
-                    <label>Series Name</label>
-                    <input type="text" id="newSeriesName" placeholder="e.g., 1.5" required>
+            <h2 class="collapsible-header" onclick="toggleSection(this)">
+                🧪 Series Formulas Configuration <span class="toggle-indicator">▼</span>
+            </h2>
+            <div class="collapsible-content">
+                <div class="alert alert-info">
+                    <strong>ℹ️ Formula Variables:</strong> W = Width, H = Height, S = Shutters, T = Tracks, MS =
+                    Mosquito
+                    Shutters
                 </div>
-                <div class="form-group">
-                    <label>Component Name</label>
-                    <input type="text" id="newComponentName" placeholder="e.g., 1.5 Handle" required>
+                <div id="formulasList"></div>
+                <div class="section-header">
+                    <h3>➕ Add New Series / Component</h3>
                 </div>
-                <div class="form-group">
-                    <label>Description</label>
-                    <input type="text" id="newComponentDesc" placeholder="e.g., Handles" required>
-                </div>
-                <div class="form-row">
+                <form id="newSeriesForm" onsubmit="addNewSeries(event)">
                     <div class="form-group">
-                        <label>Quantity Formula</label>
-                        <input type="text" id="newQtyFormula" placeholder="e.g., 2 or 2*S" required>
+                        <label>Series Name</label>
+                        <input type="text" id="newSeriesName" placeholder="e.g., 1.5" required>
                     </div>
                     <div class="form-group">
-                        <label>Length Formula</label>
-                        <input type="text" id="newLengthFormula" placeholder="e.g., H-1.5" required>
+                        <label>Component Name</label>
+                        <input type="text" id="newComponentName" placeholder="e.g., 1.5 Handle" required>
                     </div>
-                </div>
-                <button type="submit" class="btn btn-success">➕ Add Component</button>
-            </form>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="newComponentDesc" placeholder="e.g., Handles" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Quantity Formula</label>
+                            <input type="text" id="newQtyFormula" placeholder="e.g., 2 or 2*S" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Length Formula</label>
+                            <input type="text" id="newLengthFormula" placeholder="e.g., H-1.5" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">➕ Add Component</button>
+                </form>
+            </div>
         </section>
 
         <!-- Section 4: Stock Master -->
         <section id="section-stock" class="section">
-            <h2 style="color: #2c3e50; margin-bottom: 20px;">Stock Master Configuration</h2>
-            <div class="alert alert-info">
-                <strong>ℹ️ Configure Stock:</strong> Set lengths and costs for optimization
-            </div>
-            <div class="form-group" style="max-width: 300px;">
-                <label>Kerf - Saw Blade Width <span class="unit-label">(inches)</span></label>
-                <input type="number" id="kerfGlobal" value="0.125" step="0.001" onchange="updateKerf()">
-            </div>
-            <div id="stockMasterList"></div>
-            <div class="section-header">
-                <h3>➕ Add New Stock Material</h3>
-            </div>
-            <form id="newStockForm" onsubmit="addNewStock(event)">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Series</label>
-                        <select id="newStockSeries" required></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Material Name</label>
-                        <input type="text" id="newStockMaterial" placeholder="e.g., Domal Shutter" required>
-                    </div>
+            <h2 class="collapsible-header" onclick="toggleSection(this)">
+                📦 Stock Master Configuration <span class="toggle-indicator">▼</span>
+            </h2>
+            <div class="collapsible-content">
+                <div class="alert alert-info">
+                    <strong>ℹ️ Configure Stock:</strong> Set lengths and costs for optimization
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Stock 1 Length <span class="unit-label">(inches)</span></label>
-                        <input type="number" id="newStock1" value="141" step="1" required>
+                <div class="form-group" style="max-width: 300px;">
+                    <label>Kerf - Saw Blade Width <span class="unit-label">(inches)</span></label>
+                    <input type="number" id="kerfGlobal" value="0.125" step="0.001" onchange="updateKerf()">
+                </div>
+                <div id="stockMasterList"></div>
+                <div class="section-header">
+                    <h3>➕ Add New Stock Material</h3>
+                </div>
+                <form id="newStockForm" onsubmit="addNewStock(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Series</label>
+                            <select id="newStockSeries" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Material Name</label>
+                            <input type="text" id="newStockMaterial" placeholder="e.g., Domal Shutter" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Stock 1 Cost (₹)</label>
-                        <input type="number" id="newStock1Cost" value="100" step="1">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Stock 1 Length <span class="unit-label">(inches)</span></label>
+                            <input type="number" id="newStock1" value="141" step="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Stock 1 Cost (₹)</label>
+                            <input type="number" id="newStock1Cost" value="100" step="1">
+                        </div>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Stock 2 Length <span class="unit-label">(inches)</span></label>
-                        <input type="number" id="newStock2" value="177" step="1" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Stock 2 Length <span class="unit-label">(inches)</span></label>
+                            <input type="number" id="newStock2" value="177" step="1" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Stock 2 Cost (₹)</label>
+                            <input type="number" id="newStock2Cost" value="125" step="1">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Stock 2 Cost (₹)</label>
-                        <input type="number" id="newStock2Cost" value="125" step="1">
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-success">➕ Add Stock Material</button>
-            </form>
+                    <button type="submit" class="btn btn-success">➕ Add Stock Material</button>
+                </form>
 
-            <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
-
-            <h2 style="color: #2c3e50; margin-bottom: 20px;">Hardware Master Configuration</h2>
-            <div class="alert alert-info">
-                <strong>ℹ️ Configure Hardware:</strong> Set rates for locks, pile, bearings, silicon, and other hardware items per series
-            </div>
-            <div id="hardwareMasterList"></div>
-
-            <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
-
-            <h3 style="color: #2c3e50; margin-bottom: 15px; cursor: pointer;" onclick="toggleHardwareFormulas()">
-                📋 Hardware Calculation Formulas <span id="formulasToggle" style="color: #27ae60;">▼</span>
-            </h3>
-            <div id="hardwareFormulasRef" style="display: none; background: #f5f5f5; padding: 20px; border-radius: 8px; border-left: 4px solid #27ae60;">
-                <p style="color: #555; margin-bottom: 15px;"><strong>Reference:</strong> Shows how hardware quantities are calculated for each series based on window dimensions.</p>
-                
-                <div style="margin-bottom: 20px;">
-                    <h4 style="color: #2c3e50; margin-bottom: 10px;">Domal Series (7 Hardware Items)</h4>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                        <tr style="background: #e8f5e9;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Domal Shutter Lock</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= (2 × Shutters) + (1 × Mosquito Shutters)</td>
-                        </tr>
-                        <tr style="background: #ffffff;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Domal Wool Pile Weather Strip</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × Perimeter (meters) | Perimeter = 2×(Width + Height)</td>
-                        </tr>
-                        <tr style="background: #e8f5e9;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Domal Bearing</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × (Shutters + Mosquito Shutters)</td>
-                        </tr>
-                        <tr style="background: #ffffff;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Silicon</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= CEILING(Perimeter ÷ 1000) bottles</td>
-                        </tr>
-                        <tr style="background: #e8f5e9;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Corner Cleat</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 4 (fixed, 4 corners)</td>
-                        </tr>
-                        <tr style="background: #ffffff;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Shutter Wing Connector</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × Shutters</td>
-                        </tr>
-                        <tr style="background: #e8f5e9;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Interlock Cap</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= Shutters + Mosquito Shutters</td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div style="margin-bottom: 20px;">
-                    <h4 style="color: #2c3e50; margin-bottom: 10px;">3/4" Series (4 Hardware Items)</h4>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                        <tr style="background: #e3f2fd;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">3/4 Sliding Shutter Lock</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= (2 × Shutters) + (1 × Mosquito Shutters)</td>
-                        </tr>
-                        <tr style="background: #ffffff;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">3/4 Wool Pile Weather Strip</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × Perimeter (meters)</td>
-                        </tr>
-                        <tr style="background: #e3f2fd;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">3/4 Bearing</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × (Shutters + Mosquito Shutters)</td>
-                        </tr>
-                        <tr style="background: #ffffff;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Silicon</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= CEILING(Perimeter ÷ 1000) bottles</td>
-                        </tr>
-                    </table>
-                </div>
-
-                <div style="margin-bottom: 20px;">
-                    <h4 style="color: #2c3e50; margin-bottom: 10px;">1" Series (4 Hardware Items)</h4>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                        <tr style="background: #f3e5f5;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">1" Sliding Shutter Lock</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= (2 × Shutters) + (1 × Mosquito Shutters)</td>
-                        </tr>
-                        <tr style="background: #ffffff;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">1" Wool Pile Weather Strip</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × Perimeter (meters)</td>
-                        </tr>
-                        <tr style="background: #f3e5f5;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">1" Bearing</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= 2 × (Shutters + Mosquito Shutters)</td>
-                        </tr>
-                        <tr style="background: #ffffff;">
-                            <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">Silicon</td>
-                            <td style="padding: 8px; border: 1px solid #ddd; font-family: monospace;">= CEILING(Perimeter ÷ 1000) bottles</td>
-                        </tr>
-                    </table>
-                </div>
-
-                <p style="color: #666; font-size: 12px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd;">
-                    <strong>Note:</strong> These formulas are applied automatically when generating quotations and purchase lists. Modify hardware rates (not formulas) in the Hardware Master tables above.
-                </p>
-            </div>
+            </div> <!-- end stock content -->
         </section>
-        
-        <!-- Section 5: Optimize -->
-        <section id="section-optimize" class="section">
-            <div class="optimization-mode">
-                <h4>💰 Smart Cost Optimization Enabled</h4>
-                <p style="margin: 0; color: #555;">
-                    ✅ Minimizes material waste<br>
-                    ✅ Prefers cost-effective stock combinations<br>
-                    ✅ Considers total project cost
-                </p>
-            </div>
-            <div class="project-selector">
-                <h3 style="margin-bottom: 15px;">Select Project to Optimize</h3>
-                <div class="form-group">
-                    <label>Project Name</label>
-                    <select id="projectSelector" style="max-width: 400px;">
-                        <option value="">-- Select Project --</option>
-                    </select>
+
+        <!-- Section 4b: Hardware Master -->
+        <section id="section-hardware" class="section">
+            <h2 class="collapsible-header" onclick="toggleSection(this)">
+                🔩 Hardware Master Configuration <span class="toggle-indicator">▼</span>
+            </h2>
+            <div class="collapsible-content">
+                <div class="alert alert-info">
+                    <strong>ℹ️ Configure Hardware:</strong> Set items and formulas for automated BOM
                 </div>
-                <p style="margin-top: 10px; color: #856404;">
-                    <strong>Selected Project Info:</strong> <span id="projectInfo">No project selected</span>
-                </p>
-            </div>
-            <div style="text-align: center; padding: 40px;">
-                <button class="btn btn-success" onclick="runOptimization()"
-                    style="font-size: 20px; padding: 20px 50px;">
-                    🚀 RUN SMART OPTIMIZATION
-                </button>
-            </div>
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="btn btn-primary" onclick="generateQuotation()"
-                    style="font-size: 16px; padding: 15px 30px;">
-                    📄 Generate Quotation
-                </button>
-                <button class="btn btn-info" onclick="generatePurchaseListPDF()"
-                    style="font-size: 16px; padding: 15px 30px; margin-left: 10px;">
-                    📋 Download Purchase List
-                </button>
-                <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Saved Data</button>
+                <div id="hardwareMasterList"></div>
+            </div> <!-- end hardware content -->
+        </section>
+
+        <section id="section-optimize" class="section">
+            <h2 class="collapsible-header" onclick="toggleSection(this)">
+                ⚡ Smart Optimization Engine <span class="toggle-indicator">▼</span>
+            </h2>
+            <div class="collapsible-content">
+                <div class="optimization-mode">
+                    <h4>💰 Smart Cost Optimization Enabled</h4>
+                    <p style="margin: 0; color: #555;">
+                        ✅ Minimizes material waste<br>
+                        ✅ Prefers cost-effective stock combinations<br>
+                        ✅ Considers total project cost
+                    </p>
+                </div>
+                <div class="project-selector">
+                    <h3 style="margin-bottom: 15px;">Select Project to Optimize</h3>
+                    <div class="form-group">
+                        <label>Project Name</label>
+                        <select id="projectSelector" style="max-width: 400px;">
+                            <option value="">-- Select Project --</option>
+                        </select>
+                    </div>
+                    <p style="margin-top: 10px; color: #856404;">
+                        <strong>Selected Project Info:</strong> <span id="projectInfo">No project selected</span>
+                    </p>
+                </div>
+                <div style="text-align: center; padding: 40px;">
+                    <button class="btn btn-success" onclick="runOptimization()"
+                        style="font-size: 20px; padding: 20px 50px;">
+                        🚀 RUN SMART OPTIMIZATION
+                    </button>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="btn btn-primary" onclick="generateQuotation()"
+                        style="font-size: 16px; padding: 15px 30px;">
+                        📄 Generate Quotation
+                    </button>
+                    <button class="btn btn-info" onclick="generatePurchaseListPDF()"
+                        style="font-size: 16px; padding: 15px 30px; margin-left: 10px;">
+                        📋 Download Purchase List
+                    </button>
+                    <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All Saved Data</button>
+                </div>
             </div>
         </section>
 
         <!-- Section 6: Results -->
         <section id="section-results" class="section">
-            <h2 style="color: #2c3e50; margin-bottom: 20px;">Optimization Results</h2>
-            <div id="resultsContent"></div>
+            <h2 class="collapsible-header" onclick="toggleSection(this)">
+                📊 Optimization Results <span class="toggle-indicator">▼</span>
+            </h2>
+            <div class="collapsible-content">
+                <div id="resultsContent"></div>
+            </div>
         </section>
     </div>
 
@@ -405,6 +392,49 @@
                 <div style="text-align: right; margin-top: 20px;">
                     <button type="button" class="btn btn-secondary" onclick="closeAddComponentModal()">Cancel</button>
                     <button type="submit" class="btn btn-success">Add Component</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add Hardware Modal -->
+    <div id="addHardwareModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ Add Hardware Item</h3>
+                <button class="close-btn" onclick="closeAddHardwareModal()">&times;</button>
+            </div>
+            <form id="addHardwareForm" onsubmit="saveNewHardwareItem(event)">
+                <input type="hidden" id="addHardwareSeries">
+                <div class="form-group">
+                    <label>Hardware Name</label>
+                    <input type="text" id="modalHardwareName" placeholder="e.g., Shutter Lock" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Unit</label>
+                        <select id="modalHardwareUnit">
+                            <option value="Nos">Nos</option>
+                            <option value="Meter">Meter</option>
+                            <option value="Bottle">Bottle</option>
+                            <option value="Set">Set</option>
+                            <option value="Kg">Kg</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Base Rate (₹)</label>
+                        <input type="number" id="modalHardwareRate" placeholder="0.00" step="0.01" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Calculation Formula</label>
+                    <input type="text" id="modalHardwareFormula" placeholder="e.g., 2 * S + MS" required>
+                    <small style="color: #666;">Available: W (Width), H (Height), S (Shutters), MS (Mosquito), T
+                        (Tracks), P (Perimeter), GL("Name") (Profile Length)</small>
+                </div>
+                <div style="text-align: right; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddHardwareModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">💾 Save Hardware Item</button>
                 </div>
             </form>
         </div>
@@ -483,6 +513,23 @@
         </div>
     </div>
 
+    <!-- Alert Modal -->
+    <div id="alertModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="alertModalTitle">Notification</h3>
+                <button class="close-btn" onclick="closeAlertModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="alertModalIcon" class="modal-icon"></div>
+                <p id="alertModalMessage">Message goes here.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-success" onclick="closeAlertModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Confirm Modal -->
     <div id="confirmModal" class="modal">
         <div class="modal-content">
@@ -490,12 +537,13 @@
                 <h3>Confirm Action</h3>
                 <button class="close-btn" onclick="closeConfirmModal()">&times;</button>
             </div>
-            <div class="modal-body" style="padding: 10px 20px; color: #333;">
+            <div class="modal-body">
+                <div id="confirmModalIcon" class="modal-icon">⚠️</div>
                 <p id="confirmModalMessage">Are you sure?</p>
             </div>
-            <div class="modal-footer" style="text-align: right; padding: 12px 20px;">
-                <button class="btn btn-secondary" id="confirmCancelBtn">Cancel</button>
-                <button class="btn btn-danger" id="confirmOkBtn">Confirm</button>
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-cancel" id="confirmCancelBtn">Cancel</button>
+                <button class="btn-modal btn-modal-confirm" id="confirmOkBtn">Confirm</button>
             </div>
         </div>
     </div>
