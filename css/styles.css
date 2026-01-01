@@ -1016,3 +1016,90 @@ table tr:hover {
         width: 95%;
     }
 }
+
+/* Hardware Glossary Styles */
+.hardware-glossary {
+    background: #f8f9fa;
+    border: 1px solid #e1e4e8;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.glossary-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 8px;
+}
+
+.glossary-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.glossary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.glossary-section h4 {
+    color: #34495e;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.glossary-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.glossary-item {
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.glossary-term {
+    font-weight: 700;
+    color: #2c3e50;
+    font-size: 14px;
+}
+
+.glossary-desc {
+    font-size: 13px;
+    color: #636e72;
+    margin-top: 4px;
+}
+
+.glossary-item-variable {
+    border-left-color: #e67e22;
+}
+
+.glossary-item-formula {
+    border-left-color: #27ae60;
+}
+
+.glossary-term code {
+    background: #fff3e0;
+    color: #d35400;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Consolas', monospace;
+}
