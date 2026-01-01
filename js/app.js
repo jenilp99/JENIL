@@ -1,5 +1,34 @@
 // Niruma Aluminum Profile Optimizer - Main App Logic
 
+// ============================================================================
+// HARDWARE MASTER CONFIGURATION
+// ============================================================================
+
+let hardwareMaster = {
+    'Domal': [
+        { hardware: 'Domal Shutter Lock', unit: 'Nos', rate: 150 },
+        { hardware: 'Domal Wool Pile Weather Strip', unit: 'Meter', rate: 50 },
+        { hardware: 'Domal Bearing', unit: 'Nos', rate: 20 },
+        { hardware: 'Silicon', unit: 'Bottle', rate: 80 },
+        { hardware: 'Corner Cleat', unit: 'Nos', rate: 10 },
+        { hardware: 'Shutter Wing Connector', unit: 'Nos', rate: 5 },
+        { hardware: 'Interlock Cap', unit: 'Nos', rate: 15 }
+    ],
+    '3/4': [
+        { hardware: '3/4 Sliding Shutter Lock', unit: 'Nos', rate: 120 },
+        { hardware: '3/4 Wool Pile Weather Strip', unit: 'Meter', rate: 45 },
+        { hardware: '3/4 Bearing', unit: 'Nos', rate: 18 },
+        { hardware: 'Silicon', unit: 'Bottle', rate: 80 }
+    ],
+    '1': [
+        { hardware: '1" Sliding Shutter Lock', unit: 'Nos', rate: 130 },
+        { hardware: '1" Wool Pile Weather Strip', unit: 'Meter', rate: 48 },
+        { hardware: '1" Bearing', unit: 'Nos', rate: 20 },
+        { hardware: 'Silicon', unit: 'Bottle', rate: 80 }
+    ]
+};
+
+
 // Global data store
 let windows = [];
 let seriesFormulas = {};
