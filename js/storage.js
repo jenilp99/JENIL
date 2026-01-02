@@ -10,7 +10,8 @@ const StorageManager = {
         KERF: 'niruma_kerf',
         UNIT: 'niruma_unit',
         RESULTS: 'niruma_results',
-        HARDWARE: 'niruma_hardware'
+        HARDWARE: 'niruma_hardware',
+        SUPPLIER: 'niruma_supplier'
     },
 
     // Save data to localStorage
@@ -123,6 +124,16 @@ const StorageManager = {
         return this.load(this.KEYS.HARDWARE, null);
     },
 
+    // Save supplier master
+    saveSupplierMaster(supplier) {
+        return this.save(this.KEYS.SUPPLIER, supplier);
+    },
+
+    // Load supplier master
+    loadSupplierMaster() {
+        return this.load(this.KEYS.SUPPLIER, null);
+    },
+
     // Export all data as JSON
     exportAll() {
         return {
@@ -185,6 +196,11 @@ function autoSaveResults() {
 function autoSaveHardwareMaster() {
     StorageManager.saveHardwareMaster(hardwareMaster);
     console.log('✅ Hardware auto-saved');
+}
+
+function autoSaveSupplierMaster() {
+    StorageManager.saveSupplierMaster(supplierMaster);
+    console.log('✅ Supplier Master auto-saved');
 }
 
 // Load all data on startup
@@ -326,5 +342,13 @@ function loadAllData() {
         autoSaveFormulas();
         autoSaveStock();
         autoSaveHardwareMaster();
+        autoSaveSupplierMaster();
+    }
+
+    // 5. Load Supplier Master
+    const loadedSupplier = StorageManager.loadSupplierMaster();
+    if (loadedSupplier) {
+        supplierMaster = loadedSupplier;
+        console.log('✅ Loaded supplier master from storage');
     }
 }

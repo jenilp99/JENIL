@@ -80,7 +80,42 @@ function displayResults() {
             .join(', ');
         
         html += '<div class="material-section">';
-        html += '<h3>📏 ' + materialTitle + '</h3>';
+        
+        // Find if already configured in results or stockMaster
+        let selectedSection = r.componentSections ? r.componentSections[key] : null;
+        if (!selectedSection) {
+            // Try to find in stockMaster
+            const [sName, mName] = key.split(' | ');
+            const stockList = stockMaster[sName] || [];
+            const stockItem = stockList.find(s => s.material === mName);
+            if (stockItem && stockItem.sectionNo) {
+                selectedSection = {
+                    supplier: stockItem.supplier,
+                    sectionNo: stockItem.sectionNo,
+                    t: stockItem.thickness,
+                    weight: stockItem.weight
+                };
+                // Initialize in results
+                if (!r.componentSections) r.componentSections = {};
+                r.componentSections[key] = selectedSection;
+            }
+        }
+
+        const sectionInfo = selectedSection 
+            ? `<span style="color: #2e7d32; font-size: 0.9em;">✅ <strong>${selectedSection.supplier} / ${selectedSection.sectionNo}</strong> (T: ${selectedSection.t}mm)</span>`
+            : `<span style="color: #c0392b; font-size: 0.9em;">❌ <strong>Section Not Selected</strong></span>`;
+
+        // Escape quotes to prevent broken HTML attributes
+        const safeKey = key.replace(/"/g, '&quot;').replace(/'/g, "\\'");
+
+        html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0;">📏 ${materialTitle}</h3>
+            <div>
+                ${sectionInfo}
+                <button class="btn btn-warning btn-sm" style="margin-left: 10px;" onclick="openSectionSelectModal('${safeKey}')">🔗 Select Thickness</button>
+            </div>
+        </div>`;
+
         html += `<div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4caf50">
             <strong style="font-size: 15px; color: #2e7d32">Material Summary</strong><br>
             <div style="margin-top: 8px; font-size: 14px; line-height: 1.8">

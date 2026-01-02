@@ -8,6 +8,7 @@
 
     <!-- CSS -->
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/modal.css">
 
     <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -238,6 +239,61 @@
             </div>
         </section>
 
+        <!-- Section 3b: Supplier Master -->
+        <section id="section-supplier" class="section collapsed-section">
+            <h2 class="collapsible-header collapsed" onclick="toggleSection(this)">
+                🏛️ Supplier & Section Master <span class="toggle-indicator">▼</span>
+            </h2>
+            <div class="collapsible-content collapsed-content">
+                <div class="alert alert-info">
+                    <strong>ℹ️ Supplier Database:</strong> Manage Section Numbers and Weights per 12ft stick.
+                </div>
+                <div id="supplierMasterList"></div>
+
+                <div class="section-header">
+                    <h3>➕ Add New Supplier Section</h3>
+                </div>
+                <form id="newSupplierForm" onsubmit="addNewSupplierSection(event)">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Supplier Name</label>
+                            <input type="text" id="supName" list="supplierList" placeholder="e.g., Windalco" required>
+                            <datalist id="supplierList"></datalist>
+                        </div>
+                        <div class="form-group">
+                            <label>Series</label>
+                            <select id="supSeries" required>
+                                <option value="3/4\"">3/4" </option>
+                                <option value="1\"">1" </option>
+                                <option value="Domal">Domal</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Profile Type</label>
+                            <input type="text" id="supMaterial" placeholder="e.g., 3/4\" Handle" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Section No.</label>
+                            <input type="text" id="supSectionNo" placeholder="e.g., 20011" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Thickness (T) mm</label>
+                            <input type="number" id="supT" step="0.01" placeholder="e.g., 0.79" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Weight (Kg/12ft)</label>
+                            <input type="number" id="supWeight" step="0.001" placeholder="e.g., 1.100" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-success">➕ Add to Catalogue</button>
+                </form>
+            </div>
+        </section>
+
         <!-- Section 4: Stock Master -->
         <section id="section-stock" class="section collapsed-section">
             <h2 class="collapsible-header collapsed" onclick="toggleSection(this)">
@@ -259,11 +315,26 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Series</label>
-                            <select id="newStockSeries" required></select>
+                            <select id="newStockSeries" onchange="updateNewStockMaterialOptions()" required></select>
                         </div>
                         <div class="form-group">
-                            <label>Material Name</label>
-                            <input type="text" id="newStockMaterial" placeholder="e.g., Domal Shutter" required>
+                            <label>Material / Profile</label>
+                            <input type="text" id="newStockMaterial" placeholder="e.g., Domal Shutter"
+                                onchange="updateSupplierSectionOptions()" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Supplier (Optional)</label>
+                            <select id="newStockSupplier" onchange="updateSupplierSectionOptions()">
+                                <option value="">-- No Supplier --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Supplier Section No.</label>
+                            <select id="newStockSectionNo" onchange="applySupplierDataToStock()">
+                                <option value="">-- Select Section --</option>
+                            </select>
                         </div>
                     </div>
                     <div class="form-row">
@@ -494,7 +565,57 @@
             </form>
         </div>
     </div>
+    </div>
 
+    <!-- Section Selection Modal -->
+    <div id="sectionSelectModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>🏛️ Select Thickness & Section</h3>
+                <button class="close-btn" onclick="closeSectionSelectModal()">&times;</button>
+            </div>
+            <div id="sectionSelectContent" style="padding: 20px;">
+                <div class="alert alert-info" style="margin-bottom: 20px;">
+                    Select thickness for <strong><span id="selectMaterialName"></span></strong>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 5px;">Available Thickness
+                        Options:</label>
+                    <select id="thicknessSelect"
+                        style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid #3498db; border-radius: 5px;"
+                        onchange="showSelectedSectionDetails()">
+                        <option value="">-- Select Thickness --</option>
+                    </select>
+                </div>
+
+                <div id="selectedSectionDetails"
+                    style="background: #e8f5e9; padding: 15px; border-radius: 5px; margin-bottom: 15px; display: none;">
+                    <h4 style="margin-top: 0; color: #2e7d32;">Selected Section Details:</h4>
+                    <div id="sectionDetailsContent"></div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="closeSectionSelectModal()">Cancel</button>
+                    <button class="btn btn-success" onclick="confirmSectionSelection()" style="float: right;">✓ Confirm
+                        Selection</button>
+                </div>
+
+                <details style="margin-top: 25px; border-top: 1px solid #ddd; padding-top: 15px;">
+                    <summary
+                        style="cursor: pointer; font-weight: bold; color: #3498db; padding: 10px; background: #ecf0f1; border-radius: 5px;">
+                        📋 View All Available Sections in Catalogue
+                    </summary>
+                    <div id="catalogueList"
+                        style="max-height: 300px; overflow-y: auto; margin-top: 10px; padding: 10px;">
+                        <!-- Catalogue sections will be rendered here -->
+                    </div>
+                </details>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Window Modal -->
     <div id="editWindowModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -638,6 +759,7 @@
 
     <!-- JavaScript Files - Load in Order -->
     <script src="js/storage.js"></script>
+    <script src="js/supplier_master.js"></script>
     <script src="js/app.js"></script>
     <script src="js/optimization.js"></script>
     <script src="js/exports.js"></script>

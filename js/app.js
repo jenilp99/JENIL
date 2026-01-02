@@ -292,11 +292,13 @@ function updateDashboardStats() {
 function refreshAllUI() {
     refreshSeriesDropdown();
     refreshFormulasDisplay();
-    refreshWindowList();
+    displayWindows();
     refreshStockMaster();
     refreshHardwareMaster();
     refreshProjectSelector();
     updateDashboardStats();
+    renderSupplierMaster(); // New
+    updateSupplierDatalist(); // New
 }
 
 function refreshSeriesDropdown() {
@@ -658,15 +660,19 @@ function deleteSeries(series) {
 
 function refreshStockMaster() {
     const container = document.getElementById('stockMasterList');
-    let html = '';
+    if (!container) return;
+    container.innerHTML = '';
 
     Object.entries(stockMaster).forEach(([series, stocks]) => {
-        html += `<div class="stock-material-card">
+        const card = document.createElement('div');
+        card.className = 'stock-material-card';
+        card.innerHTML = `
             <h4>${series} Series Materials</h4>
             <table>
                 <thead>
                     <tr>
                         <th>Material</th>
+                        <th>Supplier / Section</th>
                         <th>Stock 1 (in)</th>
                         <th>Cost (₹)</th>
                         <th>Stock 2 (in)</th>
@@ -674,23 +680,31 @@ function refreshStockMaster() {
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>`;
+                <tbody></tbody>
+            </table>
+        `;
 
+        const tbody = card.querySelector('tbody');
         stocks.forEach((stock, idx) => {
-            html += `<tr>
+            const row = tbody.insertRow();
+            row.innerHTML = `
                 <td>${stock.material}</td>
-                <td><input type="number" value="${stock.stock1}" onchange="updateStock('${series}', ${idx}, 'stock1', this.value)" style="width: 80px; padding: 5px;"></td>
-                <td><input type="number" value="${stock.stock1Cost}" onchange="updateStock('${series}', ${idx}, 'stock1Cost', this.value)" style="width: 80px; padding: 5px;"></td>
-                <td><input type="number" value="${stock.stock2}" onchange="updateStock('${series}', ${idx}, 'stock2', this.value)" style="width: 80px; padding: 5px;"></td>
-                <td><input type="number" value="${stock.stock2Cost}" onchange="updateStock('${series}', ${idx}, 'stock2Cost', this.value)" style="width: 80px; padding: 5px;"></td>
-                <td><button class="btn btn-danger btn-sm" onclick="deleteStock('${series}', ${idx})">🗑️</button></td>
-            </tr>`;
+                <td style="font-size: 0.8em; color: #666;">
+                    ${stock.supplier || 'N/A'}<br>
+                    ${stock.sectionNo || 'N/A'}
+                </td>
+                <td><input type="number" value="${stock.stock1}" onchange="updateStock('${series}', ${idx}, 'stock1', this.value)" style="width: 70px; padding: 5px;"></td>
+                <td><input type="number" value="${stock.stock1Cost}" onchange="updateStock('${series}', ${idx}, 'stock1Cost', this.value)" style="width: 70px; padding: 5px;"></td>
+                <td><input type="number" value="${stock.stock2}" onchange="updateStock('${series}', ${idx}, 'stock2', this.value)" style="width: 70px; padding: 5px;"></td>
+                <td><input type="number" value="${stock.stock2Cost}" onchange="updateStock('${series}', ${idx}, 'stock2Cost', this.value)" style="width: 70px; padding: 5px;"></td>
+                <td style="text-align:center">
+                    <button class="btn btn-danger btn-sm" onclick="deleteStock('${series}', ${idx})">🗑️</button>
+                </td>
+            `;
         });
 
-        html += '</tbody></table></div>';
+        container.appendChild(card);
     });
-
-    container.innerHTML = html;
 }
 
 function addNewStock(event) {
@@ -703,6 +717,10 @@ function addNewStock(event) {
 
     stockMaster[series].push({
         material: document.getElementById('newStockMaterial').value,
+        supplier: document.getElementById('newStockSupplier').value,
+        sectionNo: document.getElementById('newStockSectionNo').value,
+        thickness: tempSupData.t,
+        weight: tempSupData.weight,
         stock1: parseFloat(document.getElementById('newStock1').value),
         stock1Cost: parseFloat(document.getElementById('newStock1Cost').value),
         stock2: parseFloat(document.getElementById('newStock2').value),
@@ -712,6 +730,7 @@ function addNewStock(event) {
     autoSaveStock();
     showAlert('✅ Stock material added!');
     document.getElementById('newStockForm').reset();
+    tempSupData = { t: 0, weight: 0 };
     refreshStockMaster();
 }
 
@@ -743,7 +762,7 @@ function refreshHardwareMaster() {
     let html = '';
 
     Object.entries(hardwareMaster).forEach(([series, hardwareItems]) => {
-        html += `<div class="stock-material-card">
+        html += `< div class="stock-material-card" >
             <h4>${series} Series Hardware
                 <button class="btn btn-success btn-sm" style="float: right;" onclick="showAddHardwareModal('${series}')">➕ Add Item</button>
             </h4>
@@ -770,7 +789,7 @@ function refreshHardwareMaster() {
             </tr>`;
         });
 
-        html += '</tbody></table></div></div>';
+        html += '</tbody></table></div></div > ';
     });
 
     container.innerHTML = html;
@@ -979,5 +998,384 @@ function clearAllData() {
 window.onload = function () {
     loadAllData();
     initializeDefaults();
+    initializeSupplierMaster(); // New
     refreshAllUI();
 };
+// ============================================================================
+// SUPPLIER MASTER UI
+// ============================================================================
+
+function renderSupplierMaster() {
+    const list = document.getElementById('supplierMasterList');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    if (Object.keys(supplierMaster).length === 0) {
+        list.innerHTML = '<div class="alert alert-info">No supplier sections configured.</div>';
+        return;
+    }
+
+    for (const [supplier, seriesObj] of Object.entries(supplierMaster)) {
+        const supDiv = document.createElement('div');
+        supDiv.className = 'supplier-card';
+        supDiv.style.border = '1px solid #ddd';
+        supDiv.style.padding = '15px';
+        supDiv.style.marginBottom = '15px';
+        supDiv.style.borderRadius = '8px';
+        supDiv.style.background = '#f9f9f9';
+
+        supDiv.innerHTML = `<h4 style="margin-top:0; border-bottom: 2px solid #007bff; padding-bottom:5px;">🏭 ${supplier}</h4>`;
+
+        for (const [series, materials] of Object.entries(seriesObj)) {
+            const seriesGroup = document.createElement('div');
+            seriesGroup.className = 'series-group';
+            seriesGroup.style.marginLeft = '15px';
+            seriesGroup.innerHTML = `<h5 style="margin-bottom:10px; color:#555;">${series} Series</h5>`;
+
+            for (const [material, sections] of Object.entries(materials)) {
+                const matBlock = document.createElement('div');
+                matBlock.className = 'material-block';
+                matBlock.innerHTML = `<p><strong>${material}</strong></p>`;
+
+                const table = document.createElement('table');
+                table.className = 'stock-table';
+                table.style.width = '100%';
+                table.style.marginBottom = '15px';
+                table.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>Section No.</th>
+                            <th>T (mm)</th>
+                            <th>Wt (Kg/12ft)</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                `;
+
+                const tbody = table.querySelector('tbody');
+                sections.forEach((sec, idx) => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td><input type="text" value="${sec.sectionNo}" onchange="editSupplierSection('${supplier}', '${series}', '${material}', ${idx}, 'sectionNo', this.value)" style="width:80px"></td>
+                        <td><input type="number" step="0.01" value="${sec.t}" onchange="editSupplierSection('${supplier}', '${series}', '${material}', ${idx}, 't', this.value)" style="width:60px"></td>
+                        <td><input type="number" step="0.001" value="${sec.weight}" onchange="editSupplierSection('${supplier}', '${series}', '${material}', ${idx}, 'weight', this.value)" style="width:70px"></td>
+                        <td style="text-align:center">
+                            <button class="btn-icon btn-danger" onclick="deleteSupplierSection('${supplier}', '${series}', '${material}', ${idx})" title="Delete Section">🗑️</button>
+                        </td>
+                    `;
+                });
+
+                seriesGroup.appendChild(matBlock);
+                seriesGroup.appendChild(table);
+            }
+            supDiv.appendChild(seriesGroup);
+        }
+        list.appendChild(supDiv);
+    }
+}
+
+function addNewSupplierSection(event) {
+    event.preventDefault();
+    const supName = document.getElementById('supName').value.trim();
+    const series = document.getElementById('supSeries').value;
+    const material = document.getElementById('supMaterial').value.trim();
+    const sectionNo = document.getElementById('supSectionNo').value.trim();
+    const t = parseFloat(document.getElementById('supT').value);
+    const weight = parseFloat(document.getElementById('supWeight').value);
+
+    if (!supplierMaster[supName]) supplierMaster[supName] = {};
+    if (!supplierMaster[supName][series]) supplierMaster[supName][series] = {};
+    if (!supplierMaster[supName][series][material]) supplierMaster[supName][series][material] = [];
+
+    supplierMaster[supName][series][material].push({ sectionNo, t, weight });
+
+    autoSaveSupplierMaster();
+    renderSupplierMaster();
+    updateSupplierDatalist();
+    event.target.reset();
+    showAlert('✅ Section added to ' + supName);
+}
+
+function editSupplierSection(supplier, series, material, index, field, value) {
+    let finalVal = value;
+    if (field === 't' || field === 'weight') finalVal = parseFloat(value);
+
+    supplierMaster[supplier][series][material][index][field] = finalVal;
+    autoSaveSupplierMaster();
+}
+
+function deleteSupplierSection(supplier, series, material, index) {
+    showConfirm('🗑️ Delete this section from ' + supplier + '?', () => {
+        supplierMaster[supplier][series][material].splice(index, 1);
+
+        // Cleanup empty structures
+        if (supplierMaster[supplier][series][material].length === 0) {
+            delete supplierMaster[supplier][series][material];
+        }
+        if (Object.keys(supplierMaster[supplier][series]).length === 0) {
+            delete supplierMaster[supplier][series];
+        }
+        if (Object.keys(supplierMaster[supplier]).length === 0) {
+            delete supplierMaster[supplier];
+        }
+
+        autoSaveSupplierMaster();
+        renderSupplierMaster();
+        updateSupplierDatalist();
+    });
+}
+
+function updateSupplierDatalist() {
+    const list = document.getElementById('supplierList');
+    if (!list) return;
+    list.innerHTML = '';
+    Object.keys(supplierMaster).forEach(sup => {
+        const opt = document.createElement('option');
+        opt.value = sup;
+        list.appendChild(opt);
+    });
+}
+function updateNewStockMaterialOptions() {
+    const series = document.getElementById('newStockSeries').value;
+    const supplierSelect = document.getElementById('newStockSupplier');
+    if (!supplierSelect) return;
+
+    // Reset supplier and section
+    supplierSelect.innerHTML = '<option value="">-- No Supplier --</option>';
+    document.getElementById('newStockSectionNo').innerHTML = '<option value="">-- Select Section --</option>';
+
+    // Filter suppliers that have data for this series
+    Object.keys(supplierMaster).forEach(sup => {
+        if (supplierMaster[sup][series]) {
+            const opt = document.createElement('option');
+            opt.value = sup;
+            opt.textContent = sup;
+            supplierSelect.appendChild(opt);
+        }
+    });
+}
+
+function updateSupplierSectionOptions() {
+    const series = document.getElementById('newStockSeries').value;
+    const supplier = document.getElementById('newStockSupplier').value;
+    const material = document.getElementById('newStockMaterial').value.trim();
+    const sectionSelect = document.getElementById('newStockSectionNo');
+
+    if (!sectionSelect) return;
+    sectionSelect.innerHTML = '<option value="">-- Select Section --</option>';
+
+    if (!supplier || !series || !material) return;
+
+    // Look for exact match or partial match in supplier master
+    const supSeries = supplierMaster[supplier][series];
+    if (supSeries) {
+        // Find the material key
+        const matKey = Object.keys(supSeries).find(k => k.toLowerCase().includes(material.toLowerCase()));
+        if (matKey) {
+            supSeries[matKey].forEach(sec => {
+                const opt = document.createElement('option');
+                opt.value = sec.sectionNo;
+                opt.textContent = `${sec.sectionNo} (T:${sec.t}, W:${sec.weight})`;
+                sectionSelect.appendChild(opt);
+            });
+        }
+    }
+}
+
+function applySupplierDataToStock() {
+    const series = document.getElementById('newStockSeries').value;
+    const supplier = document.getElementById('newStockSupplier').value;
+    const material = document.getElementById('newStockMaterial').value.trim();
+    const sectionNo = document.getElementById('newStockSectionNo').value;
+
+    if (!supplier || !series || !material || !sectionNo) return;
+
+    const supSeries = supplierMaster[supplier][series];
+    const matKey = Object.keys(supSeries).find(k => k.toLowerCase().includes(material.toLowerCase()));
+    if (matKey) {
+        const section = supSeries[matKey].find(s => s.sectionNo === sectionNo);
+        if (section) {
+            tempSupData = { t: section.t, weight: section.weight };
+            console.log('Applied supplier data:', tempSupData);
+        }
+    }
+}
+
+// ============================================================================
+// SECTION SELECTION MODAL
+// ============================================================================
+
+let currentSelectingMaterial = null;
+let availableSections = [];
+
+function openSectionSelectModal(materialKey) {
+    currentSelectingMaterial = materialKey;
+    document.getElementById('selectMaterialName').textContent = materialKey;
+
+    // Get all matching sections
+    const [series, materialName] = materialKey.split(' | ');
+    availableSections = [];
+
+    Object.entries(supplierMaster).forEach(([supplier, seriesObj]) => {
+        if (seriesObj[series]) {
+            // Find material matches (partial match)
+            const matMatches = Object.keys(seriesObj[series]).filter(k =>
+                k.toLowerCase().includes(materialName.toLowerCase()) ||
+                materialName.toLowerCase().includes(k.toLowerCase())
+            );
+
+            matMatches.forEach(matKey => {
+                const sections = seriesObj[series][matKey];
+                sections.forEach(sec => {
+                    availableSections.push({
+                        supplier: supplier,
+                        materialKey: matKey,
+                        sectionNo: sec.sectionNo,
+                        t: sec.t,
+                        weight: sec.weight
+                    });
+                });
+            });
+        }
+    });
+
+    // Populate dropdown
+    const dropdown = document.getElementById('thicknessSelect');
+    dropdown.innerHTML = '<option value="">-- Select Thickness --</option>';
+
+    availableSections.forEach((sec, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx;
+        opt.textContent = `${sec.t}mm - ${sec.supplier} (Sec: ${sec.sectionNo}, Wt: ${sec.weight}Kg)`;
+        dropdown.appendChild(opt);
+    });
+
+    // Populate catalogue view
+    populateCatalogueList(series, materialName);
+
+    // Hide details initially
+    document.getElementById('selectedSectionDetails').style.display = 'none';
+
+    document.getElementById('sectionSelectModal').classList.add('active');
+}
+
+function closeSectionSelectModal() {
+    document.getElementById('sectionSelectModal').classList.remove('active');
+    currentSelectingMaterial = null;
+    availableSections = [];
+}
+
+function showSelectedSectionDetails() {
+    const dropdown = document.getElementById('thicknessSelect');
+    const selectedIdx = dropdown.value;
+    const detailsDiv = document.getElementById('selectedSectionDetails');
+    const contentDiv = document.getElementById('sectionDetailsContent');
+
+    if (selectedIdx === '') {
+        detailsDiv.style.display = 'none';
+        return;
+    }
+
+    const section = availableSections[parseInt(selectedIdx)];
+
+    contentDiv.innerHTML = `
+        <div style="line-height: 1.8;">
+            <strong>Supplier:</strong> ${section.supplier}<br>
+            <strong>Material:</strong> ${section.materialKey}<br>
+            <strong>Section Number:</strong> ${section.sectionNo}<br>
+            <strong>Thickness (T):</strong> ${section.t} mm<br>
+            <strong>Weight per 12ft stick:</strong> ${section.weight} Kg
+        </div>
+    `;
+
+    detailsDiv.style.display = 'block';
+}
+
+function confirmSectionSelection() {
+    const dropdown = document.getElementById('thicknessSelect');
+    const selectedIdx = dropdown.value;
+
+    if (selectedIdx === '') {
+        showAlert('⚠️ Please select a thickness option first!');
+        return;
+    }
+
+    const section = availableSections[parseInt(selectedIdx)];
+
+    if (!optimizationResults) return;
+
+    if (!optimizationResults.componentSections) {
+        optimizationResults.componentSections = {};
+    }
+
+    optimizationResults.componentSections[currentSelectingMaterial] = {
+        supplier: section.supplier,
+        sectionNo: section.sectionNo,
+        t: section.t,
+        weight: section.weight
+    };
+
+    autoSaveResults();
+    closeSectionSelectModal();
+    if (typeof displayResults === 'function') displayResults();
+    showAlert(`✅ Section ${section.sectionNo} (T: ${section.t}mm) selected for ${currentSelectingMaterial}`);
+}
+
+function populateCatalogueList(series, materialName) {
+    const catalogueDiv = document.getElementById('catalogueList');
+    catalogueDiv.innerHTML = '';
+
+    Object.entries(supplierMaster).forEach(([supplier, seriesObj]) => {
+        if (seriesObj[series]) {
+            const matMatches = Object.keys(seriesObj[series]).filter(k =>
+                k.toLowerCase().includes(materialName.toLowerCase()) ||
+                materialName.toLowerCase().includes(k.toLowerCase())
+            );
+
+            matMatches.forEach(matKey => {
+                const sections = seriesObj[series][matKey];
+
+                const groupDiv = document.createElement('div');
+                groupDiv.style.marginBottom = '15px';
+                groupDiv.style.padding = '10px';
+                groupDiv.style.background = '#f8f9fa';
+                groupDiv.style.borderRadius = '5px';
+                groupDiv.innerHTML = `<h5 style="margin: 0 0 10px 0; color: #2c3e50;">${supplier} - ${matKey}</h5>`;
+
+                const table = document.createElement('table');
+                table.style.width = '100%';
+                table.style.fontSize = '0.85em';
+                table.innerHTML = `
+                    <thead>
+                        <tr style="background: #34495e; color: white;">
+                            <th style="padding: 5px;">Section No.</th>
+                            <th style="padding: 5px;">T (mm)</th>
+                            <th style="padding: 5px;">Wt (Kg)</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                `;
+
+                const tbody = table.querySelector('tbody');
+                sections.forEach((sec, idx) => {
+                    const row = tbody.insertRow();
+                    row.style.background = idx % 2 === 0 ? 'white' : '#ecf0f1';
+                    row.innerHTML = `
+                        <td style="padding: 5px;">${sec.sectionNo}</td>
+                        <td style="padding: 5px;">${sec.t}</td>
+                        <td style="padding: 5px;">${sec.weight}</td>
+                    `;
+                });
+
+                groupDiv.appendChild(table);
+                catalogueDiv.appendChild(groupDiv);
+            });
+        }
+    });
+
+    if (catalogueDiv.innerHTML === '') {
+        catalogueDiv.innerHTML = '<div class="alert alert-warning">No catalogue sections found for this material.</div>';
+    }
+}

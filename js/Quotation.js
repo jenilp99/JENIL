@@ -43,6 +43,9 @@ function generateQuotation() {
         return;
     }
 
+    // Verify sections configured
+    if (!verifySectionsConfigured()) return;
+
     // Show quotation input dialog
     showQuotationInputDialog(projectWindows, selectedProject);
 }
@@ -87,6 +90,9 @@ function generatePurchaseListPDF() {
         showAlert('⚠️ No windows found for this project!');
         return;
     }
+
+    // Verify sections configured
+    if (!verifySectionsConfigured()) return;
 
     _continueGeneratePurchaseList(projectWindows, selectedProject);
 }
@@ -138,7 +144,58 @@ function _continueGeneratePurchaseList(projectWindows, selectedProject) {
 
     currentY += 8;
 
-    // ========== PURCHASE LIST TABLE ==========
+    // ========== ALUMINIUM SECTION PURCHASE LIST ==========
+    if (optimizationResults && optimizationResults.results) {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(46, 125, 50);
+        doc.text('Aluminium Profile Purchase List (Sticks)', 14, currentY);
+        currentY += 6;
+
+        const sectionData = [];
+        let totalSticks = 0;
+        let totalWeight = 0;
+
+        Object.entries(optimizationResults.results).forEach(([material, data]) => {
+            const stockItems = data.stockUsage || [];
+            stockItems.forEach(stock => {
+                const stockInfo = findStockInfo(material, stock.stockLength);
+                const weightPerStick = stockInfo ? (stockInfo.weight || 0) : 0;
+                const sectionNo = stockInfo ? (stockInfo.sectionNo || 'N/A') : 'N/A';
+                const thickness = stockInfo ? (stockInfo.thickness || 0) : 0;
+                const totalW = stock.qty * weightPerStick;
+
+                sectionData.push([
+                    material,
+                    sectionNo,
+                    thickness > 0 ? `${thickness} mm` : 'N/A',
+                    `${stock.qty} pcs`,
+                    `${stock.stockLength}"`,
+                    weightPerStick > 0 ? `${weightPerStick.toFixed(3)} Kg` : 'N/A',
+                    totalW > 0 ? `${totalW.toFixed(3)} Kg` : 'N/A'
+                ]);
+
+                totalSticks += stock.qty;
+                totalWeight += totalW;
+            });
+        });
+
+        doc.autoTable({
+            startY: currentY,
+            head: [['Material', 'Sec No.', 'T', 'Qty', 'Len', 'Wt/Stick', 'Total Wt']],
+            body: sectionData,
+            theme: 'grid',
+            headStyles: { fillColor: [46, 125, 50] },
+            styles: { fontSize: 8 }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 8;
+        doc.setFontSize(10);
+        doc.text(`Total Sticks: ${totalSticks} | Total Approx Weight: ${totalWeight.toFixed(2)} Kg`, 14, currentY);
+        currentY += 10;
+    }
+
+    // ========== PURCHASE LIST TABLE (HARDWARE) ==========
     const purchaseListData = generatePurchaseListTable(projectWindows, optimizationResults);
     const hardwareTotalCost = calculatePurchaseListTotal(projectWindows, optimizationResults);
 
@@ -866,4 +923,49 @@ function numberToWords(num) {
     }
 
     return ones[num];
+}
+
+function verifySectionsConfigured() {
+    if (!optimizationResults || !optimizationResults.results) return true;
+
+    const missing = [];
+    Object.keys(optimizationResults.results).forEach(key => {
+        const selected = optimizationResults.componentSections ? optimizationResults.componentSections[key] : null;
+        if (!selected) {
+            missing.push(key);
+        }
+    });
+
+    if (missing.length > 0) {
+        showAlert(`⚠️ Missing Thickness Selection!\n\nPlease select the thickness (section) for the following components in the results section before generating a quotation:\n\n${missing.join('\n')}`);
+        scrollToSection('section-results');
+        return false;
+    }
+    return true;
+}
+
+function findStockInfo(materialKey, length) {
+    /**
+     * Helper to find weight and section info.
+     * Prefers data from componentSections in optimizationResults.
+     */
+    if (optimizationResults && optimizationResults.componentSections && optimizationResults.componentSections[materialKey]) {
+        const choice = optimizationResults.componentSections[materialKey];
+        return {
+            sectionNo: choice.sectionNo,
+            thickness: choice.t,
+            weight: choice.weight,
+            supplier: choice.supplier
+        };
+    }
+
+    // Fallback to stockMaster
+    const [series, material] = materialKey.includes(' | ') ? materialKey.split(' | ') : ['', materialKey];
+
+    for (const [sName, stocks] of Object.entries(stockMaster)) {
+        if (series && sName !== series) continue;
+        const stock = stocks.find(s => s.material === material);
+        if (stock) return stock;
+    }
+    return null;
 }

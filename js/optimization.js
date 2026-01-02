@@ -15,7 +15,29 @@ function runOptimization() {
     const piecesByMaterial = calculatePieces(selectedProject);
 
     if (Object.keys(piecesByMaterial).length === 0) {
-        showAlert('❌ No pieces calculated for this project!');
+        const projectWindows = windows.filter(w => w.projectName === selectedProject);
+
+        if (projectWindows.length === 0) {
+            showAlert('❌ No windows found for this project!\n\nPlease add windows to the project first.');
+            return;
+        }
+
+        // Check if formulas exist for window series
+        const missingSeries = [];
+        projectWindows.forEach(win => {
+            if (!seriesFormulas[win.series] && !seriesFormulas[win.series === '1' ? '1"' : win.series === '1"' ? '1' : win.series]) {
+                if (!missingSeries.includes(win.series)) {
+                    missingSeries.push(win.series);
+                }
+            }
+        });
+
+        if (missingSeries.length > 0) {
+            showAlert(`❌ Missing formulas for series: ${missingSeries.join(', ')}\n\nPlease configure formulas in the "Formulas Master" section.`);
+            return;
+        }
+
+        showAlert('❌ No pieces calculated for this project!\n\nThis could be due to:\n- Missing or invalid formulas\n- All formula quantities evaluate to 0\n- Formula evaluation errors');
         return;
     }
 
@@ -100,6 +122,12 @@ function calculatePieces(selectedProject) {
     const pieces = {};
     const projectWindows = windows.filter(w => w.projectName === selectedProject);
 
+    console.log('🔍 calculatePieces:', {
+        project: selectedProject,
+        windowCount: projectWindows.length,
+        windows: projectWindows
+    });
+
     projectWindows.forEach(win => {
         const W = win.width;
         const H = win.height;
@@ -115,9 +143,16 @@ function calculatePieces(selectedProject) {
         if (!formulas) {
             if (seriesName === '1') formulas = seriesFormulas['1"'];
             else if (seriesName === '1"') formulas = seriesFormulas['1'];
+            else if (seriesName === '3/4') formulas = seriesFormulas['3/4"'];
+            else if (seriesName === '3/4"') formulas = seriesFormulas['3/4'];
         }
 
-        if (!formulas) return;
+        if (!formulas) {
+            console.warn('⚠️ No formulas found for series:', seriesName, 'Available series:', Object.keys(seriesFormulas));
+            return;
+        }
+
+        console.log('📐 Processing window:', id, 'Series:', seriesName, 'Formula count:', formulas.length);
 
         const context = {
             W: win.width,
@@ -130,7 +165,10 @@ function calculatePieces(selectedProject) {
 
         formulas.forEach(formula => {
             // Safety check for formula existence and contents
-            if (!formula.qty || !formula.length) return;
+            if (!formula.qty || !formula.length) {
+                console.warn('⚠️ Invalid formula (missing qty or length):', formula);
+                return;
+            }
 
             let qtyVal = safeEval(formula.qty, context, 0);
             let lenVal = safeEval(formula.length, context, 0);
@@ -141,10 +179,13 @@ function calculatePieces(selectedProject) {
 
             if (qty > 0 && length > 0) {
                 addPieces(pieces, seriesName, formula.component, length, id + ' - ' + formula.desc, qty);
+            } else {
+                console.log('⏭️ Skipped formula (qty or length is 0):', formula.desc, 'qty:', qty, 'length:', length);
             }
         });
     });
 
+    console.log('✅ Calculated pieces:', pieces);
     return pieces;
 }
 
