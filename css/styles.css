@@ -165,7 +165,7 @@ body {
 }
 
 .collapsible-content {
-    max-height: 8000px;
+    max-height: 50000px;
     overflow: hidden;
     transition: max-height 0.4s ease-out, opacity 0.3s ease-out, margin 0.4s ease-out;
     opacity: 1;

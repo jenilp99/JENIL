@@ -117,8 +117,7 @@ function initializeDefaults() {
         };
     }
 
-    // Initialize Hardware Master
-    // Initialize Hardware Master
+    // Initialize Hardware Master if not loaded
     const defaultHardwareMaster = {
         'Domal': [
             { hardware: 'Domal Shutter Lock', unit: 'Nos', rate: 150, formula: '2 + (MS > 0 ? 1 : 0)' },
@@ -143,30 +142,25 @@ function initializeDefaults() {
         ]
     };
 
-    if (!localStorage.getItem('hardwareMaster')) {
+    if (Object.keys(hardwareMaster).length === 0) {
         hardwareMaster = JSON.parse(JSON.stringify(defaultHardwareMaster));
-        localStorage.setItem('hardwareMaster', JSON.stringify(hardwareMaster));
+        autoSaveHardwareMaster();
     } else {
-        const savedHardwareMaster = localStorage.getItem('hardwareMaster');
-        if (savedHardwareMaster) {
-            hardwareMaster = JSON.parse(savedHardwareMaster);
-            // Migration: Rename "1" to "1\""
-            if (hardwareMaster['1']) {
-                hardwareMaster['1"'] = hardwareMaster['1'];
-                delete hardwareMaster['1'];
-            }
-            // Migration: Add formulas to existing items if missing
-            Object.entries(hardwareMaster).forEach(([series, items]) => {
-                const defaults = defaultHardwareMaster[series] || [];
-                items.forEach(item => {
-                    if (!item.formula) {
-                        const defaultItem = defaults.find(d => d.hardware === item.hardware);
-                        if (defaultItem) item.formula = defaultItem.formula;
+        // Ensure formulas exist for existing items (migration helper)
+        let updated = false;
+        Object.entries(hardwareMaster).forEach(([series, items]) => {
+            const defaults = defaultHardwareMaster[series] || [];
+            items.forEach(item => {
+                if (!item.formula) {
+                    const defaultItem = defaults.find(d => d.hardware === item.hardware);
+                    if (defaultItem) {
+                        item.formula = defaultItem.formula;
+                        updated = true;
                     }
-                });
+                }
             });
-            localStorage.setItem('hardwareMaster', JSON.stringify(hardwareMaster));
-        }
+        });
+        if (updated) autoSaveHardwareMaster();
     }
 
     if (windows.length === 0) {

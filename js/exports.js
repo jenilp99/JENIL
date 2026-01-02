@@ -59,7 +59,11 @@ function displayResults() {
     html += '</div>';
     
     // Material details
-    for (const [material, plans] of Object.entries(r.results)) {
+    for (const [key, plans] of Object.entries(r.results)) {
+        // Parse key if it contains series part
+        const hasSeries = key.includes(' | ');
+        const materialTitle = hasSeries ? key : key; // Keep as is, it's already descriptive
+        
         const materialUsed = plans.reduce((sum, p) => sum + p.used, 0);
         const materialWaste = plans.reduce((sum, p) => sum + p.waste, 0);
         const materialTotal = materialUsed + materialWaste;
@@ -76,7 +80,7 @@ function displayResults() {
             .join(', ');
         
         html += '<div class="material-section">';
-        html += '<h3>📏 ' + material + '</h3>';
+        html += '<h3>📏 ' + materialTitle + '</h3>';
         html += `<div style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #4caf50">
             <strong style="font-size: 15px; color: #2e7d32">Material Summary</strong><br>
             <div style="margin-top: 8px; font-size: 14px; line-height: 1.8">
@@ -201,14 +205,14 @@ function shareViaWhatsApp() {
     const r = optimizationResults;
     let message = `*Niruma Aluminum Profile Optimizer*\n*Project:* ${r.project}\n\n*SUMMARY*\nTotal Sticks: ${r.stats.totalSticks}\nTotal Cost: ₹${r.stats.totalCost}\nEfficiency: ${r.stats.efficiency}%\n\n*PURCHASE LIST*\n`;
     
-    for (const [material, plans] of Object.entries(r.results)) {
+    for (const [key, plans] of Object.entries(r.results)) {
         const stockCounts = {};
         plans.forEach(plan => {
             const stockSize = plan.stock.replace('"', '');
             stockCounts[stockSize] = (stockCounts[stockSize] || 0) + 1;
         });
         
-        message += `\n${material}:\n`;
+        message += `\n${key}:\n`;
         for (const [size, count] of Object.entries(stockCounts)) {
             message += `  • ${size}" - ${count} nos\n`;
         }
@@ -230,14 +234,14 @@ function shareViaEmail() {
     const r = optimizationResults;
     let body = `NIRUMA ALUMINUM PROFILE OPTIMIZER\nProject: ${r.project}\n\nSUMMARY\nTotal Sticks: ${r.stats.totalSticks}\nTotal Cost: ₹${r.stats.totalCost}\nEfficiency: ${r.stats.efficiency}%\n\nPURCHASE LIST\n`;
     
-    for (const [material, plans] of Object.entries(r.results)) {
+    for (const [key, plans] of Object.entries(r.results)) {
         const stockCounts = {};
         plans.forEach(plan => {
             const stockSize = plan.stock.replace('"', '');
             stockCounts[stockSize] = (stockCounts[stockSize] || 0) + 1;
         });
         
-        body += `\n${material}:\n`;
+        body += `\n${key}:\n`;
         for (const [size, count] of Object.entries(stockCounts)) {
             body += `  ${size}" - ${count} nos\n`;
         }
@@ -271,7 +275,7 @@ body { font-family: 'Courier New', monospace; }
 </div>
 <div class="label-grid">`;
     
-    for (const [material, plans] of Object.entries(r.results)) {
+    for (const [key, plans] of Object.entries(r.results)) {
         let cutNumber = 1;
         plans.forEach((plan, stickIdx) => {
             plan.pieces.forEach(piece => {
@@ -279,7 +283,7 @@ body { font-family: 'Courier New', monospace; }
                 labelHTML += `<div class="label-item">
                     <div class="label-header">${r.project}</div>
                     <div><strong>Window:</strong> ${windowId}</div>
-                    <div><strong>Material:</strong> ${material}</div>
+                    <div><strong>Material:</strong> ${key}</div>
                     <div><strong>Cut #:</strong> ${cutNumber}</div>
                     <div><strong>Length:</strong> ${piece.length.toFixed(2)}"</div>
                 </div>`;
@@ -321,7 +325,7 @@ function exportFullResultsExcel() {
         ['']
     ];
     
-    for (const [material, plans] of Object.entries(r.results)) {
+    for (const [key, plans] of Object.entries(r.results)) {
         const materialUsed = plans.reduce((sum, p) => sum + p.used, 0);
         const materialWaste = plans.reduce((sum, p) => sum + p.waste, 0);
         const materialTotal = materialUsed + materialWaste;
@@ -337,7 +341,7 @@ function exportFullResultsExcel() {
             .map(([size, count]) => `${size}" - ${count} nos`)
             .join(' | ');
         
-        summaryData.push([`Material: ${material}`]);
+        summaryData.push([`Material: ${key}`]);
         summaryData.push(['Requirements', requirementStr]);
         summaryData.push(['Used Length', materialUsed.toFixed(2) + '"']);
         summaryData.push(['Waste Length', materialWaste.toFixed(2) + '"']);
@@ -406,7 +410,7 @@ function exportFullResultsPDF() {
     
     let currentY = doc.lastAutoTable.finalY + 10;
     
-    for (const [material, plans] of Object.entries(r.results)) {
+    for (const [key, plans] of Object.entries(r.results)) {
         if (currentY > 250) {
             doc.addPage();
             currentY = 20;
@@ -428,7 +432,7 @@ function exportFullResultsPDF() {
             .join(' | ');
         
         doc.setFontSize(14);
-        doc.text(`Material: ${material}`, 14, currentY);
+        doc.text(`Material: ${key}`, 14, currentY);
         currentY += 7;
         
         doc.setFontSize(10);

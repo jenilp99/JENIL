@@ -674,13 +674,16 @@ function calculateWindowHardware(window, optimizationResults = null) {
     const GL = (materialName) => {
         if (!optimizationResults || !optimizationResults.results) return 0;
         let total = 0;
-        for (const [material, plans] of Object.entries(optimizationResults.results)) {
-            // Case-insensitive inclusion check
-            if (material.toLowerCase().includes(materialName.toLowerCase())) {
+
+        // The results are now keyed by "Series | Material"
+        const expectedKey = `${series} | ${materialName}`.toLowerCase();
+        const fallbackKey = materialName.toLowerCase(); // For backward compatibility
+
+        for (const [key, plans] of Object.entries(optimizationResults.results)) {
+            const lowerKey = key.toLowerCase();
+            if (lowerKey === expectedKey || lowerKey === fallbackKey) {
                 plans.forEach(plan => {
                     plan.pieces.forEach(piece => {
-                        // Check if this piece belongs to this specific window configuration
-                        // piece.label format: "ConfigId - Description"
                         if (piece.label && piece.label.startsWith(window.configId)) {
                             total += piece.length;
                         }

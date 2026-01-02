@@ -9,7 +9,8 @@ const StorageManager = {
         STOCK: 'niruma_stock',
         KERF: 'niruma_kerf',
         UNIT: 'niruma_unit',
-        RESULTS: 'niruma_results'
+        RESULTS: 'niruma_results',
+        HARDWARE: 'niruma_hardware'
     },
 
     // Save data to localStorage
@@ -112,6 +113,16 @@ const StorageManager = {
         return this.load(this.KEYS.RESULTS, null);
     },
 
+    // Save hardware master
+    saveHardwareMaster(hardware) {
+        return this.save(this.KEYS.HARDWARE, hardware);
+    },
+
+    // Load hardware master
+    loadHardwareMaster() {
+        return this.load(this.KEYS.HARDWARE, null);
+    },
+
     // Export all data as JSON
     exportAll() {
         return {
@@ -169,6 +180,11 @@ function autoSaveResults() {
         StorageManager.saveResults(optimizationResults);
         console.log('✅ Results auto-saved');
     }
+}
+
+function autoSaveHardwareMaster() {
+    StorageManager.saveHardwareMaster(hardwareMaster);
+    console.log('✅ Hardware auto-saved');
 }
 
 // Load all data on startup
@@ -238,10 +254,16 @@ function loadAllData() {
         migrated = true;
     }
 
-    // 3. Migrate Stock
-    if (stockMaster && stockMaster['1']) {
-        stockMaster['1"'] = stockMaster['1'];
-        delete stockMaster['1'];
+    // 4. Migrate Hardware
+    const loadedHardware = StorageManager.loadHardwareMaster();
+    if (loadedHardware) {
+        hardwareMaster = loadedHardware;
+        console.log('✅ Loaded hardware from storage');
+    }
+
+    if (hardwareMaster['1']) {
+        hardwareMaster['1"'] = hardwareMaster['1'];
+        delete hardwareMaster['1'];
         migrated = true;
     }
 
@@ -251,6 +273,7 @@ function loadAllData() {
         autoSaveWindows();
         autoSaveFormulas();
         autoSaveStock();
+        autoSaveHardwareMaster();
     } else {
         console.log('ℹ️ No data needed migration.');
     }

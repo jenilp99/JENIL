@@ -25,30 +25,32 @@ function runOptimization() {
     let totalWaste = 0;
     let totalCost = 0;
 
-    for (const [material, pieces] of Object.entries(piecesByMaterial)) {
-        let projectSeries = windows.find(w => w.projectName === selectedProject).series;
-        let stockList = stockMaster[projectSeries];
+    for (const [compoundKey, pieces] of Object.entries(piecesByMaterial)) {
+        const [materialSeries, materialName] = compoundKey.split('|');
+
+        let stockList = stockMaster[materialSeries];
 
         // Fallback for series name migration
         if (!stockList) {
-            if (projectSeries === '1') stockList = stockMaster['1"'];
-            else if (projectSeries === '1"') stockList = stockMaster['1'];
+            if (materialSeries === '1') stockList = stockMaster['1"'];
+            else if (materialSeries === '1"') stockList = stockMaster['1'];
         }
 
         if (!stockList) {
-            console.warn('No stock list for series:', projectSeries);
+            console.warn('No stock list for series:', materialSeries);
             continue;
         }
 
-        const stockInfo = stockList.find(s => s.material === material);
+        const stockInfo = stockList.find(s => s.material === materialName);
 
         if (!stockInfo) {
-            console.warn('No stock info for:', material);
+            console.warn(`No stock info for material "${materialName}" in series "${materialSeries}"`);
             continue;
         }
 
         const plans = optimizeMaterialSmart(pieces, stockInfo, kerf);
-        results[material] = plans;
+        const displayKey = `${materialSeries} | ${materialName}`;
+        results[displayKey] = plans;
 
         plans.forEach(plan => {
             totalSticks++;
@@ -105,6 +107,9 @@ function calculatePieces(selectedProject) {
 
         formulas.forEach(formula => {
             try {
+                // Safety check for formula existence and contents
+                if (!formula.qty || !formula.length) return;
+
                 let qtyVal = eval(formula.qty);
                 let lenVal = eval(formula.length);
 
@@ -112,10 +117,10 @@ function calculatePieces(selectedProject) {
                 const length = parseFloat(lenVal);
 
                 if (qty > 0 && length > 0) {
-                    addPieces(pieces, formula.component, length, id + ' - ' + formula.desc, qty);
+                    addPieces(pieces, seriesName, formula.component, length, id + ' - ' + formula.desc, qty);
                 }
             } catch (e) {
-                console.error('Formula error:', e, formula);
+                console.error('Formula error in series:', seriesName, 'Component:', formula.component, e);
             }
         });
     });
@@ -123,13 +128,14 @@ function calculatePieces(selectedProject) {
     return pieces;
 }
 
-function addPieces(pieces, material, length, label, qty) {
-    if (!pieces[material]) {
-        pieces[material] = [];
+function addPieces(pieces, series, material, length, label, qty) {
+    const key = `${series}|${material}`;
+    if (!pieces[key]) {
+        pieces[key] = [];
     }
 
     for (let i = 0; i < qty; i++) {
-        pieces[material].push({ length: length, label: label });
+        pieces[key].push({ length: length, label: label });
     }
 }
 
