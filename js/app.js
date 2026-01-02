@@ -61,18 +61,18 @@ function initializeDefaults() {
                 { component: 'Domal Shutter', qty: '2*MS', length: '(W-3+2.5*(S-1))/S', desc: 'MS Shutter Horizontal' },
                 { component: 'Domal Clip', qty: '1*MS', length: 'H-2.75', desc: 'MS Domal Clip' }
             ],
-            '3/4': [
-                { component: '3/4 Handle', qty: '2', length: 'H-1.5', desc: 'Handles' },
-                { component: '3/4 Interlock', qty: '2*S-2', length: 'H-1.5', desc: 'Interlocks' },
-                { component: '3/4 Bearing Bottom', qty: '2*S', length: '(W-5-1.5*(S-1))/S', desc: 'Bearing Bottom' },
-                { component: '3/4 Track Top', qty: '1', length: 'W', desc: 'Track Top' },
-                { component: '3/4 Track Top', qty: '2', length: 'H', desc: 'Track Sides' },
-                { component: '3/4 Track Bottom', qty: '1', length: 'W', desc: 'Track Bottom' },
-                { component: '3/4 Handle', qty: '1*MS', length: 'H-1.5', desc: 'MS Handle' },
-                { component: '3/4 Interlock', qty: '1*MS', length: 'H-1.5', desc: 'MS Interlock' },
-                { component: '3/4 Bearing Bottom', qty: '2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS Bearing Bottom' },
-                { component: '3/4 C-channel', qty: '2*MS', length: 'H-1.5', desc: 'MS C-channel Vertical' },
-                { component: '3/4 C-channel', qty: '2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS C-channel Horizontal' }
+            '3/4"': [
+                { component: '3/4" Handle', qty: '2', length: 'H-1.5', desc: 'Handles' },
+                { component: '3/4" Interlock', qty: '2*S-2', length: 'H-1.5', desc: 'Interlocks' },
+                { component: '3/4" Bearing Bottom', qty: '2*S', length: '(W-5-1.5*(S-1))/S', desc: 'Bearing Bottom' },
+                { component: '3/4" Track Top', qty: '1', length: 'W', desc: 'Track Top' },
+                { component: '3/4" Track Top', qty: '2', length: 'H', desc: 'Track Sides' },
+                { component: '3/4" Track Bottom', qty: '1', length: 'W', desc: 'Track Bottom' },
+                { component: '3/4" Handle', qty: '1*MS', length: 'H-1.5', desc: 'MS Handle' },
+                { component: '3/4" Interlock', qty: '1*MS', length: 'H-1.5', desc: 'MS Interlock' },
+                { component: '3/4" Bearing Bottom', qty: '2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS Bearing Bottom' },
+                { component: '3/4" C-channel', qty: '2*MS', length: 'H-1.5', desc: 'MS C-channel Vertical' },
+                { component: '3/4" C-channel', qty: '2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS C-channel Horizontal' }
             ],
             '1"': [
                 { component: '1" Handle', qty: '2', length: 'H-1.125', desc: 'Handles' },
@@ -98,13 +98,13 @@ function initializeDefaults() {
                 { material: 'Domal Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: 'Domal C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
             ],
-            '3/4': [
-                { material: '3/4 Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4 Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4 Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4 Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4 Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4 C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
+            '3/4"': [
+                { material: '3/4" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '3/4" Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '3/4" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '3/4" Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '3/4" Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '3/4" C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
             ],
             '1"': [
                 { material: '1" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
@@ -128,10 +128,10 @@ function initializeDefaults() {
             { hardware: 'Shutter Wing Connector', unit: 'Nos', rate: 5, formula: '8 * S + 8 * MS' },
             { hardware: 'Interlock Cap', unit: 'Nos', rate: 15, formula: 'S + MS' }
         ],
-        '3/4': [
-            { hardware: '3/4 Sliding Shutter Lock', unit: 'Nos', rate: 120, formula: '2 + (MS > 0 ? 1 : 0)' },
-            { hardware: '3/4 Wool Pile Weather Strip', unit: 'Meter', rate: 45, formula: '(P * T + GL("Interlock")) * 0.0254' },
-            { hardware: '3/4 Bearing', unit: 'Nos', rate: 18, formula: '2 * (S + MS)' },
+        '3/4"': [
+            { hardware: '3/4" Sliding Shutter Lock', unit: 'Nos', rate: 120, formula: '2 + (MS > 0 ? 1 : 0)' },
+            { hardware: '3/4" Wool Pile Weather Strip', unit: 'Meter', rate: 45, formula: '(P * T + GL("Interlock")) * 0.0254' },
+            { hardware: '3/4" Bearing', unit: 'Nos', rate: 18, formula: '2 * (S + MS)' },
             { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' }
         ],
         '1"': [
@@ -172,7 +172,7 @@ function initializeDefaults() {
             tracks: 3,
             shutters: 3,
             mosquitoShutters: 0,
-            series: '3/4',
+            series: '3/4"',
             description: 'Living Room Main'
         }];
     }
@@ -364,13 +364,29 @@ function toggleUnit() {
 function addWindow(event) {
     event.preventDefault();
 
+    // Get values
+    const widthRaw = parseFloat(document.getElementById('width').value);
+    const heightRaw = parseFloat(document.getElementById('height').value);
+    const tracks = parseInt(document.getElementById('tracks').value, 10);
+    const shutters = parseInt(document.getElementById('shutters').value, 10);
+
+    // Validation
+    if (widthRaw <= 0 || heightRaw <= 0) {
+        showAlert('❌ Error: Width and Height must be greater than zero.', 'error');
+        return;
+    }
+    if (shutters <= 0) {
+        showAlert('❌ Error: Number of shutters must be at least 1.', 'error');
+        return;
+    }
+
     const window = {
         configId: document.getElementById('configId').value,
         projectName: document.getElementById('projectName').value,
-        width: convertToInches(parseFloat(document.getElementById('width').value)),
-        height: convertToInches(parseFloat(document.getElementById('height').value)),
-        tracks: parseInt(document.getElementById('tracks').value),
-        shutters: parseInt(document.getElementById('shutters').value),
+        width: convertToInches(widthRaw),
+        height: convertToInches(heightRaw),
+        tracks: tracks,
+        shutters: shutters,
         mosquitoShutters: parseInt(document.getElementById('mosquitoShutters').value),
         series: document.getElementById('series').value,
         description: document.getElementById('description').value
@@ -447,13 +463,27 @@ function saveWindowEdit(event) {
     event.preventDefault();
     const idx = parseInt(document.getElementById('editWindowIndex').value);
 
+    const widthRaw = parseFloat(document.getElementById('editWidth').value);
+    const heightRaw = parseFloat(document.getElementById('editHeight').value);
+    const shutters = parseInt(document.getElementById('editShutters').value, 10);
+
+    // Validation
+    if (widthRaw <= 0 || heightRaw <= 0) {
+        showAlert('❌ Error: Width and Height must be greater than zero.', 'error');
+        return;
+    }
+    if (shutters <= 0) {
+        showAlert('❌ Error: Number of shutters must be at least 1.', 'error');
+        return;
+    }
+
     windows[idx] = {
         configId: document.getElementById('editConfigId').value,
         projectName: document.getElementById('editProjectName').value,
-        width: convertToInches(parseFloat(document.getElementById('editWidth').value)),
-        height: convertToInches(parseFloat(document.getElementById('editHeight').value)),
+        width: convertToInches(widthRaw),
+        height: convertToInches(heightRaw),
         tracks: parseInt(document.getElementById('editTracks').value),
-        shutters: parseInt(document.getElementById('editShutters').value),
+        shutters: shutters,
         mosquitoShutters: parseInt(document.getElementById('editMosquitoShutters').value),
         series: document.getElementById('editSeries').value,
         description: document.getElementById('editDescription').value
@@ -586,11 +616,16 @@ function deleteFormula(series, idx) {
 
 function addNewSeries(event) {
     event.preventDefault();
-    const seriesName = document.getElementById('newSeriesName').value;
+    let seriesName = document.getElementById('newSeriesName').value.trim();
+
+    // Market Standard Normalization
+    if (seriesName === '1') seriesName = '1"';
+    if (seriesName === '3/4') seriesName = '3/4"';
 
     if (!seriesFormulas[seriesName]) {
         seriesFormulas[seriesName] = [];
         stockMaster[seriesName] = [];
+        hardwareMaster[seriesName] = []; // Ensure hardware entry exists too
     }
 
     seriesFormulas[seriesName].push({
@@ -718,7 +753,7 @@ function refreshHardwareMaster() {
                         <tr>
                             <th style="width: 25%">Hardware Item</th>
                             <th style="width: 10%">Unit</th>
-                            <th style="width: 40%">Quantity Formula</th>
+                            <th style="width: 40%">Quantity Formula <span class="formula-info-icon" title="H: Height, W: Width, S: Shutters, MS: Mosquito, T: Tracks, GL: Get Length">ⓘ</span></th>
                             <th style="width: 15%">Rate (₹)</th>
                             <th style="width: 10%">Actions</th>
                         </tr>

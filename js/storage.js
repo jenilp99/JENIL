@@ -236,23 +236,64 @@ function loadAllData() {
         console.log('✅ Loaded previous results');
     }
 
-    // --- MIGRATION LOGIC: Update "1" to "1\"" ---
+    // --- MIGRATION LOGIC: Deep normalization of series names ---
     let migrated = false;
+
+    const normalizeSeries = (series) => {
+        if (series === '1') return '1"';
+        if (series === '3/4') return '3/4"';
+        return series;
+    };
+
+    const deepNormalize = (name) => {
+        if (typeof name !== 'string') return name;
+        if (name.startsWith('1 ') && !name.startsWith('1"')) return name.replace('1 ', '1" ');
+        if (name.startsWith('3/4 ') && !name.startsWith('3/4"')) return name.replace('3/4 ', '3/4" ');
+        return name;
+    };
 
     // 1. Migrate Windows
     windows.forEach(win => {
-        if (win.series == '1') {
-            win.series = '1"';
+        const oldS = win.series;
+        win.series = normalizeSeries(win.series);
+        if (oldS !== win.series) migrated = true;
+    });
+
+    // 2. Migrate Formulas
+    ['1', '3/4'].forEach(oldKey => {
+        if (seriesFormulas && seriesFormulas[oldKey]) {
+            const newKey = normalizeSeries(oldKey);
+            seriesFormulas[newKey] = seriesFormulas[oldKey];
+            delete seriesFormulas[oldKey];
             migrated = true;
         }
     });
 
-    // 2. Migrate Formulas
-    if (seriesFormulas && seriesFormulas['1']) {
-        seriesFormulas['1"'] = seriesFormulas['1'];
-        delete seriesFormulas['1'];
-        migrated = true;
-    }
+    Object.values(seriesFormulas).forEach(list => {
+        list.forEach(item => {
+            const old = item.component;
+            item.component = deepNormalize(item.component);
+            if (old !== item.component) migrated = true;
+        });
+    });
+
+    // 3. Migrate Stock
+    ['1', '3/4'].forEach(oldKey => {
+        if (stockMaster && stockMaster[oldKey]) {
+            const newKey = normalizeSeries(oldKey);
+            stockMaster[newKey] = stockMaster[oldKey];
+            delete stockMaster[oldKey];
+            migrated = true;
+        }
+    });
+
+    Object.values(stockMaster).forEach(list => {
+        list.forEach(item => {
+            const old = item.material;
+            item.material = deepNormalize(item.material);
+            if (old !== item.material) migrated = true;
+        });
+    });
 
     // 4. Migrate Hardware
     const loadedHardware = StorageManager.loadHardwareMaster();
@@ -261,20 +302,29 @@ function loadAllData() {
         console.log('✅ Loaded hardware from storage');
     }
 
-    if (hardwareMaster['1']) {
-        hardwareMaster['1"'] = hardwareMaster['1'];
-        delete hardwareMaster['1'];
-        migrated = true;
-    }
+    ['1', '3/4'].forEach(oldKey => {
+        if (hardwareMaster && hardwareMaster[oldKey]) {
+            const newKey = normalizeSeries(oldKey);
+            hardwareMaster[newKey] = hardwareMaster[oldKey];
+            delete hardwareMaster[oldKey];
+            migrated = true;
+        }
+    });
+
+    Object.values(hardwareMaster).forEach(list => {
+        list.forEach(item => {
+            const old = item.hardware;
+            item.hardware = deepNormalize(item.hardware);
+            if (old !== item.hardware) migrated = true;
+        });
+    });
 
     if (migrated) {
-        console.log('🔄 Data migrated: Renamed series "1" to "1\""');
+        console.log('🔄 Data migrated: Deep normalization of series names (X")');
         // Save migrated data immediately
         autoSaveWindows();
         autoSaveFormulas();
         autoSaveStock();
         autoSaveHardwareMaster();
-    } else {
-        console.log('ℹ️ No data needed migration.');
     }
 }

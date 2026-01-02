@@ -82,6 +82,20 @@ function runOptimization() {
 // PIECE CALCULATION FROM FORMULAS
 // ============================================================================
 
+// Safe evaluation helper to prevent crashes from bad formulas
+function safeEval(formula, context, defaultValue = 0) {
+    try {
+        // Create variables from context
+        const { W, H, S, MS, T, P } = context;
+        // Use a function constructor for slightly better safety than eval()
+        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', `return ${formula}`);
+        return fn(W, H, S, MS, T, P);
+    } catch (e) {
+        console.error('SafeEval Error:', e, 'Formula:', formula);
+        return defaultValue;
+    }
+}
+
 function calculatePieces(selectedProject) {
     const pieces = {};
     const projectWindows = windows.filter(w => w.projectName === selectedProject);
@@ -105,22 +119,28 @@ function calculatePieces(selectedProject) {
 
         if (!formulas) return;
 
+        const context = {
+            W: win.width,
+            H: win.height,
+            S: win.shutters,
+            MS: win.mosquitoShutters || 0,
+            T: win.tracks,
+            P: (win.width * 2 + win.height * 2)
+        };
+
         formulas.forEach(formula => {
-            try {
-                // Safety check for formula existence and contents
-                if (!formula.qty || !formula.length) return;
+            // Safety check for formula existence and contents
+            if (!formula.qty || !formula.length) return;
 
-                let qtyVal = eval(formula.qty);
-                let lenVal = eval(formula.length);
+            let qtyVal = safeEval(formula.qty, context, 0);
+            let lenVal = safeEval(formula.length, context, 0);
 
-                const qty = parseInt(qtyVal, 10);
-                const length = parseFloat(lenVal);
+            const qty = parseInt(qtyVal, 10);
+            // Round length to 2 decimal places to avoid float precision issues
+            const length = Math.round(parseFloat(lenVal) * 100) / 100;
 
-                if (qty > 0 && length > 0) {
-                    addPieces(pieces, seriesName, formula.component, length, id + ' - ' + formula.desc, qty);
-                }
-            } catch (e) {
-                console.error('Formula error in series:', seriesName, 'Component:', formula.component, e);
+            if (qty > 0 && length > 0) {
+                addPieces(pieces, seriesName, formula.component, length, id + ' - ' + formula.desc, qty);
             }
         });
     });

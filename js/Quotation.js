@@ -651,6 +651,20 @@ function generateWindowDiagram(config) {
 // HARDWARE CALCULATIONS
 // ============================================================================
 
+// Safe evaluation helper for hardware formulas
+function safeEval(formula, context, defaultValue = 0) {
+    try {
+        const { W, H, S, MS, T, P, GL } = context;
+        // Use Function constructor for isolation and safety
+        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', 'GL', `return ${formula}`);
+        const result = fn(W, H, S, MS, T, P, GL);
+        return isNaN(result) ? defaultValue : result;
+    } catch (e) {
+        console.error('SafeEval Error (Hardware):', e, 'Formula:', formula);
+        return defaultValue;
+    }
+}
+
 function calculateWindowHardware(window, optimizationResults = null) {
     /**
      * Calculate hardware quantities for a single window based on series
@@ -661,14 +675,6 @@ function calculateWindowHardware(window, optimizationResults = null) {
     const mosquitoShutters = window.mosquitoShutters || 0;
     const width = window.width || 0;
     const height = window.height || 0;
-
-    // Perimeter calculation: 2*(width + height) in inches
-    const perimeter = 2 * (width + height);
-
-    // Silicon bottles calculation: CEILING(perimeter / 1000)
-    const siliconBottles = Math.ceil(perimeter / 1000);
-
-    let hardware = {};
 
     // Helper to get total length of a material for this window from optimization results
     const GL = (materialName) => {
@@ -694,54 +700,69 @@ function calculateWindowHardware(window, optimizationResults = null) {
         return total;
     };
 
-    // Variables for eval scope
-    const W = width;
-    const H = height;
-    const S = shutters;
-    const MS = mosquitoShutters;
-    const T = window.tracks || 2;
-    const P = perimeter;
-
     // Get hardware items for this series
-    let items = hardwareMaster[series];
-    if (!items) {
+    let hardwareList = hardwareMaster[series];
+    if (!hardwareList) {
         // Fallback for migrated names
-        if (series === '1') items = hardwareMaster['1"'];
-        else if (series === '1"') items = hardwareMaster['1'];
+        if (series === '1') hardwareList = hardwareMaster['1"'];
+        else if (series === '1"') hardwareList = hardwareMaster['1'];
     }
 
-    if (items) {
-        items.forEach(item => {
-            try {
-                if (item.formula) {
-                    let result = eval(item.formula);
-                    hardware[item.hardware] = result;
-                }
-            } catch (e) {
-                console.error(`Error calculating hardware ${item.hardware}:`, e);
-                hardware[item.hardware] = 0;
-            }
-        });
+    if (!hardwareList) {
+        console.warn(`No hardware items found for series: ${series}`);
+        return [];
     }
 
-    return hardware;
+    const context = {
+        W: window.width,
+        H: window.height,
+        S: window.shutters,
+        MS: window.mosquitoShutters || 0,
+        T: window.tracks,
+        P: (window.width * 2 + window.height * 2),
+        GL: GL // Passing the helper function itself
+    };
+
+    let results = [];
+
+    hardwareList.forEach(item => {
+        let quantity = safeEval(item.formula, context, 0);
+
+        // Round quantity to 2 decimal places to prevent floating point issues in reports
+        quantity = Math.round(quantity * 100) / 100;
+
+        if (quantity > 0) {
+            results.push({
+                hardware: item.hardware,
+                qty: quantity,
+                unit: item.unit,
+                rate: item.rate,
+                total: Math.round(quantity * item.rate * 100) / 100
+            });
+        }
+    });
+
+    return results;
 }
 
 function aggregateProjectHardware(projectWindows, optimizationResults = null) {
     /**
      * Aggregate hardware quantities for all windows in a project
-     * Returns aggregated totals for each hardware item
      */
     const aggregated = {};
 
     projectWindows.forEach(window => {
         const windowHardware = calculateWindowHardware(window, optimizationResults);
 
-        Object.entries(windowHardware).forEach(([item, qty]) => {
-            if (!aggregated[item]) {
-                aggregated[item] = 0;
+        windowHardware.forEach(item => {
+            if (!aggregated[item.hardware]) {
+                aggregated[item.hardware] = {
+                    qty: 0,
+                    unit: item.unit,
+                    rate: item.rate
+                };
             }
-            aggregated[item] += qty;
+            aggregated[item.hardware].qty += item.qty;
         });
     });
 
@@ -751,38 +772,28 @@ function aggregateProjectHardware(projectWindows, optimizationResults = null) {
 function generatePurchaseListTable(projectWindows, optimizationResults = null) {
     /**
      * Generate purchase list showing hardware items with quantities and costs
-     * Returns array suitable for jsPDF autoTable
      */
     const aggregatedHardware = aggregateProjectHardware(projectWindows, optimizationResults);
     const purchaseListData = [];
 
-    Object.entries(aggregatedHardware).forEach(([hardwareName, quantity]) => {
-        // Find hardware unit and rate from hardwareMaster
-        let unit = 'Nos';
-        let rate = 0;
+    Object.entries(aggregatedHardware).forEach(([hardwareName, data]) => {
         let cost = 0;
+        const qty = data.qty;
+        const rate = data.rate;
 
-        // Search through all series to find this hardware item
-        Object.values(hardwareMaster).forEach(seriesHardware => {
-            const found = seriesHardware.find(h => h.hardware === hardwareName);
-            if (found) {
-                unit = found.unit;
-                rate = found.rate;
-                // For Wool Pile (in meters), calculate cost directly
-                // For other items (in Nos), round up the quantity
-                if (hardwareName.includes('Wool Pile')) {
-                    cost = quantity * rate;
-                } else {
-                    cost = Math.ceil(quantity) * rate;
-                }
-            }
-        });
+        // For Wool Pile (in meters), calculate cost directly
+        // For other items (in Nos), round up the quantity
+        if (hardwareName.toLowerCase().includes('wool pile')) {
+            cost = qty * rate;
+        } else {
+            cost = Math.ceil(qty) * rate;
+        }
 
         purchaseListData.push([
             hardwareName,
-            hardwareName.includes('Wool Pile') ? quantity.toFixed(2) : Math.ceil(quantity),  // Keep decimals for Wool Pile
-            unit,
-            `${rate}`,
+            hardwareName.toLowerCase().includes('wool pile') ? qty.toFixed(2) : Math.ceil(qty),
+            data.unit,
+            `Rs. ${rate}`,
             `Rs. ${cost.toFixed(0)}`
         ]);
     });
@@ -800,15 +811,8 @@ function calculatePurchaseListTotal(projectWindows, optimizationResults = null) 
     const aggregatedHardware = aggregateProjectHardware(projectWindows, optimizationResults);
     let totalHardwareCost = 0;
 
-    Object.entries(aggregatedHardware).forEach(([hardwareName, quantity]) => {
-        let rate = 0;
-        Object.values(hardwareMaster).forEach(seriesHardware => {
-            const found = seriesHardware.find(h => h.hardware === hardwareName);
-            if (found) {
-                rate = found.rate;
-            }
-        });
-        totalHardwareCost += (quantity * rate);
+    Object.values(aggregatedHardware).forEach(data => {
+        totalHardwareCost += (data.qty * data.rate);
     });
 
     return totalHardwareCost;

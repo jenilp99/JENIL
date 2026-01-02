@@ -1049,6 +1049,26 @@ table tr:hover {
     gap: 20px;
 }
 
+.formula-info-icon {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    background: #3498db;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 18px;
+    font-size: 12px;
+    cursor: help;
+    margin-left: 5px;
+    font-style: normal;
+    font-weight: bold;
+}
+
+.formula-info-icon:hover {
+    background: #2980b9;
+}
+
 .glossary-section h4 {
     color: #34495e;
     font-size: 14px;
