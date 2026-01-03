@@ -32,7 +32,7 @@ const DEFAULT_SUPPLIER_DATA = {
                 { sectionNo: "20025", t: 0.60, weight: 0.900 },
                 { sectionNo: "20026", t: 1.00, weight: 1.300 }
             ],
-            "3/4\" 2 Track Top": [
+            "3/4\" 2 or 3 track top and bottom": [
                 { sectionNo: "20030", t: 0.84, weight: 1.700 },
                 { sectionNo: "20031", t: 0.94, weight: 1.900 },
                 { sectionNo: "20032", t: 1.04, weight: 2.100 },
@@ -64,6 +64,11 @@ const DEFAULT_SUPPLIER_DATA = {
             "1\" Bearing Bottom": [
                 { sectionNo: "20058", t: 0.70, weight: 2.550 },
                 { sectionNo: "20059", t: 1.00, weight: 3.050 }
+            ],
+            "1\" 2 or 3 track top and bottom": [
+                { sectionNo: "2151", t: 0.80, weight: 2.000 },
+                { sectionNo: "2152", t: 1.00, weight: 2.400 },
+                { sectionNo: "2153", t: 1.20, weight: 2.800 }
             ]
         }
     },
@@ -89,7 +94,7 @@ const DEFAULT_SUPPLIER_DATA = {
                 { sectionNo: "1207", t: 1.44, weight: 2.300 },
                 { sectionNo: "1208", t: 1.55, weight: 2.500 }
             ],
-            "3/4\" 2 Track Top": [
+            "3/4\" 2 or 3 track top and bottom": [
                 { sectionNo: "2101", t: 0.80, weight: 1.500 },
                 { sectionNo: "2102", t: 0.87, weight: 1.700 },
                 { sectionNo: "2103", t: 0.95, weight: 1.900 },
@@ -107,6 +112,10 @@ const DEFAULT_SUPPLIER_DATA = {
                 { sectionNo: "1154", t: 1.23, weight: 2.100 },
                 { sectionNo: "1155", t: 1.38, weight: 2.300 },
                 { sectionNo: "1156", t: 1.53, weight: 2.500 }
+            ],
+            "1\" 2 or 3 track top and bottom": [
+                { sectionNo: "3101", t: 0.80, weight: 2.200 },
+                { sectionNo: "3102", t: 1.00, weight: 2.600 }
             ]
         }
     }

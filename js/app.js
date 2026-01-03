@@ -65,9 +65,9 @@ function initializeDefaults() {
                 { component: '3/4" Handle', qty: '2', length: 'H-1.5', desc: 'Handles' },
                 { component: '3/4" Interlock', qty: '2*S-2', length: 'H-1.5', desc: 'Interlocks' },
                 { component: '3/4" Bearing Bottom', qty: '2*S', length: '(W-5-1.5*(S-1))/S', desc: 'Bearing Bottom' },
-                { component: '3/4" Track Top', qty: '1', length: 'W', desc: 'Track Top' },
-                { component: '3/4" Track Top', qty: '2', length: 'H', desc: 'Track Sides' },
-                { component: '3/4" Track Bottom', qty: '1', length: 'W', desc: 'Track Bottom' },
+                { component: '3/4" 2 or 3 track top and bottom', qty: '1', length: 'W', desc: 'Track Top' },
+                { component: '3/4" 2 or 3 track top and bottom', qty: '2', length: 'H', desc: 'Track Sides' },
+                { component: '3/4" 2 or 3 track top and bottom', qty: '1', length: 'W', desc: 'Track Bottom' },
                 { component: '3/4" Handle', qty: '1*MS', length: 'H-1.5', desc: 'MS Handle' },
                 { component: '3/4" Interlock', qty: '1*MS', length: 'H-1.5', desc: 'MS Interlock' },
                 { component: '3/4" Bearing Bottom', qty: '2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS Bearing Bottom' },
@@ -78,9 +78,9 @@ function initializeDefaults() {
                 { component: '1" Handle', qty: '2', length: 'H-1.125', desc: 'Handles' },
                 { component: '1" Interlock', qty: '2*S-2', length: 'H-1.125', desc: 'Interlocks' },
                 { component: '1" Bearing Bottom', qty: '2*S', length: '(W-5-2*(S-1))/S', desc: 'Bearing Bottom' },
-                { component: '1" Track Top', qty: '1', length: 'W', desc: 'Track Top' },
-                { component: '1" Track Top', qty: '2', length: 'H', desc: 'Track Sides' },
-                { component: '1" Track Bottom', qty: '1', length: 'W', desc: 'Track Bottom' },
+                { component: '1" 2 or 3 track top and bottom', qty: '1', length: 'W', desc: 'Track Top' },
+                { component: '1" 2 or 3 track top and bottom', qty: '2', length: 'H', desc: 'Track Sides' },
+                { component: '1" 2 or 3 track top and bottom', qty: '1', length: 'W', desc: 'Track Bottom' },
                 { component: '1" Handle', qty: '1*MS', length: 'H-1.125', desc: 'MS Handle' },
                 { component: '1" Interlock', qty: '1*MS', length: 'H-1.125', desc: 'MS Interlock' },
                 { component: '1" Bearing Bottom', qty: '2*MS', length: '(W-5-2*(S-1))/S', desc: 'MS Bearing Bottom' },
@@ -102,16 +102,14 @@ function initializeDefaults() {
                 { material: '3/4" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '3/4" Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '3/4" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4" Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4" Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '3/4" 2 or 3 track top and bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '3/4" C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
             ],
             '1"': [
                 { material: '1" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '1" Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '1" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '1" Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '1" Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '1" 2 or 3 track top and bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '1" C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
             ]
         };
@@ -455,10 +453,12 @@ function editWindow(idx) {
     document.getElementById('editSeries').value = win.series;
     document.getElementById('editDescription').value = win.description;
     document.getElementById('editWindowModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeEditWindowModal() {
     document.getElementById('editWindowModal').classList.remove('active');
+    document.body.style.overflow = '';
 }
 
 function saveWindowEdit(event) {
@@ -550,10 +550,12 @@ function showAddComponentModal(series) {
     document.getElementById('modalComponentLength').value = '';
     document.getElementById('modalComponentDesc').value = '';
     document.getElementById('addComponentModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeAddComponentModal() {
     document.getElementById('addComponentModal').classList.remove('active');
+    document.body.style.overflow = '';
 }
 
 function saveNewComponent(event) {
@@ -584,10 +586,12 @@ function editFormula(series, idx) {
     document.getElementById('editFormulaQty').value = formula.qty;
     document.getElementById('editFormulaLength').value = formula.length;
     document.getElementById('editFormulaModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeEditFormulaModal() {
     document.getElementById('editFormulaModal').classList.remove('active');
+    document.body.style.overflow = '';
 }
 
 function saveFormulaEdit(event) {
@@ -811,10 +815,12 @@ function showAddHardwareModal(series) {
     document.getElementById('modalHardwareFormula').value = '';
     document.getElementById('modalHardwareRate').value = '';
     document.getElementById('addHardwareModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeAddHardwareModal() {
     document.getElementById('addHardwareModal').classList.remove('active');
+    document.body.style.overflow = '';
 }
 
 function saveNewHardwareItem(event) {
@@ -916,11 +922,13 @@ function showAlert(message, type = 'info', title = 'Notification') {
     msgEl.textContent = message.replace(/^[✅⚠️❌ℹ️]\s*/, '');
 
     modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeAlertModal() {
     const modal = document.getElementById('alertModal');
     if (modal) modal.classList.remove('active');
+    document.body.style.overflow = '';
 }
 
 function showConfirm(message, onConfirm) {
@@ -947,11 +955,13 @@ function showConfirm(message, onConfirm) {
 
     __confirmCallback = onConfirm;
     modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeConfirmModal() {
     const modal = document.getElementById('confirmModal');
     if (modal) modal.classList.remove('active');
+    document.body.style.overflow = '';
     __confirmCallback = null;
 }
 
@@ -1259,10 +1269,12 @@ function openSectionSelectModal(materialKey) {
     document.getElementById('selectedSectionDetails').style.display = 'none';
 
     document.getElementById('sectionSelectModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeSectionSelectModal() {
     document.getElementById('sectionSelectModal').classList.remove('active');
+    document.body.style.overflow = '';
     currentSelectingMaterial = null;
     availableSections = [];
 }

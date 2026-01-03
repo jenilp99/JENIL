@@ -569,12 +569,12 @@
 
     <!-- Section Selection Modal -->
     <div id="sectionSelectModal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-content" style="max-width: 800px; max-height: 95vh;">
             <div class="modal-header">
                 <h3>🏛️ Select Thickness & Section</h3>
                 <button class="close-btn" onclick="closeSectionSelectModal()">&times;</button>
             </div>
-            <div id="sectionSelectContent" style="padding: 20px;">
+            <div id="sectionSelectContent" class="modal-body">
                 <div class="alert alert-info" style="margin-bottom: 20px;">
                     Select thickness for <strong><span id="selectMaterialName"></span></strong>
                 </div>
@@ -607,7 +607,7 @@
                         📋 View All Available Sections in Catalogue
                     </summary>
                     <div id="catalogueList"
-                        style="max-height: 300px; overflow-y: auto; margin-top: 10px; padding: 10px;">
+                        style="max-height: 400px; overflow-y: auto; margin-top: 10px; padding: 10px; background: #fff; border: 1px solid #eee; border-radius: 4px;">
                         <!-- Catalogue sections will be rendered here -->
                     </div>
                 </details>
