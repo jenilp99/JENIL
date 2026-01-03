@@ -187,6 +187,14 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
+                            <label>Glass Type</label>
+                            <select id="glassType" required>
+                                <option value="none">No Glass</option>
+                                <option value="toughened_5mm" selected>5mm Toughened Clear Glass</option>
+                                <option value="non_toughened_5mm">5mm Non-Toughened Clear Glass</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label>Description</label>
                             <input type="text" id="description" value="Living Room" required>
                         </div>
@@ -442,6 +450,47 @@
             </div> <!-- end hardware content -->
         </section>
 
+        <!-- Section 4c: Rate Management -->
+        <section id="section-rates" class="section collapsed-section">
+            <h2 class="collapsible-header collapsed" onclick="toggleSection(this)">
+                💰 Rate & Price Management <span class="toggle-indicator">▼</span>
+            </h2>
+            <div class="collapsible-content collapsed-content">
+                <div class="alert alert-info">
+                    <strong>ℹ️ Price Settings:</strong> Configure glass prices and powder coating rates per R.Ft.
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group" style="flex: 1;">
+                        <h3>🖼️ Glass Prices (per Sq.Ft)</h3>
+                        <div id="glassRatesList">
+                            <div class="form-row">
+                                <div class="form-group"><label>5mm Toughened (₹)</label><input type="number"
+                                        id="rateGlassToughened" value="85" step="1"></div>
+                                <div class="form-group"><label>5mm Non-Toughened (₹)</label><input type="number"
+                                        id="rateGlassNonToughened" value="65" step="1"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <h3>🧪 Global Constants</h3>
+                        <div class="form-row">
+                            <div class="form-group"><label>Glass Offset (inches)</label><input type="number"
+                                    id="glassOffset" value="1.5" step="0.1"></div>
+                            <div class="form-group"><label>Rubber Rate (₹/ft)</label><input type="number"
+                                    id="rateRubber" value="5" step="1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>✨ Powder Coating Rates (₹ / Running Foot)</h3>
+                <div id="powderCoatingRatesList">
+                    <!-- Dynamic powder coating rates will be rendered here -->
+                </div>
+                <button class="btn btn-success" onclick="saveAllRates()">💾 Save All Rates</button>
+            </div>
+        </section>
+
         <section id="section-optimize" class="section collapsed-section">
             <h2 class="collapsible-header collapsed" onclick="toggleSection(this)">
                 ⚡ Smart Optimization Engine <span class="toggle-indicator">▼</span>
@@ -495,13 +544,30 @@
             </div>
         </section>
 
-        <!-- Section 6: Results -->
         <section id="section-results" class="section collapsed-section">
             <h2 class="collapsible-header collapsed" onclick="toggleSection(this)">
                 📊 Optimization Results <span class="toggle-indicator">▼</span>
             </h2>
             <div class="collapsible-content collapsed-content">
                 <div id="resultsContent"></div>
+            </div>
+        </section>
+
+        <!-- Section 7: Export Preview (Modal-like section) -->
+        <section id="section-preview" class="section collapsed-section" style="display: none;">
+            <h2 class="collapsible-header" onclick="toggleSection(this)">
+                📄 Export Preview <span class="toggle-indicator">▼</span>
+            </h2>
+            <div class="collapsible-content">
+                <div class="preview-actions" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button class="btn btn-danger" onclick="closeExportPreview()">❌ Close Preview</button>
+                    <button class="btn btn-success" id="downloadExportBtn">💾 Download PDF</button>
+                    <button class="btn btn-info" id="downloadExcelBtn">📊 Download Excel</button>
+                </div>
+                <div id="reportPreviewContent"
+                    style="background: white; padding: 40px; border: 1px solid #ccc; box-shadow: 0 0 20px rgba(0,0,0,0.1); color: black; font-family: 'Helvetica', Arial, sans-serif; min-height: 800px; overflow-x: auto;">
+                    <!-- Preview HTML will be injected here -->
+                </div>
             </div>
         </section>
     </div>

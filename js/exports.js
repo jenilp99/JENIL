@@ -18,12 +18,17 @@ function displayResults() {
     // Export buttons
     html += `
     <div class="import-export-section">
-        <div style="text-align: center; margin-bottom: 15px;"><strong style="font-size: 16px;">📦 Project Management</strong></div>
+        <div style="text-align: center; margin-bottom: 15px;"><strong style="font-size: 16px;">📦 Project Exports & Previews</strong></div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-            <button class="btn btn-primary" onclick="exportProject()">💾 Export Project (JSON)</button>
-            <button class="btn btn-primary" onclick="importProject()">📂 Import Project (JSON)</button>
-            <button class="btn btn-success" onclick="exportFullResultsExcel()">📊 Export Excel</button>
-            <button class="btn btn-danger" onclick="exportFullResultsPDF()">📄 Export PDF</button>
+            <button class="btn btn-primary" onclick="showReportPreview('quotation')">📜 Customer Quotation</button>
+            <button class="btn btn-success" onclick="showReportPreview('purchase_material')">🏢 Material Purchase</button>
+            <button class="btn btn-info" onclick="showReportPreview('purchase_hardware')">🔩 Hardware Vendor List</button>
+            <button class="btn btn-warning" onclick="showReportPreview('cutlist')">🪚 Optimized Cut List</button>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 10px; opacity: 0.8;">
+            <button class="btn btn-primary btn-sm" onclick="exportFullResultsExcel()">📊 Full Excel</button>
+            <button class="btn btn-danger btn-sm" onclick="exportFullResultsPDF()">📄 Full PDF</button>
+            <button class="btn btn-secondary btn-sm" onclick="exportProject()">💾 Save JSON</button>
         </div>
     </div>
     <div class="import-export-section">

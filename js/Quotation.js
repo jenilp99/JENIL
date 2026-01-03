@@ -14,6 +14,14 @@ function getNextQuotationNumber() {
     return `TRM/QT/${year}/${String(counter).padStart(5, '0')}`;
 }
 
+// Helper to get next quotation number
+function getNextQuotationNumber() {
+    let lastNo = localStorage.getItem('lastQuoteNo') || 1000;
+    lastNo = parseInt(lastNo) + 1;
+    localStorage.setItem('lastQuoteNo', lastNo);
+    return `QT-${lastNo}`;
+}
+
 function generateQuotation() {
     const projectSelector = document.getElementById('projectSelector');
     const selectedProject = projectSelector.value;
@@ -60,6 +68,130 @@ function showQuotationInputDialog(projectWindows, selectedProject) {
     const dept = (requestingDept && requestingDept.trim()) ? requestingDept.trim() : 'Maintenance Department';
 
     generateQuotationPDF(projectWindows, selectedProject, quoteNo, dept);
+}
+
+// PDF EXPORT FUNCTIONS (STUBS/IMPLEMENTATIONS)
+function generateMaterialPurchaseListPDF(projectWindows, selectedProject) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text(`Material Purchase List: ${selectedProject}`, 14, 20);
+
+    const body = [];
+    for (const [key, data] of Object.entries(optimizationResults.results)) {
+        const section = optimizationResults.componentSections ? optimizationResults.componentSections[key] : null;
+        body.push([
+            section ? section.sectionNo : '-',
+            key,
+            data.length,
+            (data[0].stockLength / 12) + "'",
+            (data.reduce((sum, p) => sum + (section ? section.weight : 0), 0)).toFixed(2)
+        ]);
+    }
+
+    doc.autoTable({
+        startY: 30,
+        head: [['Section No', 'Description', 'Qty', 'Length', 'Weight (Kg)']],
+        body: body,
+        theme: 'grid'
+    });
+    doc.save(`Material_Purchase_${selectedProject}.pdf`);
+}
+
+function generateHardwarePurchaseListPDF(projectWindows, selectedProject) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text(`Hardware Purchase List: ${selectedProject}`, 14, 20);
+
+    const hardwareMap = aggregateProjectHardware(projectWindows, optimizationResults);
+    const body = Object.entries(hardwareMap).map(([name, data]) => [
+        name, Math.ceil(data.qty), data.unit
+    ]);
+
+    doc.autoTable({
+        startY: 30,
+        head: [['Hardware Item', 'Qty', 'Unit']],
+        body: body,
+        theme: 'grid',
+        headStyles: { fillColor: [39, 174, 96] }
+    });
+    doc.save(`Hardware_Purchase_${selectedProject}.pdf`);
+}
+
+function generateOptimizedCutListPDF(projectWindows, selectedProject) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    let currentY = 20;
+    doc.text(`Workshop Cut List: ${selectedProject}`, 14, currentY);
+    currentY += 10;
+
+    for (const [key, plans] of Object.entries(optimizationResults.results)) {
+        if (currentY > 260) { doc.addPage(); currentY = 20; }
+        doc.setFontSize(12);
+        doc.text(`Material: ${key}`, 14, currentY);
+        currentY += 7;
+
+        const body = plans.map((p, idx) => [
+            idx + 1,
+            p.stockLength + '"',
+            p.pieces.map(pc => pc.length + '" (' + pc.label + ')').join(', '),
+            p.waste.toFixed(2) + '"'
+        ]);
+
+        doc.autoTable({
+            startY: currentY,
+            head: [['Stick', 'Stock', 'Cut Sequence', 'Waste']],
+            body: body,
+            theme: 'striped',
+            styles: { fontSize: 8 }
+        });
+        currentY = doc.lastAutoTable.finalY + 10;
+    }
+    doc.save(`CutList_${selectedProject}.pdf`);
+}
+
+function showReportPreview(type) {
+    const projectSelector = document.getElementById('projectSelector');
+    const selectedProject = projectSelector.value;
+
+    if (!selectedProject) {
+        showAlert('⚠️ Please select a project first!');
+        return;
+    }
+
+    const projectWindows = windows.filter(w => w.projectName === selectedProject);
+    if (projectWindows.length === 0) {
+        showAlert('⚠️ No windows found for this project!');
+        return;
+    }
+
+    // Toggle Preview Section
+    const previewSection = document.getElementById('section-preview');
+    previewSection.style.display = 'block';
+    scrollToSection('section-preview');
+
+    const previewContent = document.getElementById('reportPreviewContent');
+    let html = '';
+
+    if (type === 'quotation') {
+        html = generateQuotationHTML(projectWindows, selectedProject);
+        document.getElementById('downloadExportBtn').onclick = () => generateQuotationPDF(projectWindows, selectedProject, getNextQuotationNumber(), 'Maintenance');
+    } else if (type === 'purchase_material') {
+        html = generateMaterialPurchaseHTML(projectWindows, selectedProject);
+        document.getElementById('downloadExportBtn').onclick = () => generateMaterialPurchaseListPDF(projectWindows, selectedProject);
+    } else if (type === 'purchase_hardware') {
+        html = generateHardwarePurchaseHTML(projectWindows, selectedProject);
+        document.getElementById('downloadExportBtn').onclick = () => generateHardwarePurchaseListPDF(projectWindows, selectedProject);
+    } else if (type === 'cutlist') {
+        html = generateCutListHTML(projectWindows, selectedProject);
+        document.getElementById('downloadExportBtn').onclick = () => generateOptimizedCutListPDF(projectWindows, selectedProject);
+    }
+
+    previewContent.innerHTML = html;
+}
+
+function closeExportPreview() {
+    document.getElementById('section-preview').style.display = 'none';
+    scrollToSection('section-results');
 }
 
 function generatePurchaseListPDF() {
@@ -391,13 +523,13 @@ function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requesti
                 fontSize: 8
             },
             columnStyles: {
-                0: { cellWidth: 10, halign: 'center', cellPadding: 5 },
-                1: { cellWidth: 45, halign: 'center', valign: 'middle', cellPadding: [15, 2, 15, 2] },
-                2: { cellWidth: 15, halign: 'center', cellPadding: 5 },
-                3: { cellWidth: 30, halign: 'center', cellPadding: 5 },
-                4: { cellWidth: 40, cellPadding: 5 },
-                5: { cellWidth: 25, halign: 'center', cellPadding: 5 },
-                6: { cellWidth: 20, halign: 'center', cellPadding: 5 }
+                0: { cellWidth: 10, halign: 'center' },
+                1: { cellWidth: 45, halign: 'center', valign: 'middle' },
+                2: { cellWidth: 15, halign: 'center' },
+                3: { cellWidth: 30, halign: 'center' },
+                4: { cellWidth: 40 },
+                5: { cellWidth: 25, halign: 'center' },
+                6: { cellWidth: 20, halign: 'center' }
             },
             didDrawCell: function (data) {
                 if (data.column.index === 1 && data.cell.section === 'body') {
@@ -409,132 +541,85 @@ function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requesti
                     }
                 }
             },
-            minCellHeight: requiredCellHeight + 30
+            minCellHeight: requiredCellHeight
         });
 
-        currentY = doc.lastAutoTable.finalY + 10;
+        currentY = doc.lastAutoTable.finalY + 15;
 
-        // ========== COST SUMMARY ==========
-        if (optimizationResults && optimizationResults.project === selectedProject) {
-            const r = optimizationResults;
-
-            if (currentY > 240) {
-                doc.addPage();
-                currentY = 20;
-            }
-
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(46, 125, 50);
-            doc.text('Cost Summary', 14, currentY);
-
-            currentY += 8;
-
-            const materialCost = parseFloat(r.stats.totalCost || 0);
-            const laborCharges = (materialCost * 0.10).toFixed(0);
-            const transportation = 500;
-            const subtotal = (materialCost + parseFloat(laborCharges) + transportation).toFixed(0);
-            const gst = (parseFloat(subtotal) * 0.18).toFixed(0);
-            const grandTotal = (parseFloat(subtotal) + parseFloat(gst)).toFixed(0);
-
-            const costData = [
-                ['Material Cost (Aluminum Profiles)', `Rs. ${materialCost.toFixed(0)}`],
-                ['Labor/Fabrication Charges (10%)', `Rs. ${laborCharges}`],
-                ['Transportation (Internal)', `Rs. ${transportation}`],
-                ['Subtotal', `Rs. ${subtotal}`],
-                ['GST @ 18%', `Rs. ${gst}`],
-                ['Grand Total', `Rs. ${grandTotal}`]
-            ];
-
-            doc.autoTable({
-                startY: currentY,
-                body: costData,
-                theme: 'plain',
-                bodyStyles: {
-                    fontSize: 11,
-                    fontName: 'helvetica'
-                },
-                columnStyles: {
-                    0: { cellWidth: 140, fontStyle: 'bold', textColor: [52, 73, 94], fontSize: 11 },
-                    1: { cellWidth: 44, halign: 'right', fontStyle: 'bold', textColor: [52, 73, 94], fontSize: 11 }
-                },
-                didParseCell: function (data) {
-                    if (data.row.index === 5) {
-                        data.cell.styles.fillColor = [46, 125, 50];
-                        data.cell.styles.textColor = [255, 255, 255];
-                        data.cell.styles.fontSize = 11;
-                    }
-                    if (data.row.index === 3) {
-                        data.cell.styles.fillColor = [236, 240, 241];
-                    }
-                }
-            });
-
-            currentY = doc.lastAutoTable.finalY + 5;
-
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'italic');
-            doc.setTextColor(127, 140, 141);
-            doc.text(`(Rupees ${numberToWords(grandTotal)} Only)`, 14, currentY);
-        }
-
-        // ========== HARDWARE/PURCHASE LIST ==========
-        if (currentY > 220) {
-            doc.addPage();
-            currentY = 20;
-        } else {
-            currentY += 15;
-        }
-
+        // ========== COST BIFURCATION TABLE ==========
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(46, 125, 50);
-        doc.text('Hardware / Purchase List', 14, currentY);
+        doc.setTextColor(41, 128, 185);
+        doc.text('Project Cost Bifurcation', 14, currentY);
+        currentY += 6;
 
-        currentY += 8;
+        let grandTotal = 0;
+        const summaryRows = [];
 
-        const purchaseListData = generatePurchaseListTable(projectWindows, optimizationResults);
-        const hardwareTotalCost = calculatePurchaseListTotal(projectWindows, optimizationResults);
+        projectWindows.forEach(win => {
+            const glass = calculateGlassDimensions(win);
+            const glassRate = glass ? (ratesConfig.glass[win.glassType] || 0) : 0;
+            const glassCost = glass ? glass.area * glass.qty * glassRate : 0;
+            const hardware = calculateWindowHardware(win, optimizationResults);
+            const hardwareCost = hardware.reduce((sum, h) => sum + h.total, 0);
+
+            let pcCost = 0;
+            let wt = 0;
+            if (optimizationResults && optimizationResults.results) {
+                for (const [key, data] of Object.entries(optimizationResults.results)) {
+                    let len = 0;
+                    let compName = key.includes('|') ? key.split('|')[1].trim() : key;
+                    const pcRate = ratesConfig.powderCoating[compName] || 1;
+                    data.forEach(plan => {
+                        plan.pieces.forEach(p => {
+                            if (p.label && p.label.startsWith(win.configId)) {
+                                len += p.length;
+                                const sec = optimizationResults.componentSections ? optimizationResults.componentSections[key] : null;
+                                if (sec && sec.weight) wt += (p.length / 144) * sec.weight;
+                            }
+                        });
+                    });
+                    pcCost += (len / 12) * pcRate;
+                }
+            }
+            const profCost = wt * 280;
+            const sub = profCost + pcCost + glassCost + hardwareCost;
+            grandTotal += sub;
+
+            summaryRows.push([
+                win.configId,
+                wt.toFixed(2),
+                profCost.toFixed(0),
+                pcCost.toFixed(0),
+                glassCost.toFixed(0),
+                hardwareCost.toFixed(0),
+                sub.toFixed(0)
+            ]);
+        });
 
         doc.autoTable({
             startY: currentY,
-            head: [['Hardware Item', 'Qty', 'Unit', 'Rate (₹)', 'Cost (₹)']],
-            body: purchaseListData,
+            head: [['ID', 'Wt(Kg)', 'Profile', 'Coating', 'Glass', 'Hard.', 'Total']],
+            body: summaryRows,
             theme: 'grid',
-            headStyles: {
-                fillColor: [46, 125, 50],
-                textColor: [255, 255, 255],
-                fontSize: 9,
-                fontStyle: 'bold'
-            },
-            bodyStyles: {
-                fontSize: 8
-            },
-            columnStyles: {
-                0: { cellWidth: 90, halign: 'left' },
-                1: { cellWidth: 20, halign: 'center' },
-                2: { cellWidth: 20, halign: 'center' },
-                3: { cellWidth: 25, halign: 'right' },
-                4: { cellWidth: 30, halign: 'right' }
-            }
+            headStyles: { fillColor: [41, 128, 185] },
+            styles: { fontSize: 8, halign: 'right' },
+            columnStyles: { 0: { halign: 'left' } }
         });
 
-        currentY = doc.lastAutoTable.finalY + 5;
-
-        // Hardware Total
-        doc.setFontSize(10);
+        currentY = doc.lastAutoTable.finalY + 15;
+        doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(46, 125, 50);
-        doc.text(`Hardware Total Cost: Rs. ${hardwareTotalCost.toFixed(0)}`, 14, currentY);
+        doc.setTextColor(255, 255, 255);
+        doc.setFillColor(44, 62, 80);
+        doc.rect(140, currentY, 56, 12, 'F');
+        doc.text(`Total: Rs. ${grandTotal.toFixed(0)}`, 142, currentY + 8);
 
-        // ========== SAVE PDF ==========
-        doc.save(`Quotation_${selectedProject}_${quoteDate.replace(/\//g, '-')}.pdf`);
-
-        showAlert(`✅ Quotation generated successfully!\n\nQuotation No: ${quoteNo}\nProject: ${selectedProject}\nWindows: ${projectWindows.length}\nDepartment: ${requestingDept}`);
-
+        doc.save(`Quotation_${selectedProject}_${quoteNo}.pdf`);
+        showAlert(`✅ Quotation generated successfully!\nNo: ${quoteNo}`);
     }).catch(err => {
-        console.error('Error processing diagrams:', err);
-        showAlert('⚠️ Error generating diagrams. Please try again.');
+        console.error(err);
+        showAlert('Error generating PDF');
     });
 }
 
@@ -799,30 +884,221 @@ function calculateWindowHardware(window, optimizationResults = null) {
         }
     });
 
+    // Add Glass Rubber automatically if glass is selected
+    const glass = calculateGlassDimensions(window);
+    if (glass) {
+        const rubberFeet = glass.perimeter * glass.qty * 1.05; // 5% extra
+        results.push({
+            hardware: '5mm Aluminum Rubber',
+            qty: rubberFeet,
+            unit: 'Ft',
+            rate: ratesConfig.global.rubberRate || 5,
+            total: Math.round(rubberFeet * (ratesConfig.global.rubberRate || 5))
+        });
+    }
+
     return results;
 }
 
-function aggregateProjectHardware(projectWindows, optimizationResults = null) {
-    /**
-     * Aggregate hardware quantities for all windows in a project
-     */
-    const aggregated = {};
+// Helper to calculate glass dimensions for a window
+function calculateGlassDimensions(window) {
+    if (!window.glassType || window.glassType === 'none') return null;
 
+    const offset = ratesConfig.global.glassOffset || 1.5;
+    let shutterW = 0;
+    let shutterH = 0;
+
+    if (optimizationResults && optimizationResults.results) {
+        for (const [key, plans] of Object.entries(optimizationResults.results)) {
+            plans.forEach(plan => {
+                plan.pieces.forEach(p => {
+                    if (p.label && p.label.startsWith(window.configId)) {
+                        if (p.label.toLowerCase().includes('shutter') || p.label.toLowerCase().includes('handle') || p.label.toLowerCase().includes('interlock')) {
+                            // Heuristic to detect vertical vs horizontal
+                            if (p.desc && (p.desc.toLowerCase().includes('vertical') || p.desc.toLowerCase().includes('handle') || p.desc.toLowerCase().includes('interlock'))) {
+                                shutterH = p.length;
+                            } else {
+                                shutterW = p.length;
+                            }
+                        }
+                    }
+                });
+            });
+        }
+    }
+
+    // Fallback if not optimized
+    if (!shutterW) shutterW = (window.width / window.shutters) - 1.5;
+    if (!shutterH) shutterH = window.height - 1.5;
+
+    const gw = Math.max(0, shutterW - offset);
+    const gh = Math.max(0, shutterH - offset);
+
+    return {
+        width: gw,
+        height: gh,
+        area: (gw * gh) / 144, // sqft
+        perimeter: (gw * 2 + gh * 2) / 12, // feet
+        qty: window.shutters
+    };
+}
+
+function generateQuotationHTML(projectWindows, selectedProject) {
+    let html = `<div style="text-align: center; margin-bottom: 30px;">
+        <h1 style="color: #2980b9; margin: 0;">NIRUMA ALUMINUM</h1>
+        <p style="margin: 5px 0; color: #7f8c8d;">Internal Project Quotation for <strong>${selectedProject}</strong></p>
+    </div>`;
+
+    let grandTotal = 0;
+
+    projectWindows.forEach(win => {
+        const glass = calculateGlassDimensions(win);
+        const glassRate = glass ? (ratesConfig.glass[win.glassType] || 0) : 0;
+        const glassCost = glass ? glass.area * glass.qty * glassRate : 0;
+        const rubberFeet = glass ? glass.perimeter * glass.qty * 1.05 : 0;
+        const rubberCost = rubberFeet * (ratesConfig.global.rubberRate || 5);
+        const hardware = calculateWindowHardware(win, optimizationResults);
+        const hardwareCost = hardware.reduce((sum, h) => sum + h.total, 0);
+
+        let powderCoatingCost = 0;
+        let weightTotal = 0;
+
+        if (optimizationResults && optimizationResults.results) {
+            for (const [key, data] of Object.entries(optimizationResults.results)) {
+                let windowLength = 0;
+                let compName = key.includes('|') ? key.split('|')[1].trim() : key;
+                const pcRate = ratesConfig.powderCoating[compName] || 1;
+
+                data.forEach(plan => {
+                    plan.pieces.forEach(p => {
+                        if (p.label && p.label.startsWith(win.configId)) {
+                            windowLength += p.length;
+                            const section = optimizationResults.componentSections ? optimizationResults.componentSections[key] : null;
+                            if (section && section.weight) {
+                                weightTotal += (p.length / 144) * section.weight;
+                            }
+                        }
+                    });
+                });
+                powderCoatingCost += (windowLength / 12) * pcRate;
+            }
+        }
+
+        const profileCost = weightTotal * 280;
+        const winTotal = profileCost + powderCoatingCost + glassCost + hardwareCost + rubberCost;
+        grandTotal += winTotal;
+
+        html += `
+        <div style="border: 1px solid #eee; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+            <h3 style="margin-top: 0; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px;">
+                Window ${win.configId} (${win.width}" x ${win.height}") - ${win.description}
+            </h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr style="background: #f8f9fa;">
+                    <th style="text-align: left; padding: 8px;">Category</th>
+                    <th style="text-align: right; padding: 8px;">Cost (₹)</th>
+                </tr>
+                <tr><td style="padding: 8px;">Aluminum Profiles (${weightTotal.toFixed(2)} Kg)</td><td style="text-align: right; padding: 8px;">${profileCost.toFixed(0)}</td></tr>
+                <tr><td style="padding: 8px;">Powder Coating</td><td style="text-align: right; padding: 8px;">${powderCoatingCost.toFixed(0)}</td></tr>
+                ${glass ? `<tr><td style="padding: 8px;">Glass Area (${(glass.area * glass.qty).toFixed(1)} sqft)</td><td style="text-align: right; padding: 8px;">${glassCost.toFixed(0)}</td></tr>` : ''}
+                <tr><td style="padding: 8px;">Hardware & Rubber</td><td style="text-align: right; padding: 8px;">${(hardwareCost + rubberCost).toFixed(0)}</td></tr>
+                <tr style="font-weight: bold;"><td style="padding: 8px;">Subtotal</td><td style="text-align: right; padding: 8px;">₹${winTotal.toFixed(0)}</td></tr>
+            </table>
+        </div>`;
+    });
+
+    html += `<h2 style="text-align: right; background: #34495e; color: white; padding: 15px; border-radius: 5px;">Total: ₹${grandTotal.toFixed(0)}</h2>`;
+    return html;
+}
+
+function generateMaterialPurchaseHTML(projectWindows, selectedProject) {
+    let html = `<h2 style="color: #2c3e50;">Raw Material Purchase List - ${selectedProject}</h2>`;
+    if (!optimizationResults) return html + '<p>No optimization results found.</p>';
+
+    html += `<table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <tr style="background: #3498db; color: white;">
+            <th style="padding: 10px; text-align: left;">Section No</th>
+            <th style="padding: 10px; text-align: left;">Description</th>
+            <th style="padding: 10px; text-align: center;">Qty (Sticks)</th>
+            <th style="padding: 10px; text-align: center;">Length</th>
+            <th style="padding: 10px; text-align: right;">Total Weight (Kg)</th>
+        </tr>`;
+
+    for (const [key, data] of Object.entries(optimizationResults.results)) {
+        const section = optimizationResults.componentSections ? optimizationResults.componentSections[key] : null;
+        const totalWeight = data.reduce((sum, plan) => sum + (section ? section.weight : 0), 0);
+        const stickLength = data[0] ? data[0].stockLength : 144;
+
+        html += `<tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 10px;">${section ? section.sectionNo : '-'}</td>
+            <td style="padding: 10px;">${key}</td>
+            <td style="padding: 10px; text-align: center;">${data.length}</td>
+            <td style="padding: 10px; text-align: center;">${stickLength / 12}'</td>
+            <td style="padding: 10px; text-align: right;">${totalWeight.toFixed(2)}</td>
+        </tr>`;
+    }
+    html += `</table>`;
+    return html;
+}
+
+function generateHardwarePurchaseHTML(projectWindows, selectedProject) {
+    let html = `<h2 style="color: #2c3e50;">Hardware Purchase List - ${selectedProject}</h2>`;
+    const hardwareMap = aggregateProjectHardware(projectWindows, optimizationResults);
+
+    html += `<table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <tr style="background: #27ae60; color: white;">
+            <th style="padding: 10px; text-align: left;">Hardware Item</th>
+            <th style="padding: 10px; text-align: center;">Quantity</th>
+            <th style="padding: 10px; text-align: left;">Unit</th>
+        </tr>`;
+
+    for (const [name, data] of Object.entries(hardwareMap)) {
+        html += `<tr style="border-bottom: 1px solid #eee;">
+            <td style="padding: 10px;">${name}</td>
+            <td style="padding: 10px; text-align: center;">${Math.ceil(data.qty)}</td>
+            <td style="padding: 10px;">${data.unit}</td>
+        </tr>`;
+    }
+    html += `</table>`;
+    return html;
+}
+
+function generateCutListHTML(projectWindows, selectedProject) {
+    let html = `<h2 style="color: #2c3e50;">Workshop Cut List - ${selectedProject}</h2>`;
+    if (!optimizationResults) return html + '<p>No optimization results found.</p>';
+
+    for (const [key, plans] of Object.entries(optimizationResults.results)) {
+        html += `<div style="margin-top: 20px; border: 1px solid #ddd; padding: 10px;">
+            <h4 style="margin: 0; background: #f1c40f; padding: 5px;">${key}</h4>`;
+
+        plans.forEach((plan, idx) => {
+            html += `<div style="margin: 10px 0; padding: 5px; border-left: 3px solid #f39c12;">
+                <strong>Stick #${idx + 1} (${plan.stockLength}"):</strong>
+                <div style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">`;
+            plan.pieces.forEach(p => {
+                html += `<span style="background: #ecf3f9; padding: 2px 8px; border: 1px solid #bdc3c7; border-radius: 3px;">
+                    ${p.length}" <small>(${p.label})</small>
+                </span>`;
+            });
+            html += `<span style="background: #fee; padding: 2px 8px; border: 1px solid #fab; color: #c0392b;">Waste: ${plan.waste.toFixed(2)}"</span>`;
+            html += `</div></div>`;
+        });
+        html += `</div>`;
+    }
+    return html;
+}
+
+function aggregateProjectHardware(projectWindows, optimizationResults = null) {
+    const aggregated = {};
     projectWindows.forEach(window => {
         const windowHardware = calculateWindowHardware(window, optimizationResults);
-
         windowHardware.forEach(item => {
             if (!aggregated[item.hardware]) {
-                aggregated[item.hardware] = {
-                    qty: 0,
-                    unit: item.unit,
-                    rate: item.rate
-                };
+                aggregated[item.hardware] = { qty: 0, unit: item.unit, rate: item.rate };
             }
             aggregated[item.hardware].qty += item.qty;
         });
     });
-
     return aggregated;
 }
 

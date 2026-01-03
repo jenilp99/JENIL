@@ -38,6 +38,29 @@ let projectSettings = {}; // Global per-project configuration
 let kerf = 0.125;
 let unitMode = 'inch';
 
+// New: Rate & Price configuration
+let ratesConfig = {
+    glass: {
+        'toughened_5mm': 85,
+        'non_toughened_5mm': 65
+    },
+    powderCoating: {
+        '3/4" Handle': 4.6,
+        '3/4" Interlock': 6,
+        '3/4" Top Bottom': 4.6,
+        '3/4" Middle': 4.6,
+        '3/4" 2 or 3 track top and bottom': 11, // Using 2 Track Bottom as proxy for general track
+        '1" Handle': 5.9,
+        '1" Interlock': 7.8,
+        '1" Bearing Bottom': 7,
+        '1" Middle': 5.9
+    },
+    global: {
+        'glassOffset': 1.5,
+        'rubberRate': 5
+    }
+};
+
 const MM_TO_INCH = 0.0393701;
 const INCH_TO_MM = 25.4;
 
@@ -244,6 +267,7 @@ function initializeDefaults() {
         if (updated) autoSaveHardwareMaster();
     }
 
+    // Initialize windows array if empty
     if (windows.length === 0) {
         windows = [{
             configId: 'W01',
@@ -254,11 +278,77 @@ function initializeDefaults() {
             shutters: 3,
             mosquitoShutters: 0,
             series: '3/4"',
-            description: 'Living Room Main'
+            description: 'Living Room Main',
+            glassType: 'toughened_5mm'
         }];
     }
 
+    // Initialize Rates if not loaded
+    if (!localStorage.getItem('ratesConfig')) {
+        autoSaveRates();
+    } else {
+        ratesConfig = JSON.parse(localStorage.getItem('ratesConfig'));
+    }
+
     refreshAllUI();
+}
+
+// ============================================================================
+// RATE MANAGEMENT
+// ============================================================================
+
+function refreshRatesDisplay() {
+    const pcContainer = document.getElementById('powderCoatingRatesList');
+    if (!pcContainer) return;
+
+    let html = '<div class="rates-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">';
+
+    // Get all unique components across all series to show rate inputs
+    const components = new Set();
+    Object.values(seriesFormulas).forEach(series => {
+        series.forEach(item => components.add(item.component));
+    });
+
+    components.forEach(comp => {
+        const rate = ratesConfig.powderCoating[comp] || 1;
+        html += `
+            <div class="form-group" style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
+                <label style="font-size: 0.85em; display: block; margin-bottom: 5px; color: #555;">${comp}</label>
+                <input type="number" step="0.1" class="pc-rate-input" data-component="${comp}" value="${rate}" style="width: 100%; padding: 5px;">
+            </div>`;
+    });
+    html += '</div>';
+    pcContainer.innerHTML = html;
+
+    // Set other global rates
+    if (document.getElementById('rateGlassToughened')) {
+        document.getElementById('rateGlassToughened').value = ratesConfig.glass['toughened_5mm'];
+        document.getElementById('rateGlassNonToughened').value = ratesConfig.glass['non_toughened_5mm'];
+        document.getElementById('glassOffset').value = ratesConfig.global['glassOffset'];
+        document.getElementById('rateRubber').value = ratesConfig.global['rubberRate'];
+    }
+}
+
+function saveAllRates() {
+    // Collect powder coating rates
+    const pcInputs = document.querySelectorAll('.pc-rate-input');
+    pcInputs.forEach(input => {
+        const comp = input.getAttribute('data-component');
+        ratesConfig.powderCoating[comp] = parseFloat(input.value);
+    });
+
+    // Collect glass and global rates
+    ratesConfig.glass['toughened_5mm'] = parseFloat(document.getElementById('rateGlassToughened').value);
+    ratesConfig.glass['non_toughened_5mm'] = parseFloat(document.getElementById('rateGlassNonToughened').value);
+    ratesConfig.global['glassOffset'] = parseFloat(document.getElementById('glassOffset').value);
+    ratesConfig.global['rubberRate'] = parseFloat(document.getElementById('rateRubber').value);
+
+    autoSaveRates();
+    showAlert('✅ All rates saved successfully!');
+}
+
+function autoSaveRates() {
+    localStorage.setItem('ratesConfig', JSON.stringify(ratesConfig));
 }
 
 // ============================================================================
@@ -378,9 +468,9 @@ function refreshAllUI() {
     refreshHardwareMaster();
     refreshProjectSelector();
     updateDashboardStats();
-    renderSupplierMaster(); // New
     updateSupplierDatalist(); // New
     initializeAddWindowVendorSelector(); // New
+    refreshRatesDisplay(); // New
 }
 
 function refreshSeriesDropdown() {
@@ -539,7 +629,8 @@ function addWindow(event) {
         shutters: shutters,
         mosquitoShutters: parseInt(document.getElementById('mosquitoShutters').value),
         series: document.getElementById('series').value,
-        description: document.getElementById('description').value
+        description: document.getElementById('description').value,
+        glassType: document.getElementById('glassType').value
     };
 
     windows.push(window);
