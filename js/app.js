@@ -45,15 +45,35 @@ let ratesConfig = {
         'non_toughened_5mm': 65
     },
     powderCoating: {
-        '3/4" Handle': 4.6,
-        '3/4" Interlock': 6,
-        '3/4" Top Bottom': 4.6,
-        '3/4" Middle': 4.6,
-        '3/4" 2 or 3 track top and bottom': 11, // Using 2 Track Bottom as proxy for general track
-        '1" Handle': 5.9,
-        '1" Interlock': 7.8,
-        '1" Bearing Bottom': 7,
-        '1" Middle': 5.9
+        '3/4" Handle': 27.66,
+        '3/4" Interlock': 34.62,
+        '3/4" Bearing Bottom': 21.94,
+        '3/4" Middle': 32.48,
+        '3/4" 2 track bottom': 69.48,
+        '3/4" 2 track top': 62.46,
+        '3/4" 3 track bottom': 93.78,
+        '3/4" 3 track top': 79.8,
+        '3/4" 4 track bottom': 117.96,
+        '3/4" 4 track top': 100.62,
+        '1" Handle': 34.44,
+        '1" Interlock': 41.67,
+        '1" Bearing Bottom': 34.44,
+        '1" Middle': 35.0,
+        '1" 2 track top': 72.69,
+        '1" 2 track bottom': 76.44,
+        '1" 3 track top': 90.36,
+        '1" 3 track bottom': 97.08,
+        '1" 4 track top': 122.16,
+        '1" 4 track bottom': 122.91,
+        'Domal Shutter': 33.0,
+        'Domal Clip': 25.8,
+        'Domal 2 Track': 50.4,
+        'Domal 3 Track': 69.0,
+        'Domal 4 Track': 87.0,
+        'Single Track Top': 33.0,
+        'Single Track Bottom': 36.0,
+        'Vitco 19mm': 35.0,
+        'Vitco 25mm': 45.0
     },
     global: {
         'glassOffset': 1.5,
@@ -76,9 +96,15 @@ function initializeDefaults() {
                 { component: 'Domal Shutter', qty: '2*S', length: 'H-2.75', desc: 'Shutter Vertical' },
                 { component: 'Domal Shutter', qty: '2*S', length: '(W-3+2.5*(S-1))/S', desc: 'Shutter Horizontal' },
                 { component: 'Domal Clip', qty: '2*(S-1)', length: 'H-2.75', desc: 'Domal Clip' },
-                { component: 'Domal Track', qty: '1', length: 'W', desc: 'Track Top' },
-                { component: 'Domal Track', qty: '1', length: 'W', desc: 'Track Bottom' },
-                { component: 'Domal Track', qty: '2', length: 'H', desc: 'Track Sides' },
+                { component: 'Domal 2 Track', qty: '1', length: 'T==2 ? W : 0', desc: 'Track Top' },
+                { component: 'Domal 2 Track', qty: '1', length: 'T==2 ? W : 0', desc: 'Track Bottom' },
+                { component: 'Domal 2 Track', qty: '2', length: 'T==2 ? H : 0', desc: 'Track Sides' },
+                { component: 'Domal 3 Track', qty: '1', length: 'T==3 ? W : 0', desc: 'Track Top' },
+                { component: 'Domal 3 Track', qty: '1', length: 'T==3 ? W : 0', desc: 'Track Bottom' },
+                { component: 'Domal 3 Track', qty: '2', length: 'T==3 ? H : 0', desc: 'Track Sides' },
+                { component: 'Domal 4 Track', qty: '1', length: 'T==4 ? W : 0', desc: 'Track Top' },
+                { component: 'Domal 4 Track', qty: '1', length: 'T==4 ? W : 0', desc: 'Track Bottom' },
+                { component: 'Domal 4 Track', qty: '2', length: 'T==4 ? H : 0', desc: 'Track Sides' },
                 { component: 'Domal C-channel', qty: '2*MS', length: 'H-2.75', desc: 'MS C-channel Vertical' },
                 { component: 'Domal C-channel', qty: '2*MS', length: '(W-3+2.5*(S-1))/S', desc: 'MS C-channel Horizontal' },
                 { component: 'Domal Shutter', qty: '2*MS', length: 'H-2.75', desc: 'MS Shutter Vertical' },
@@ -89,9 +115,15 @@ function initializeDefaults() {
                 { component: '3/4" Handle', qty: '2', length: 'H-1.5', desc: 'Handles' },
                 { component: '3/4" Interlock', qty: '2*S-2', length: 'H-1.5', desc: 'Interlocks' },
                 { component: '3/4" Bearing Bottom', qty: '2*S', length: '(W-5-1.5*(S-1))/S', desc: 'Bearing Bottom' },
-                { component: '3/4" 2 or 3 track top and bottom', qty: '1', length: 'W', desc: 'Track Top' },
-                { component: '3/4" 2 or 3 track top and bottom', qty: '2', length: 'H', desc: 'Track Sides' },
-                { component: '3/4" 2 or 3 track top and bottom', qty: '1', length: 'W', desc: 'Track Bottom' },
+                { component: '3/4" 2 track top', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
+                { component: '3/4" 2 track bottom', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
+                { component: '3/4" 2 track top', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
+                { component: '3/4" 3 track top', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Top' },
+                { component: '3/4" 3 track bottom', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Bottom' },
+                { component: '3/4" 3 track top', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
+                { component: '3/4" 4 track top', qty: '1', length: 'T==4 ? W : 0', desc: '4T Track Top' },
+                { component: '3/4" 4 track bottom', qty: '1', length: 'T==4 ? W : 0', desc: '4T Track Bottom' },
+                { component: '3/4" 4 track top', qty: '2', length: 'T==4 ? H : 0', desc: '4T Track Sides' },
                 { component: '3/4" Handle', qty: '1*MS', length: 'H-1.5', desc: 'MS Handle' },
                 { component: '3/4" Interlock', qty: '1*MS', length: 'H-1.5', desc: 'MS Interlock' },
                 { component: '3/4" Bearing Bottom', qty: '2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS Bearing Bottom' },
@@ -102,9 +134,15 @@ function initializeDefaults() {
                 { component: '1" Handle', qty: '2', length: 'H-1.125', desc: 'Handles' },
                 { component: '1" Interlock', qty: '2*S-2', length: 'H-1.125', desc: 'Interlocks' },
                 { component: '1" Bearing Bottom', qty: '2*S', length: '(W-5-2*(S-1))/S', desc: 'Bearing Bottom' },
-                { component: '1" 2 or 3 track top and bottom', qty: '1', length: 'W', desc: 'Track Top' },
-                { component: '1" 2 or 3 track top and bottom', qty: '2', length: 'H', desc: 'Track Sides' },
-                { component: '1" 2 or 3 track top and bottom', qty: '1', length: 'W', desc: 'Track Bottom' },
+                { component: '1" 2 track top', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
+                { component: '1" 2 track bottom', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
+                { component: '1" 2 track top', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
+                { component: '1" 3 track top', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Top' },
+                { component: '1" 3 track bottom', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Bottom' },
+                { component: '1" 3 track top', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
+                { component: '1" 4 track top', qty: '1', length: 'T==4 ? W : 0', desc: '4T Track Top' },
+                { component: '1" 4 track bottom', qty: '1', length: 'T==4 ? W : 0', desc: '4T Track Bottom' },
+                { component: '1" 4 track top', qty: '2', length: 'T==4 ? H : 0', desc: '4T Track Sides' },
                 { component: '1" Handle', qty: '1*MS', length: 'H-1.125', desc: 'MS Handle' },
                 { component: '1" Interlock', qty: '1*MS', length: 'H-1.125', desc: 'MS Interlock' },
                 { component: '1" Bearing Bottom', qty: '2*MS', length: '(W-5-2*(S-1))/S', desc: 'MS Bearing Bottom' },
@@ -113,21 +151,42 @@ function initializeDefaults() {
             ],
             '19mm UMA': [
                 { component: 'Handle Profile', qty: '(2*(S/S))+(1*MS)', length: 'H-1.5', desc: 'Shutter Handle' },
-                { component: 'Slim Interlock Shutter', qty: '(2*S-2)+(1*MS)', length: 'H-1.5', desc: 'Interlocks' },
-                { component: 'Top Bottom Profile', qty: '2*S + 2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'Shutter Horizontal' },
-                { component: 'Two Track Premium Type', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
-                { component: 'Three Track Premium Type', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
-                { component: 'Two Track Premium Type', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
-                { component: 'Three Track Premium Type', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' }
+                { section: 'UMA-11', component: 'Handle Profile', qty: '2', length: 'H-1.5', desc: 'Handles' },
+                { section: 'UMA-13', component: 'Slim Interlock Shutter', qty: '2*S-2', length: 'H-1.5', desc: 'Interlocks' },
+                { section: 'UMA-12', component: 'Top Bottom Profile', qty: '2*S', length: '(W-5-1.5*(S-1))/S', desc: 'Sash Top/Bottom' },
+                { component: 'Track (Horiz)', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
+                { component: 'Track (Horiz)', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
+                { component: 'Track (Horiz)', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
+                { component: 'Track (Horiz)', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Top' },
+                { component: 'Track (Horiz)', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Bottom' },
+                { component: 'Track (Horiz)', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
+                { section: 'UMA-19', component: 'Auxiliary', qty: 'T', length: 'W', desc: 'U-Type Rail Clip (Bottom)' }
             ],
-            '25mm Gulf': [
-                { component: '2 Track Top/Bottom', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
-                { component: '3 Track Top/Bottom', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
-                { component: '2 Track Vertical', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
-                { component: '3 Track Vertical', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
-                { component: '25mm Shutter Handle', qty: '(2*(S/S))+(1*MS)', length: 'H-1.125', desc: 'Shutter Handle' },
-                { component: '25mm Shutter Interlock', qty: '(2*S-2)+(1*MS)', length: 'H-1.125', desc: 'Interlock' },
-                { component: '25mm Shutter Horizontal', qty: '2*S + 2*MS', length: '(W-5-2*(S-1))/S', desc: 'Shutter Top/Bottom' }
+            'Vitco 25mm Gulf': [
+                { component: 'Track (Horiz)', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
+                { component: 'Track (Horiz)', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
+                { component: 'Frame (Vert)', qty: '2', length: 'T==2 ? H : 0', desc: '2T Vertical Frame' },
+                { component: 'Track (Horiz)', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Top' },
+                { component: 'Track (Horiz)', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Bottom' },
+                { component: 'Frame (Vert)', qty: '2', length: 'T==3 ? H : 0', desc: '3T Vertical Frame' },
+                { component: 'Sash Component', qty: '2', length: 'H-1.125', desc: 'Shutter Handles' },
+                { component: 'Sash Component', qty: '2*S-2', length: 'H-1.125', desc: 'Interlocks' },
+                { component: 'Sash Component', qty: '2*S', length: '(W-5-2*(S-1))/S', desc: 'Sash Top/Bottom' },
+                { section: 'V-3535', component: 'Hardware', qty: 'T', length: 'W', desc: 'Rail Cap (Bottom)' },
+                { section: 'V-2544', component: 'Auxiliary', qty: 'T', length: 'W', desc: 'Top Track Guide' }
+            ],
+            'Vitco 25mm High-End': [
+                { component: 'Track (Horiz)', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
+                { component: 'Track (Horiz)', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
+                { component: 'Frame (Vert)', qty: '2', length: 'T==2 ? H : 0', desc: '2T Vertical Frame' },
+                { component: 'Track (Horiz)', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Top' },
+                { component: 'Track (Horiz)', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Bottom' },
+                { component: 'Frame (Vert)', qty: '2', length: 'T==3 ? H : 0', desc: '3T Vertical Frame' },
+                { component: 'Sash Component', qty: '2', length: 'H-1.125', desc: 'Shutter Handles' },
+                { component: 'Sash Component', qty: '2*S-2', length: 'H-1.125', desc: 'Interlocks' },
+                { component: 'Sash Component', qty: '2*S', length: '(W-5-2*(S-1))/S', desc: 'Sash Top/Bottom' },
+                { section: 'V-3535', component: 'Hardware', qty: 'T', length: 'W', desc: 'Rail Cap (Bottom)' },
+                { section: 'V-2560', component: 'Auxiliary', qty: '1', length: 'W', desc: 'Rain Cover (Bottom)' }
             ],
             '27mm Gulf': [
                 { component: '2 Track Top/Bottom', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
@@ -168,35 +227,52 @@ function initializeDefaults() {
             'Domal': [
                 { material: 'Domal Shutter', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: 'Domal Clip', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: 'Domal Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: 'Domal 2 Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: 'Domal 3 Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: 'Domal 4 Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: 'Domal C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
             ],
             '3/4"': [
                 { material: '3/4" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '3/4" Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '3/4" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4" 2 or 3 track top and bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '3/4" 2 track top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '3/4" 2 track bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '3/4" 3 track top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '3/4" 3 track bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '3/4" 4 track top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '3/4" 4 track bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '3/4" C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
             ],
             '1"': [
                 { material: '1" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '1" Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '1" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '1" 2 or 3 track top and bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '1" 2 track top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '1" 2 track bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '1" 3 track top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '1" 3 track bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '1" 4 track top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+                { material: '1" 4 track bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '1" C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
             ],
             '19mm UMA': [
                 { material: 'Handle Profile', stock1: 144, stock1Cost: 100 },
-                { material: 'Slim Interlock Shutter', stock1: 144, stock1Cost: 100 },
                 { material: 'Top Bottom Profile', stock1: 144, stock1Cost: 100 },
-                { material: 'Two Track Premium Type', stock1: 144, stock1Cost: 100 },
-                { material: 'Three Track Premium Type', stock1: 144, stock1Cost: 100 }
+                { material: 'Track (Horiz)', stock1: 144, stock1Cost: 100 },
+                { material: 'Interlock (Vert)', stock1: 144, stock1Cost: 100 },
+                { material: 'Auxiliary', stock1: 144, stock1Cost: 100 }
             ],
-            '25mm Gulf': [
-                { material: '2 Track Top/Bottom', stock1: 144, stock1Cost: 100 },
-                { material: '3 Track Top/Bottom', stock1: 144, stock1Cost: 100 },
-                { material: '25mm Shutter Handle', stock1: 144, stock1Cost: 100 },
-                { material: '25mm Shutter Horizontal', stock1: 144, stock1Cost: 100 }
+            'Vitco 25mm Gulf': [
+                { material: 'Track (Horiz)', stock1: 144, stock1Cost: 100 },
+                { material: 'Frame (Vert)', stock1: 144, stock1Cost: 100 },
+                { material: 'Sash Component', stock1: 144, stock1Cost: 100 },
+                { material: 'Hardware', stock1: 144, stock1Cost: 100 }
+            ],
+            'Vitco 25mm High-End': [
+                { material: 'Track (Horiz)', stock1: 144, stock1Cost: 100 },
+                { material: 'Frame (Vert)', stock1: 144, stock1Cost: 100 },
+                { material: 'Sash Component', stock1: 144, stock1Cost: 100 }
             ],
             '27mm Gulf': [
                 { material: '2 Track Top/Bottom', stock1: 144, stock1Cost: 100 },
@@ -301,26 +377,49 @@ function refreshRatesDisplay() {
     const pcContainer = document.getElementById('powderCoatingRatesList');
     if (!pcContainer) return;
 
-    let html = '<div class="rates-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">';
+    // Grouping powder coating rates by series
+    const groups = {
+        '3/4" Series': [],
+        '1" Series': [],
+        'Domal Series': [],
+        'Others': []
+    };
 
     // Get all unique components across all series to show rate inputs
-    const components = new Set();
-    Object.values(seriesFormulas).forEach(series => {
-        series.forEach(item => components.add(item.component));
+    Object.entries(ratesConfig.powderCoating).forEach(([comp, rate]) => {
+        if (comp.startsWith('3/4"')) groups['3/4" Series'].push({ comp, rate });
+        else if (comp.startsWith('1"')) groups['1" Series'].push({ comp, rate });
+        else if (comp.startsWith('Domal')) groups['Domal Series'].push({ comp, rate });
+        else groups['Others'].push({ comp, rate });
     });
 
-    components.forEach(comp => {
-        const rate = ratesConfig.powderCoating[comp] || 1;
+    let html = '';
+    Object.entries(groups).forEach(([groupName, items]) => {
+        if (items.length === 0) return;
         html += `
-            <div class="form-group" style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
-                <label style="font-size: 0.85em; display: block; margin-bottom: 5px; color: #555;">${comp}</label>
-                <input type="number" step="0.1" class="pc-rate-input" data-component="${comp}" value="${rate}" style="width: 100%; padding: 5px;">
-            </div>`;
+            <details class="rate-group" style="margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; background: white;">
+                <summary style="padding: 12px 15px; cursor: pointer; font-weight: bold; background: #f8f9fa; border-radius: 8px; list-style: none; display: flex; justify-content: space-between; align-items: center;">
+                    <span>✨ ${groupName}</span>
+                    <span style="font-size: 0.8em; color: #666;">(${items.length} items)</span>
+                </summary>
+                <div class="rates-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; padding: 15px; border-top: 1px solid #eee;">
+        `;
+        items.forEach(item => {
+            html += `
+                <div class="form-group" style="background: #fdfdfd; padding: 10px; border: 1px solid #f0f0f0; border-radius: 6px;">
+                    <label style="font-size: 0.85em; display: block; margin-bottom: 6px; color: #444; font-weight: 500;">${item.comp}</label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #888; font-size: 0.9em;">₹</span>
+                        <input type="number" step="0.01" class="pc-rate-input" data-component="${item.comp}" value="${item.rate}" style="width: 100%; padding: 6px 6px 6px 20px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                </div>`;
+        });
+        html += `</div></details>`;
     });
-    html += '</div>';
+
     pcContainer.innerHTML = html;
 
-    // Set other global rates
+    // Set other global and glass rates
     if (document.getElementById('rateGlassToughened')) {
         document.getElementById('rateGlassToughened').value = ratesConfig.glass['toughened_5mm'];
         document.getElementById('rateGlassNonToughened').value = ratesConfig.glass['non_toughened_5mm'];
@@ -439,6 +538,8 @@ function refreshSectionContent(sectionName) {
         refreshProjectSelector();
     } else if (sectionName === 'results') {
         if (typeof displayResults === 'function') displayResults();
+    } else if (sectionName === 'supplier') {
+        renderSupplierMaster();
     }
 }
 
@@ -471,6 +572,7 @@ function refreshAllUI() {
     updateSupplierDatalist(); // New
     initializeAddWindowVendorSelector(); // New
     refreshRatesDisplay(); // New
+    renderSupplierMaster(); // New
 }
 
 function refreshSeriesDropdown() {
@@ -933,46 +1035,57 @@ function refreshStockMaster() {
     container.innerHTML = '';
 
     Object.entries(stockMaster).forEach(([series, stocks]) => {
-        const card = document.createElement('div');
-        card.className = 'stock-material-card';
-        card.innerHTML = `
-            <h4>${series} Series Materials</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Material</th>
-                        <th>Supplier / Section</th>
-                        <th>Stock 1 (in)</th>
-                        <th>Cost (₹)</th>
-                        <th>Stock 2 (in)</th>
-                        <th>Cost (₹)</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+        const details = document.createElement('details');
+        details.className = 'rate-group';
+        details.style.marginBottom = '10px';
+        details.style.border = '1px solid #ddd';
+        details.style.borderRadius = '8px';
+        details.style.background = 'white';
+
+        details.innerHTML = `
+            <summary style="padding: 12px 15px; cursor: pointer; font-weight: bold; background: #f8f9fa; border-radius: 8px; list-style: none; display: flex; justify-content: space-between; align-items: center;">
+                <span>📦 ${series} Series Materials</span>
+                <span style="font-size: 0.8em; color: #666;">(${stocks.length} items)</span>
+            </summary>
+            <div style="padding: 15px; border-top: 1px solid #eee; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #eee; text-align: left;">
+                            <th style="padding: 8px;">Material</th>
+                            <th style="padding: 8px;">Supplier / Section</th>
+                            <th style="padding: 8px;">Stock 1 (in)</th>
+                            <th style="padding: 8px;">Cost (₹)</th>
+                            <th style="padding: 8px;">Stock 2 (in)</th>
+                            <th style="padding: 8px;">Cost (₹)</th>
+                            <th style="padding: 8px; text-align: center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         `;
 
-        const tbody = card.querySelector('tbody');
+        const tbody = details.querySelector('tbody');
         stocks.forEach((stock, idx) => {
             const row = tbody.insertRow();
+            row.style.borderBottom = '1px solid #f0f0f0';
             row.innerHTML = `
-                <td>${stock.material}</td>
-                <td style="font-size: 0.8em; color: #666;">
+                <td style="padding: 8px; font-weight: 500;">${stock.material}</td>
+                <td style="padding: 8px; font-size: 0.8em; color: #666;">
                     ${stock.supplier || 'N/A'}<br>
                     ${stock.sectionNo || 'N/A'}
                 </td>
-                <td><input type="number" value="${stock.stock1}" onchange="updateStock('${series}', ${idx}, 'stock1', this.value)" style="width: 70px; padding: 5px;"></td>
-                <td><input type="number" value="${stock.stock1Cost}" onchange="updateStock('${series}', ${idx}, 'stock1Cost', this.value)" style="width: 70px; padding: 5px;"></td>
-                <td><input type="number" value="${stock.stock2}" onchange="updateStock('${series}', ${idx}, 'stock2', this.value)" style="width: 70px; padding: 5px;"></td>
-                <td><input type="number" value="${stock.stock2Cost}" onchange="updateStock('${series}', ${idx}, 'stock2Cost', this.value)" style="width: 70px; padding: 5px;"></td>
-                <td style="text-align:center">
-                    <button class="btn btn-danger btn-sm" onclick="deleteStock('${series}', ${idx})">🗑️</button>
+                <td style="padding: 8px;"><input type="number" value="${stock.stock1}" onchange="updateStock('${series}', ${idx}, 'stock1', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                <td style="padding: 8px;"><input type="number" value="${stock.stock1Cost}" onchange="updateStock('${series}', ${idx}, 'stock1Cost', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                <td style="padding: 8px;"><input type="number" value="${stock.stock2}" onchange="updateStock('${series}', ${idx}, 'stock2', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                <td style="padding: 8px;"><input type="number" value="${stock.stock2Cost}" onchange="updateStock('${series}', ${idx}, 'stock2Cost', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                <td style="padding: 8px; text-align:center">
+                    <button class="btn btn-danger btn-sm" onclick="deleteStock('${series}', ${idx})" style="padding: 4px 8px;">🗑️</button>
                 </td>
             `;
         });
 
-        container.appendChild(card);
+        container.appendChild(details);
     });
 }
 
@@ -1153,16 +1266,7 @@ function refreshProjectSelector() {
     };
 }
 
-function initializeProjectSupplierSelector() {
-    const selector = document.getElementById('projectSupplierSelector');
-    if (!selector) return;
-
-    const suppliers = Object.keys(supplierMaster);
-    selector.innerHTML = '<option value="">-- Generic (Automatic) --</option>';
-    suppliers.forEach(s => {
-        selector.innerHTML += `<option value="${s}">${s}</option>`;
-    });
-}
+// (initializeProjectSupplierSelector removed, moved to js/supplier_master.js)
 
 function saveProjectSupplier() {
     const project = document.getElementById('projectSelector').value;
@@ -1318,395 +1422,4 @@ window.onload = function () {
     refreshAllUI();
 };
 // ============================================================================
-// SUPPLIER MASTER UI
-// ============================================================================
-
-function renderSupplierMaster() {
-    const list = document.getElementById('supplierMasterList');
-    if (!list) return;
-
-    list.innerHTML = '';
-
-    if (Object.keys(supplierMaster).length === 0) {
-        list.innerHTML = '<div class="alert alert-info">No supplier sections configured.</div>';
-        return;
-    }
-
-    for (const [supplier, seriesObj] of Object.entries(supplierMaster)) {
-        const supDiv = document.createElement('div');
-        supDiv.className = 'supplier-card';
-        supDiv.style.border = '1px solid #ddd';
-        supDiv.style.padding = '15px';
-        supDiv.style.marginBottom = '15px';
-        supDiv.style.borderRadius = '8px';
-        supDiv.style.background = '#f9f9f9';
-
-        supDiv.innerHTML = `<h4 style="margin-top:0; border-bottom: 2px solid #007bff; padding-bottom:5px;">🏭 ${supplier}</h4>`;
-
-        for (const [series, materials] of Object.entries(seriesObj)) {
-            const seriesGroup = document.createElement('div');
-            seriesGroup.className = 'series-group';
-            seriesGroup.style.marginLeft = '15px';
-            seriesGroup.innerHTML = `<h5 style="margin-bottom:10px; color:#555;">${series} Series</h5>`;
-
-            for (const [material, sections] of Object.entries(materials)) {
-                const matBlock = document.createElement('div');
-                matBlock.className = 'material-block';
-                matBlock.innerHTML = `<p><strong>${material}</strong></p>`;
-
-                const table = document.createElement('table');
-                table.className = 'stock-table';
-                table.style.width = '100%';
-                table.style.marginBottom = '15px';
-                table.innerHTML = `
-                    <thead>
-                        <tr>
-                            <th>Section No.</th>
-                            <th>T (mm)</th>
-                            <th>Wt (Kg/12ft)</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                `;
-
-                const tbody = table.querySelector('tbody');
-                sections.forEach((sec, idx) => {
-                    const row = tbody.insertRow();
-                    row.innerHTML = `
-                        <td><input type="text" value="${sec.sectionNo}" onchange="editSupplierSection('${supplier}', '${series}', '${material}', ${idx}, 'sectionNo', this.value)" style="width:80px"></td>
-                        <td><input type="number" step="0.01" value="${sec.t}" onchange="editSupplierSection('${supplier}', '${series}', '${material}', ${idx}, 't', this.value)" style="width:60px"></td>
-                        <td><input type="number" step="0.001" value="${sec.weight}" onchange="editSupplierSection('${supplier}', '${series}', '${material}', ${idx}, 'weight', this.value)" style="width:70px"></td>
-                        <td style="text-align:center">
-                            <button class="btn-icon btn-danger" onclick="deleteSupplierSection('${supplier}', '${series}', '${material}', ${idx})" title="Delete Section">🗑️</button>
-                        </td>
-                    `;
-                });
-
-                seriesGroup.appendChild(matBlock);
-                seriesGroup.appendChild(table);
-            }
-            supDiv.appendChild(seriesGroup);
-        }
-        list.appendChild(supDiv);
-    }
-}
-
-function addNewSupplierSection(event) {
-    event.preventDefault();
-    const supName = document.getElementById('supName').value.trim();
-    const series = document.getElementById('supSeries').value;
-    const material = document.getElementById('supMaterial').value.trim();
-    const sectionNo = document.getElementById('supSectionNo').value.trim();
-    const t = parseFloat(document.getElementById('supT').value);
-    const weight = parseFloat(document.getElementById('supWeight').value);
-
-    if (!supplierMaster[supName]) supplierMaster[supName] = {};
-    if (!supplierMaster[supName][series]) supplierMaster[supName][series] = {};
-    if (!supplierMaster[supName][series][material]) supplierMaster[supName][series][material] = [];
-
-    supplierMaster[supName][series][material].push({ sectionNo, t, weight });
-
-    autoSaveSupplierMaster();
-    renderSupplierMaster();
-    updateSupplierDatalist();
-    event.target.reset();
-    showAlert('✅ Section added to ' + supName);
-}
-
-function editSupplierSection(supplier, series, material, index, field, value) {
-    let finalVal = value;
-    if (field === 't' || field === 'weight') finalVal = parseFloat(value);
-
-    supplierMaster[supplier][series][material][index][field] = finalVal;
-    autoSaveSupplierMaster();
-}
-
-function deleteSupplierSection(supplier, series, material, index) {
-    showConfirm('🗑️ Delete this section from ' + supplier + '?', () => {
-        supplierMaster[supplier][series][material].splice(index, 1);
-
-        // Cleanup empty structures
-        if (supplierMaster[supplier][series][material].length === 0) {
-            delete supplierMaster[supplier][series][material];
-        }
-        if (Object.keys(supplierMaster[supplier][series]).length === 0) {
-            delete supplierMaster[supplier][series];
-        }
-        if (Object.keys(supplierMaster[supplier]).length === 0) {
-            delete supplierMaster[supplier];
-        }
-
-        autoSaveSupplierMaster();
-        renderSupplierMaster();
-        updateSupplierDatalist();
-    });
-}
-
-function updateSupplierDatalist() {
-    const list = document.getElementById('supplierList');
-    if (!list) return;
-    list.innerHTML = '';
-    Object.keys(supplierMaster).forEach(sup => {
-        const opt = document.createElement('option');
-        opt.value = sup;
-        list.appendChild(opt);
-    });
-}
-function updateNewStockMaterialOptions() {
-    const series = document.getElementById('newStockSeries').value;
-    const supplierSelect = document.getElementById('newStockSupplier');
-    if (!supplierSelect) return;
-
-    // Reset supplier and section
-    supplierSelect.innerHTML = '<option value="">-- No Supplier --</option>';
-    document.getElementById('newStockSectionNo').innerHTML = '<option value="">-- Select Section --</option>';
-
-    // Filter suppliers that have data for this series
-    Object.keys(supplierMaster).forEach(sup => {
-        if (supplierMaster[sup][series]) {
-            const opt = document.createElement('option');
-            opt.value = sup;
-            opt.textContent = sup;
-            supplierSelect.appendChild(opt);
-        }
-    });
-}
-
-function updateSupplierSectionOptions() {
-    const series = document.getElementById('newStockSeries').value;
-    const supplier = document.getElementById('newStockSupplier').value;
-    const material = document.getElementById('newStockMaterial').value.trim();
-    const sectionSelect = document.getElementById('newStockSectionNo');
-
-    if (!sectionSelect) return;
-    sectionSelect.innerHTML = '<option value="">-- Select Section --</option>';
-
-    if (!supplier || !series || !material) return;
-
-    // Look for exact match or partial match in supplier master
-    const supSeries = supplierMaster[supplier][series];
-    if (supSeries) {
-        // Find the material key
-        const matKey = Object.keys(supSeries).find(k => k.toLowerCase().includes(material.toLowerCase()));
-        if (matKey) {
-            supSeries[matKey].forEach(sec => {
-                const opt = document.createElement('option');
-                opt.value = sec.sectionNo;
-                opt.textContent = `${sec.sectionNo} (T:${sec.t}, W:${sec.weight})`;
-                sectionSelect.appendChild(opt);
-            });
-        }
-    }
-}
-
-function applySupplierDataToStock() {
-    const series = document.getElementById('newStockSeries').value;
-    const supplier = document.getElementById('newStockSupplier').value;
-    const material = document.getElementById('newStockMaterial').value.trim();
-    const sectionNo = document.getElementById('newStockSectionNo').value;
-
-    if (!supplier || !series || !material || !sectionNo) return;
-
-    const supSeries = supplierMaster[supplier][series];
-    const matKey = Object.keys(supSeries).find(k => k.toLowerCase().includes(material.toLowerCase()));
-    if (matKey) {
-        const section = supSeries[matKey].find(s => s.sectionNo === sectionNo);
-        if (section) {
-            tempSupData = { t: section.t, weight: section.weight };
-            console.log('Applied supplier data:', tempSupData);
-        }
-    }
-}
-
-// ============================================================================
-// SECTION SELECTION MODAL
-// ============================================================================
-
-let currentSelectingMaterial = null;
-let availableSections = [];
-
-function openSectionSelectModal(materialKey) {
-    currentSelectingMaterial = materialKey;
-    document.getElementById('selectMaterialName').textContent = materialKey;
-
-    // Get project filter
-    const project = document.getElementById('projectSelector').value;
-    const prefSupplier = (project && projectSettings[project]) ? projectSettings[project].preferredSupplier : null;
-
-    // Get all matching sections
-    const [series, materialName] = materialKey.split(' | ');
-    availableSections = [];
-
-    Object.entries(supplierMaster).forEach(([supplier, seriesObj]) => {
-        // Apply preference filter
-        if (prefSupplier && supplier !== prefSupplier) return;
-
-        if (seriesObj[series]) {
-            // Find material matches (partial match)
-            const matMatches = Object.keys(seriesObj[series]).filter(k =>
-                k.toLowerCase().includes(materialName.toLowerCase()) ||
-                materialName.toLowerCase().includes(k.toLowerCase())
-            );
-
-            matMatches.forEach(matKey => {
-                const sections = seriesObj[series][matKey];
-                sections.forEach(sec => {
-                    availableSections.push({
-                        supplier: supplier,
-                        materialKey: matKey,
-                        sectionNo: sec.sectionNo,
-                        t: sec.t,
-                        weight: sec.weight
-                    });
-                });
-            });
-        }
-    });
-
-    // Populate dropdown
-    const dropdown = document.getElementById('thicknessSelect');
-    dropdown.innerHTML = '<option value="">-- Select Thickness --</option>';
-
-    availableSections.forEach((sec, idx) => {
-        const opt = document.createElement('option');
-        opt.value = idx;
-        opt.textContent = `${sec.t}mm - ${sec.supplier} (Sec: ${sec.sectionNo}, Wt: ${sec.weight}Kg)`;
-        dropdown.appendChild(opt);
-    });
-
-    // Populate catalogue view
-    populateCatalogueList(series, materialName);
-
-    // Hide details initially
-    document.getElementById('selectedSectionDetails').style.display = 'none';
-
-    document.getElementById('sectionSelectModal').classList.add('active');
-    document.body.style.overflow = 'hidden';
-}
-
-function closeSectionSelectModal() {
-    document.getElementById('sectionSelectModal').classList.remove('active');
-    document.body.style.overflow = '';
-    currentSelectingMaterial = null;
-    availableSections = [];
-}
-
-function showSelectedSectionDetails() {
-    const dropdown = document.getElementById('thicknessSelect');
-    const selectedIdx = dropdown.value;
-    const detailsDiv = document.getElementById('selectedSectionDetails');
-    const contentDiv = document.getElementById('sectionDetailsContent');
-
-    if (selectedIdx === '') {
-        detailsDiv.style.display = 'none';
-        return;
-    }
-
-    const section = availableSections[parseInt(selectedIdx)];
-
-    contentDiv.innerHTML = `
-        <div style="line-height: 1.8;">
-            <strong>Supplier:</strong> ${section.supplier}<br>
-            <strong>Material:</strong> ${section.materialKey}<br>
-            <strong>Section Number:</strong> ${section.sectionNo}<br>
-            <strong>Thickness (T):</strong> ${section.t} mm<br>
-            <strong>Weight per 12ft stick:</strong> ${section.weight} Kg
-        </div>
-    `;
-
-    detailsDiv.style.display = 'block';
-}
-
-function confirmSectionSelection() {
-    const dropdown = document.getElementById('thicknessSelect');
-    const selectedIdx = dropdown.value;
-
-    if (selectedIdx === '') {
-        showAlert('⚠️ Please select a thickness option first!');
-        return;
-    }
-
-    const section = availableSections[parseInt(selectedIdx)];
-
-    if (!optimizationResults) return;
-
-    if (!optimizationResults.componentSections) {
-        optimizationResults.componentSections = {};
-    }
-
-    optimizationResults.componentSections[currentSelectingMaterial] = {
-        supplier: section.supplier,
-        sectionNo: section.sectionNo,
-        t: section.t,
-        weight: section.weight
-    };
-
-    autoSaveResults();
-    closeSectionSelectModal();
-    if (typeof displayResults === 'function') displayResults();
-    showAlert(`✅ Section ${section.sectionNo} (T: ${section.t}mm) selected for ${currentSelectingMaterial}`);
-}
-
-function populateCatalogueList(series, materialName) {
-    const catalogueDiv = document.getElementById('catalogueList');
-    catalogueDiv.innerHTML = '';
-
-    const project = document.getElementById('projectSelector').value;
-    const prefSupplier = (project && projectSettings[project]) ? projectSettings[project].preferredSupplier : null;
-
-    Object.entries(supplierMaster).forEach(([supplier, seriesObj]) => {
-        // Apply preference filter
-        if (prefSupplier && supplier !== prefSupplier) return;
-
-        if (seriesObj[series]) {
-            const matMatches = Object.keys(seriesObj[series]).filter(k =>
-                k.toLowerCase().includes(materialName.toLowerCase()) ||
-                materialName.toLowerCase().includes(k.toLowerCase())
-            );
-
-            matMatches.forEach(matKey => {
-                const sections = seriesObj[series][matKey];
-
-                const groupDiv = document.createElement('div');
-                groupDiv.style.marginBottom = '15px';
-                groupDiv.style.padding = '10px';
-                groupDiv.style.background = '#f8f9fa';
-                groupDiv.style.borderRadius = '5px';
-                groupDiv.innerHTML = `<h5 style="margin: 0 0 10px 0; color: #2c3e50;">${supplier} - ${matKey}</h5>`;
-
-                const table = document.createElement('table');
-                table.style.width = '100%';
-                table.style.fontSize = '0.85em';
-                table.innerHTML = `
-                    <thead>
-                        <tr style="background: #34495e; color: white;">
-                            <th style="padding: 5px;">Section No.</th>
-                            <th style="padding: 5px;">T (mm)</th>
-                            <th style="padding: 5px;">Wt (Kg)</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                `;
-
-                const tbody = table.querySelector('tbody');
-                sections.forEach((sec, idx) => {
-                    const row = tbody.insertRow();
-                    row.style.background = idx % 2 === 0 ? 'white' : '#ecf0f1';
-                    row.innerHTML = `
-                        <td style="padding: 5px;">${sec.sectionNo}</td>
-                        <td style="padding: 5px;">${sec.t}</td>
-                        <td style="padding: 5px;">${sec.weight}</td>
-                    `;
-                });
-
-                groupDiv.appendChild(table);
-                catalogueDiv.appendChild(groupDiv);
-            });
-        }
-    });
-
-    if (catalogueDiv.innerHTML === '') {
-        catalogueDiv.innerHTML = '<div class="alert alert-warning">No catalogue sections found for this material.</div>';
-    }
-}
+// (Supplier Master UI and Modal Logic removed, moved to js/supplier_master.js)

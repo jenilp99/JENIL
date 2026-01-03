@@ -567,19 +567,33 @@ function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requesti
             let wt = 0;
             if (optimizationResults && optimizationResults.results) {
                 for (const [key, data] of Object.entries(optimizationResults.results)) {
-                    let len = 0;
+                    let purchasedLenForWindow = 0;
+                    let weightForWindow = 0;
                     let compName = key.includes('|') ? key.split('|')[1].trim() : key;
                     const pcRate = ratesConfig.powderCoating[compName] || 1;
+
                     data.forEach(plan => {
+                        const stockLen = parseFloat(plan.stock);
+                        const totalUsedInStick = plan.used;
+                        if (totalUsedInStick <= 0) return;
+
                         plan.pieces.forEach(p => {
                             if (p.label && p.label.startsWith(win.configId)) {
-                                len += p.length;
+                                const shareRatio = p.length / totalUsedInStick;
+                                purchasedLenForWindow += shareRatio * stockLen;
+
                                 const sec = optimizationResults.componentSections ? optimizationResults.componentSections[key] : null;
-                                if (sec && sec.weight) wt += (p.length / 144) * sec.weight;
+                                if (sec && sec.weight) {
+                                    // Weight is per 12ft (144"), but we purchased stockLen
+                                    const stickWeight = (stockLen / 144) * sec.weight;
+                                    weightForWindow += shareRatio * stickWeight;
+                                }
                             }
                         });
                     });
-                    pcCost += (len / 12) * pcRate;
+
+                    pcCost += (purchasedLenForWindow / 12) * pcRate;
+                    wt += weightForWindow;
                 }
             }
             const profCost = wt * 280;
@@ -965,22 +979,31 @@ function generateQuotationHTML(projectWindows, selectedProject) {
 
         if (optimizationResults && optimizationResults.results) {
             for (const [key, data] of Object.entries(optimizationResults.results)) {
-                let windowLength = 0;
+                let purchasedLenForWindow = 0;
+                let weightForWindow = 0;
                 let compName = key.includes('|') ? key.split('|')[1].trim() : key;
                 const pcRate = ratesConfig.powderCoating[compName] || 1;
 
                 data.forEach(plan => {
+                    const stockLen = parseFloat(plan.stock);
+                    const totalUsedInStick = plan.used;
+                    if (totalUsedInStick <= 0) return;
+
                     plan.pieces.forEach(p => {
                         if (p.label && p.label.startsWith(win.configId)) {
-                            windowLength += p.length;
+                            const shareRatio = p.length / totalUsedInStick;
+                            purchasedLenForWindow += shareRatio * stockLen;
+
                             const section = optimizationResults.componentSections ? optimizationResults.componentSections[key] : null;
                             if (section && section.weight) {
-                                weightTotal += (p.length / 144) * section.weight;
+                                const stickWeight = (stockLen / 144) * section.weight;
+                                weightForWindow += shareRatio * stickWeight;
                             }
                         }
                     });
                 });
-                powderCoatingCost += (windowLength / 12) * pcRate;
+                powderCoatingCost += (purchasedLenForWindow / 12) * pcRate;
+                weightTotal += weightForWindow;
             }
         }
 

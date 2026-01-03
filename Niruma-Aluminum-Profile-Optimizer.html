@@ -40,6 +40,8 @@
                     onclick="scrollToSection('section-formulas'); return false;">🧪 Formulas</a>
                 <a href="#section-stock" class="nav-link" onclick="scrollToSection('section-stock'); return false;">📦
                     Stock</a>
+                <a href="#section-supplier" class="nav-link"
+                    onclick="scrollToSection('section-supplier'); return false;">🏛️ Supplier</a>
                 <a href="#section-hardware" class="nav-link"
                     onclick="scrollToSection('section-hardware'); return false;">🔩 Hardware</a>
                 <a href="#section-optimize" class="nav-link"
@@ -96,6 +98,11 @@
                 <div class="tile-icon">📦</div>
                 <div class="tile-title">Stock Master</div>
                 <div id="stat-stock-count" class="tile-status">Manage Inventory</div>
+            </div>
+            <div class="tile tile-yellow" onclick="scrollToSection('section-supplier')" style="--tile-color: #f1c40f;">
+                <div class="tile-icon">🏛️</div>
+                <div class="tile-title">Supplier Master</div>
+                <div class="tile-status">Catalogue</div>
             </div>
             <div class="tile tile-navy" onclick="scrollToSection('section-hardware')">
                 <div class="tile-icon">🔩</div>
@@ -460,10 +467,13 @@
                     <strong>ℹ️ Price Settings:</strong> Configure glass prices and powder coating rates per R.Ft.
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group" style="flex: 1;">
-                        <h3>🖼️ Glass Prices (per Sq.Ft)</h3>
-                        <div id="glassRatesList">
+                <div class="form-row" style="display: block;">
+                    <details class="rate-group"
+                        style="margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; background: white;">
+                        <summary
+                            style="padding: 12px 15px; cursor: pointer; font-weight: bold; background: #f8f9fa; border-radius: 8px; list-style: none;">
+                            🖼️ Glass Prices (per Sq.Ft)</summary>
+                        <div id="glassRatesList" style="padding: 15px; border-top: 1px solid #eee;">
                             <div class="form-row">
                                 <div class="form-group"><label>5mm Toughened (₹)</label><input type="number"
                                         id="rateGlassToughened" value="85" step="1"></div>
@@ -471,16 +481,22 @@
                                         id="rateGlassNonToughened" value="65" step="1"></div>
                             </div>
                         </div>
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <h3>🧪 Global Constants</h3>
-                        <div class="form-row">
-                            <div class="form-group"><label>Glass Offset (inches)</label><input type="number"
-                                    id="glassOffset" value="1.5" step="0.1"></div>
-                            <div class="form-group"><label>Rubber Rate (₹/ft)</label><input type="number"
-                                    id="rateRubber" value="5" step="1"></div>
+                    </details>
+
+                    <details class="rate-group"
+                        style="margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: white;">
+                        <summary
+                            style="padding: 12px 15px; cursor: pointer; font-weight: bold; background: #f8f9fa; border-radius: 8px; list-style: none;">
+                            🧪 Global Constants & Offsets</summary>
+                        <div style="padding: 15px; border-top: 1px solid #eee;">
+                            <div class="form-row">
+                                <div class="form-group"><label>Glass Offset (inches)</label><input type="number"
+                                        id="glassOffset" value="1.5" step="0.1"></div>
+                                <div class="form-group"><label>Rubber Rate (₹/ft)</label><input type="number"
+                                        id="rateRubber" value="5" step="1"></div>
+                            </div>
                         </div>
-                    </div>
+                    </details>
                 </div>
 
                 <h3>✨ Powder Coating Rates (₹ / Running Foot)</h3>
