@@ -118,6 +118,151 @@ const DEFAULT_SUPPLIER_DATA = {
                 { sectionNo: "3102", t: 1.00, weight: 2.600 }
             ]
         }
+    },
+    "Vitco": {
+        "19mm UMA": {
+            "Two Track Premium Type": [{ sectionNo: "UMA-01", t: 1.2, weight: 0.825 }],
+            "Three Track Premium Type": [{ sectionNo: "UMA-02", t: 1.2, weight: 1.220 }],
+            "Handle Profile": [
+                { sectionNo: "UMA-11", t: 1.2, weight: 0.425 },
+                { sectionNo: "UMA-21", t: 1.2, weight: 0.575 },
+                { sectionNo: "UMA-28", t: 1.5, weight: 0.732 }
+            ],
+            "Top Bottom Profile": [{ sectionNo: "UMA-12", t: 1.2, weight: 0.480 }],
+            "Slim Interlock Shutter": [{ sectionNo: "UMA-13", t: 1.2, weight: 0.370 }],
+            "Reinforcement Interlock": [{ sectionNo: "UMA-14", t: 1.2, weight: 0.618 }],
+            "Mosquito Adapter": [{ sectionNo: "UMA-15", t: 1.2, weight: 0.180 }],
+            "Adapter Roller": [{ sectionNo: "UMA-16", t: 1.2, weight: 0.150 }],
+            "Corner Joint Angle": [{ sectionNo: "UMA-17", t: 1.2, weight: 1.688 }],
+            "Mosquito Shutter": [{ sectionNo: "UMA-18", t: 1.2, weight: 0.655 }],
+            "U Type Track Rail Clip": [{ sectionNo: "UMA-19", t: 1.2, weight: 0.137 }],
+            "Universal Interlock": [{ sectionNo: "UMA-22", t: 1.2, weight: 0.505 }]
+        },
+        "25mm Gulf": {
+            "2 Track Top/Bottom": [
+                { sectionNo: "V-2545", t: 1.2, weight: 1.020 },
+                { sectionNo: "V-2536", t: 1.4, weight: 1.010 }
+            ],
+            "3 Track Top/Bottom": [
+                { sectionNo: "V-2541", t: 1.2, weight: 1.470 },
+                { sectionNo: "V-2537", t: 1.4, weight: 1.462 }
+            ],
+            "2 Track Vertical": [
+                { sectionNo: "V-2546", t: 1.2, weight: 0.700 },
+                { sectionNo: "V-2938", t: 1.2, weight: 0.840 }
+            ],
+            "3 Track Vertical": [
+                { sectionNo: "V-2542", t: 1.2, weight: 0.985 },
+                { sectionNo: "V-2939", t: 1.2, weight: 1.106 }
+            ],
+            "4 Track Top/Bottom": [{ sectionNo: "V-2547", t: 1.2, weight: 1.844 }],
+            "4 Track Vertical": [{ sectionNo: "V-2548", t: 1.2, weight: 1.310 }],
+            "25mm Shutter Handle": [{ sectionNo: "GENERIC-25-H", t: 1.2, weight: 0.450 }],
+            "25mm Shutter Interlock": [{ sectionNo: "GENERIC-25-I", t: 1.2, weight: 0.500 }],
+            "25mm Shutter Horizontal": [{ sectionNo: "GENERIC-25-TB", t: 1.2, weight: 0.480 }]
+        },
+        "25mm Basic": {
+            "Two Track Basic Type": [{ sectionNo: "V-2501", t: 1.4, weight: 0.870 }],
+            "Three Track Basic Type": [{ sectionNo: "V-2502", t: 1.4, weight: 1.400 }],
+            "Two Track Premium Type": [{ sectionNo: "V-2503", t: 1.4, weight: 1.079 }],
+            "Three Track Premium Type": [{ sectionNo: "V-2504", t: 1.4, weight: 1.649 }],
+            "2 in 1 Frame With Grill": [{ sectionNo: "V-2509", t: 1.4, weight: 1.435 }]
+        },
+        "27mm Gulf": {
+            "2 Track Top/Bottom": [
+                { sectionNo: "V-2755", t: 1.2, weight: 1.020 },
+                { sectionNo: "V-2736", t: 1.2, weight: 1.010 }
+            ],
+            "3 Track Top/Bottom": [
+                { sectionNo: "V-2751", t: 1.2, weight: 1.470 },
+                { sectionNo: "V-2737", t: 1.2, weight: 1.462 }
+            ],
+            "2 Track Vertical": [
+                { sectionNo: "V-2756", t: 1.2, weight: 0.700 },
+                { sectionNo: "V-2938", t: 1.2, weight: 0.840 }
+            ],
+            "3 Track Vertical": [
+                { sectionNo: "V-2752", t: 1.2, weight: 0.985 },
+                { sectionNo: "V-2939", t: 1.2, weight: 1.106 }
+            ],
+            "4 Track Top/Bottom": [{ sectionNo: "V-2757", t: 1.2, weight: 1.844 }],
+            "4 Track Vertical": [{ sectionNo: "V-2758", t: 1.2, weight: 1.310 }],
+            "27mm Shutter Handle": [{ sectionNo: "GENERIC-27-H", t: 1.2, weight: 0.470 }],
+            "27mm Shutter Interlock": [{ sectionNo: "GENERIC-27-I", t: 1.2, weight: 0.520 }]
+        },
+        "29mm Gulf": {
+            "2 Track Top/Bottom": [
+                { sectionNo: "V-2940", t: 1.2, weight: 1.020 },
+                { sectionNo: "V-2969", t: 1.4, weight: 1.010 }
+            ],
+            "3 Track Top/Bottom": [
+                { sectionNo: "V-2942", t: 1.2, weight: 1.470 },
+                { sectionNo: "V-2970", t: 1.4, weight: 1.462 }
+            ],
+            "2 Track Vertical": [
+                { sectionNo: "V-2941", t: 1.2, weight: 0.700 },
+                { sectionNo: "V-2938", t: 1.2, weight: 0.840 },
+                { sectionNo: "V-2990", t: 1.2, weight: 0.676 }
+            ],
+            "3 Track Vertical": [
+                { sectionNo: "V-2943", t: 1.2, weight: 0.985 },
+                { sectionNo: "V-2939", t: 1.2, weight: 1.106 }
+            ],
+            "4 Track Top/Bottom": [{ sectionNo: "V-2944", t: 1.2, weight: 1.844 }],
+            "4 Track Vertical": [{ sectionNo: "V-2945", t: 1.2, weight: 1.310 }]
+        },
+        "31mm Gulf": {
+            "Two Track Top & Bottom": [
+                { sectionNo: "V-3103", t: 1.45, weight: 1.640 },
+                { sectionNo: "V-3108", t: 1.4, weight: 1.350 },
+                { sectionNo: "V-3146", t: 1.4, weight: 1.361 }
+            ],
+            "Two Track Vertical": [
+                { sectionNo: "V-3102", t: 1.2, weight: 1.040 },
+                { sectionNo: "V-3127", t: 1.35, weight: 0.872 },
+                { sectionNo: "V-3147", t: 1.4, weight: 0.853 }
+            ],
+            "Three Track Top & Bottom": [
+                { sectionNo: "V-3104", t: 1.45, weight: 2.267 },
+                { sectionNo: "V-3110", t: 1.2, weight: 2.000 },
+                { sectionNo: "V-3148", t: 1.4, weight: 1.913 }
+            ],
+            "Three Track Vertical": [
+                { sectionNo: "V-3105", t: 1.2, weight: 1.756 },
+                { sectionNo: "V-3107", t: 1.2, weight: 1.220 },
+                { sectionNo: "V-3149", t: 1.4, weight: 1.161 }
+            ],
+            "31mm Shutter Handle": [{ sectionNo: "GENERIC-31-H", t: 1.4, weight: 0.650 }],
+            "31mm Shutter Interlock": [{ sectionNo: "GENERIC-31-I", t: 1.4, weight: 0.700 }]
+        },
+        "32mm Gulf": {
+            "2 Track Top/Bottom": [{ sectionNo: "V-3241", t: 1.4, weight: 1.300 }],
+            "2 Track Vertical": [{ sectionNo: "V-3242", t: 1.5, weight: 0.850 }],
+            "3 Track Top/Bottom": [{ sectionNo: "V-3243", t: 1.4, weight: 1.750 }],
+            "3 Track Vertical": [{ sectionNo: "V-3244", t: 1.5, weight: 1.250 }]
+        },
+        "35mm Gulf": {
+            "Two Track Vertical": [{ sectionNo: "V-3501", t: 1.4, weight: 1.134 }],
+            "Two Track Top & Bottom": [{ sectionNo: "V-3502", t: 1.4, weight: 1.544 }],
+            "Three Track Vertical": [
+                { sectionNo: "V-3503", t: 1.4, weight: 1.566 },
+                { sectionNo: "V-3510", t: 1.4, weight: 1.566 },
+                { sectionNo: "V-3520", t: 1.4, weight: 1.404 }
+            ],
+            "Three Track Top & Bottom": [
+                { sectionNo: "V-3505", t: 1.4, weight: 2.073 },
+                { sectionNo: "V-3591", t: 1.35, weight: 2.328 }
+            ],
+            "35mm Shutter Handle": [{ sectionNo: "GENERIC-35-H", t: 1.4, weight: 0.850 }],
+            "35mm Shutter Interlock": [{ sectionNo: "GENERIC-35-I", t: 1.4, weight: 0.900 }]
+        },
+        "40mm Pro": {
+            "Two Track Top Bottom": [{ sectionNo: "V-4151", t: 1.8, weight: 2.401 }],
+            "Two Track Premium Type": [{ sectionNo: "V-4152", t: 1.8, weight: 0.902 }],
+            "Three Track Top Bottom": [{ sectionNo: "V-4154", t: 1.8, weight: 2.099 }],
+            "40mm Shutter Handle": [{ sectionNo: "GENERIC-40-H", t: 1.8, weight: 1.100 }],
+            "40mm Shutter Interlock": [{ sectionNo: "GENERIC-40-I", t: 1.8, weight: 1.200 }]
+        }
     }
 };
 

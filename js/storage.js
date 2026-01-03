@@ -11,7 +11,8 @@ const StorageManager = {
         UNIT: 'niruma_unit',
         RESULTS: 'niruma_results',
         HARDWARE: 'niruma_hardware',
-        SUPPLIER: 'niruma_supplier'
+        SUPPLIER: 'niruma_supplier',
+        PROJECT_SETTINGS: 'niruma_project_settings'
     },
 
     // Save data to localStorage
@@ -134,6 +135,16 @@ const StorageManager = {
         return this.load(this.KEYS.SUPPLIER, null);
     },
 
+    // Save project settings
+    saveProjectSettings(settings) {
+        return this.save(this.KEYS.PROJECT_SETTINGS, settings);
+    },
+
+    // Load project settings
+    loadProjectSettings() {
+        return this.load(this.KEYS.PROJECT_SETTINGS, {});
+    },
+
     // Export all data as JSON
     exportAll() {
         return {
@@ -142,6 +153,7 @@ const StorageManager = {
             stock: this.loadStock(),
             settings: this.loadSettings(),
             results: this.loadResults(),
+            projectSettings: this.loadProjectSettings(),
             exportDate: new Date().toISOString(),
             version: '1.0'
         };
@@ -157,6 +169,7 @@ const StorageManager = {
                 this.saveSettings(data.settings.kerf, data.settings.unit);
             }
             if (data.results) this.saveResults(data.results);
+            if (data.projectSettings) this.saveProjectSettings(data.projectSettings);
             return true;
         } catch (error) {
             console.error('Import error:', error);
@@ -203,6 +216,11 @@ function autoSaveSupplierMaster() {
     console.log('✅ Supplier Master auto-saved');
 }
 
+function autoSaveProjectSettings() {
+    StorageManager.saveProjectSettings(projectSettings);
+    console.log('✅ Project Settings auto-saved');
+}
+
 // Load all data on startup
 function loadAllData() {
     const loadedWindows = StorageManager.loadWindows();
@@ -210,6 +228,7 @@ function loadAllData() {
     const loadedStock = StorageManager.loadStock();
     const settings = StorageManager.loadSettings();
     const loadedResults = StorageManager.loadResults();
+    const loadedProjectSettings = StorageManager.loadProjectSettings();
 
     // Only load if data exists, otherwise keep defaults
     if (loadedWindows.length > 0) {
@@ -250,6 +269,11 @@ function loadAllData() {
     if (loadedResults) {
         optimizationResults = loadedResults;
         console.log('✅ Loaded previous results');
+    }
+
+    if (loadedProjectSettings) {
+        projectSettings = loadedProjectSettings;
+        console.log('✅ Loaded project settings');
     }
 
     // --- MIGRATION LOGIC: Deep normalization of series names ---

@@ -128,7 +128,8 @@
                         </div>
                         <div class="form-group">
                             <label>Project Name</label>
-                            <input type="text" id="projectName" value="check" required>
+                            <input type="text" id="projectName" value="check"
+                                oninput="initializeAddWindowVendorSelector()" required>
                         </div>
                     </div>
                     <div class="form-row">
@@ -172,9 +173,19 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Series Type</label>
-                            <select id="series" required></select>
+                            <label>Vendor / Supplier</label>
+                            <select id="windowVendor" onchange="filterSeriesByVendor()" required>
+                                <option value="">-- Select Vendor --</option>
+                            </select>
                         </div>
+                        <div class="form-group">
+                            <label>Series Type</label>
+                            <select id="series" required>
+                                <option value="">-- Select Vendor First --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
                         <div class="form-group">
                             <label>Description</label>
                             <input type="text" id="description" value="Living Room" required>
@@ -445,12 +456,20 @@
                     </p>
                 </div>
                 <div class="project-selector">
-                    <h3 style="margin-bottom: 15px;">Select Project to Optimize</h3>
-                    <div class="form-group">
-                        <label>Project Name</label>
-                        <select id="projectSelector" style="max-width: 400px;">
-                            <option value="">-- Select Project --</option>
-                        </select>
+                    <h3 style="margin-bottom: 15px;">Select Project & Supplier to Optimize</h3>
+                    <div class="form-row" style="align-items: flex-end;">
+                        <div class="form-group" style="flex: 2;">
+                            <label>Project Name</label>
+                            <select id="projectSelector">
+                                <option value="">-- Select Project --</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 2;">
+                            <label>Preferred Supplier</label>
+                            <select id="projectSupplierSelector" onchange="saveProjectSupplier()">
+                                <option value="">-- Select Supplier --</option>
+                            </select>
+                        </div>
                     </div>
                     <p style="margin-top: 10px; color: #856404;">
                         <strong>Selected Project Info:</strong> <span id="projectInfo">No project selected</span>
@@ -530,39 +549,42 @@
                 <h3>➕ Add Hardware Item</h3>
                 <button class="close-btn" onclick="closeAddHardwareModal()">&times;</button>
             </div>
-            <form id="addHardwareForm" onsubmit="saveNewHardwareItem(event)">
-                <input type="hidden" id="addHardwareSeries">
-                <div class="form-group">
-                    <label>Hardware Name</label>
-                    <input type="text" id="modalHardwareName" placeholder="e.g., Shutter Lock" required>
-                </div>
-                <div class="form-row">
+            <div class="modal-body">
+                <form id="addHardwareForm" onsubmit="saveNewHardwareItem(event)">
+                    <input type="hidden" id="addHardwareSeries">
                     <div class="form-group">
-                        <label>Unit</label>
-                        <select id="modalHardwareUnit">
-                            <option value="Nos">Nos</option>
-                            <option value="Meter">Meter</option>
-                            <option value="Bottle">Bottle</option>
-                            <option value="Set">Set</option>
-                            <option value="Kg">Kg</option>
-                        </select>
+                        <label>Hardware Name</label>
+                        <input type="text" id="modalHardwareName" placeholder="e.g., Shutter Lock" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Unit</label>
+                            <select id="modalHardwareUnit">
+                                <option value="Nos">Nos</option>
+                                <option value="Meter">Meter</option>
+                                <option value="Bottle">Bottle</option>
+                                <option value="Set">Set</option>
+                                <option value="Kg">Kg</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Base Rate (₹)</label>
+                            <input type="number" id="modalHardwareRate" placeholder="0.00" step="0.01" required>
+                        </div>
                     </div>
                     <div class="form-group">
-                        <label>Base Rate (₹)</label>
-                        <input type="number" id="modalHardwareRate" placeholder="0.00" step="0.01" required>
+                        <label>Calculation Formula</label>
+                        <input type="text" id="modalHardwareFormula" placeholder="e.g., 2 * S + MS" required>
+                        <small style="color: #666;">Available: W (Width), H (Height), S (Shutters), MS (Mosquito), T
+                            (Tracks), P (Perimeter), GL("Name") (Profile Length)</small>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label>Calculation Formula</label>
-                    <input type="text" id="modalHardwareFormula" placeholder="e.g., 2 * S + MS" required>
-                    <small style="color: #666;">Available: W (Width), H (Height), S (Shutters), MS (Mosquito), T
-                        (Tracks), P (Perimeter), GL("Name") (Profile Length)</small>
-                </div>
-                <div style="text-align: right; margin-top: 20px;">
-                    <button type="button" class="btn btn-secondary" onclick="closeAddHardwareModal()">Cancel</button>
-                    <button type="submit" class="btn btn-success">💾 Save Hardware Item</button>
-                </div>
-            </form>
+                    <div style="text-align: right; margin-top: 20px;">
+                        <button type="button" class="btn btn-secondary"
+                            onclick="closeAddHardwareModal()">Cancel</button>
+                        <button type="submit" class="btn btn-success">💾 Save Hardware Item</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
     </div>
@@ -622,70 +644,84 @@
                 <h3>✏️ Edit Window</h3>
                 <button class="close-btn" onclick="closeEditWindowModal()">&times;</button>
             </div>
-            <form id="editWindowForm" onsubmit="saveWindowEdit(event)">
-                <input type="hidden" id="editWindowIndex">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Config ID</label>
-                        <input type="text" id="editConfigId" required>
+            <div class="modal-body">
+                <form id="editWindowForm" onsubmit="saveWindowEdit(event)">
+                    <input type="hidden" id="editWindowIndex">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Config ID</label>
+                            <input type="text" id="editConfigId" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Project Name</label>
+                            <input type="text" id="editProjectName" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Project Name</label>
-                        <input type="text" id="editProjectName" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Width <span class="unit-label">(inches)</span></label>
+                            <input type="number" id="editWidth" step="0.25" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Height <span class="unit-label">(inches)</span></label>
+                            <input type="number" id="editHeight" step="0.25" required>
+                        </div>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Width <span class="unit-label">(inches)</span></label>
-                        <input type="number" id="editWidth" step="0.25" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Tracks</label>
+                            <select id="editTracks" required>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Shutters</label>
+                            <select id="editShutters" required>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Mosquito</label>
+                            <select id="editMosquitoShutters" required>
+                                <option value="0">0</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Height <span class="unit-label">(inches)</span></label>
-                        <input type="number" id="editHeight" step="0.25" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Vendor / Supplier</label>
+                            <select id="editWindowVendor" onchange="filterEditSeriesByVendor()" required>
+                                <option value="">-- Select Vendor --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Series</label>
+                            <select id="editSeries" required>
+                                <option value="">-- Select Vendor First --</option>
+                            </select>
+                        </div>
                     </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Tracks</label>
-                        <select id="editTracks" required>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                        </select>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Description</label>
+                            <input type="text" id="editDescription" required>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Shutters</label>
-                        <select id="editShutters" required>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                        </select>
+                    <div style="margin-top: 20px;">
+                        <button type="submit" class="btn btn-success">💾 Save Changes</button>
+                        <button type="button" class="btn btn-danger" onclick="closeEditWindowModal()">Cancel</button>
                     </div>
-                    <div class="form-group">
-                        <label>Mosquito</label>
-                        <select id="editMosquitoShutters" required>
-                            <option value="0">0</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Series</label>
-                        <select id="editSeries" required></select>
-                    </div>
-                    <div class="form-group">
-                        <label>Description</label>
-                        <input type="text" id="editDescription" required>
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-success">💾 Save Changes</button>
-                <button type="button" class="btn btn-danger" onclick="closeEditWindowModal()">Cancel</button>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
 

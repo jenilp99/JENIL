@@ -34,6 +34,7 @@ let windows = [];
 let seriesFormulas = {};
 let stockMaster = {};
 let optimizationResults = null;
+let projectSettings = {}; // Global per-project configuration
 let kerf = 0.125;
 let unitMode = 'inch';
 
@@ -86,6 +87,55 @@ function initializeDefaults() {
                 { component: '1" Bearing Bottom', qty: '2*MS', length: '(W-5-2*(S-1))/S', desc: 'MS Bearing Bottom' },
                 { component: '1" C-channel', qty: '2*MS', length: 'H-1.125', desc: 'MS C-channel Vertical' },
                 { component: '1" C-channel', qty: '2*MS', length: '(W-5-2*(S-1))/S', desc: 'MS C-channel Horizontal' }
+            ],
+            '19mm UMA': [
+                { component: 'Handle Profile', qty: '(2*(S/S))+(1*MS)', length: 'H-1.5', desc: 'Shutter Handle' },
+                { component: 'Slim Interlock Shutter', qty: '(2*S-2)+(1*MS)', length: 'H-1.5', desc: 'Interlocks' },
+                { component: 'Top Bottom Profile', qty: '2*S + 2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'Shutter Horizontal' },
+                { component: 'Two Track Premium Type', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
+                { component: 'Three Track Premium Type', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
+                { component: 'Two Track Premium Type', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
+                { component: 'Three Track Premium Type', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' }
+            ],
+            '25mm Gulf': [
+                { component: '2 Track Top/Bottom', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
+                { component: '3 Track Top/Bottom', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
+                { component: '2 Track Vertical', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
+                { component: '3 Track Vertical', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
+                { component: '25mm Shutter Handle', qty: '(2*(S/S))+(1*MS)', length: 'H-1.125', desc: 'Shutter Handle' },
+                { component: '25mm Shutter Interlock', qty: '(2*S-2)+(1*MS)', length: 'H-1.125', desc: 'Interlock' },
+                { component: '25mm Shutter Horizontal', qty: '2*S + 2*MS', length: '(W-5-2*(S-1))/S', desc: 'Shutter Top/Bottom' }
+            ],
+            '27mm Gulf': [
+                { component: '2 Track Top/Bottom', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
+                { component: '3 Track Top/Bottom', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
+                { component: '2 Track Vertical', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
+                { component: '3 Track Vertical', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
+                { component: '27mm Shutter Handle', qty: '(2*(S/S))+(1*MS)', length: 'H-1.125', desc: 'Shutter Handle' },
+                { component: '27mm Shutter Interlock', qty: '(2*S-2)+(1*MS)', length: 'H-1.125', desc: 'Interlock' }
+            ],
+            '31mm Gulf': [
+                { component: 'Two Track Top & Bottom', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
+                { component: 'Three Track Top & Bottom', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
+                { component: 'Two Track Vertical', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
+                { component: 'Three Track Vertical', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
+                { component: '31mm Shutter Handle', qty: '(2*(S/S))+(1*MS)', length: 'H-1.125', desc: 'Shutter Handle' },
+                { component: '31mm Shutter Interlock', qty: '(2*S-2)+(1*MS)', length: 'H-1.125', desc: 'Interlock' }
+            ],
+            '35mm Gulf': [
+                { component: 'Two Track Top & Bottom', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
+                { component: 'Three Track Top & Bottom', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
+                { component: 'Two Track Vertical', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
+                { component: 'Three Track Vertical', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
+                { component: '35mm Shutter Handle', qty: '(2*(S/S))+(1*MS)', length: 'H-2.75', desc: 'Shutter Handle' },
+                { component: '35mm Shutter Interlock', qty: '(2*S-2)+(1*MS)', length: 'H-2.75', desc: 'Interlock' }
+            ],
+            '40mm Pro': [
+                { component: 'Two Track Top Bottom', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
+                { component: 'Three Track Top Bottom', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
+                { component: 'Two Track Premium Type', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
+                { component: '40mm Shutter Handle', qty: '(2*(S/S))+(1*MS)', length: 'H-2.75', desc: 'Shutter Handle' },
+                { component: '40mm Shutter Interlock', qty: '(2*S-2)+(1*MS)', length: 'H-2.75', desc: 'Interlock' }
             ]
         };
     }
@@ -111,6 +161,39 @@ function initializeDefaults() {
                 { material: '1" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '1" 2 or 3 track top and bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
                 { material: '1" C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
+            ],
+            '19mm UMA': [
+                { material: 'Handle Profile', stock1: 144, stock1Cost: 100 },
+                { material: 'Slim Interlock Shutter', stock1: 144, stock1Cost: 100 },
+                { material: 'Top Bottom Profile', stock1: 144, stock1Cost: 100 },
+                { material: 'Two Track Premium Type', stock1: 144, stock1Cost: 100 },
+                { material: 'Three Track Premium Type', stock1: 144, stock1Cost: 100 }
+            ],
+            '25mm Gulf': [
+                { material: '2 Track Top/Bottom', stock1: 144, stock1Cost: 100 },
+                { material: '3 Track Top/Bottom', stock1: 144, stock1Cost: 100 },
+                { material: '25mm Shutter Handle', stock1: 144, stock1Cost: 100 },
+                { material: '25mm Shutter Horizontal', stock1: 144, stock1Cost: 100 }
+            ],
+            '27mm Gulf': [
+                { material: '2 Track Top/Bottom', stock1: 144, stock1Cost: 100 },
+                { material: '3 Track Top/Bottom', stock1: 144, stock1Cost: 100 },
+                { material: '27mm Shutter Handle', stock1: 144, stock1Cost: 100 }
+            ],
+            '31mm Gulf': [
+                { material: 'Two Track Top & Bottom', stock1: 144, stock1Cost: 100 },
+                { material: 'Three Track Top & Bottom', stock1: 144, stock1Cost: 100 },
+                { material: '31mm Shutter Handle', stock1: 144, stock1Cost: 100 }
+            ],
+            '35mm Gulf': [
+                { material: 'Two Track Top & Bottom', stock1: 144, stock1Cost: 100 },
+                { material: 'Three Track Top & Bottom', stock1: 144, stock1Cost: 100 },
+                { material: '35mm Shutter Handle', stock1: 144, stock1Cost: 100 }
+            ],
+            '40mm Pro': [
+                { material: 'Two Track Top Bottom', stock1: 144, stock1Cost: 100 },
+                { material: 'Three Track Top Bottom', stock1: 144, stock1Cost: 100 },
+                { material: '40mm Shutter Handle', stock1: 144, stock1Cost: 100 }
             ]
         };
     }
@@ -297,22 +380,88 @@ function refreshAllUI() {
     updateDashboardStats();
     renderSupplierMaster(); // New
     updateSupplierDatalist(); // New
+    initializeAddWindowVendorSelector(); // New
 }
 
 function refreshSeriesDropdown() {
-    const selects = [
-        document.getElementById('series'),
-        document.getElementById('editSeries'),
-        document.getElementById('newStockSeries')
-    ];
+    const select = document.getElementById('newStockSeries');
+    if (select) {
+        select.innerHTML = '';
+        Object.keys(seriesFormulas).forEach(series => {
+            select.innerHTML += `<option value="${series}">${series} Series</option>`;
+        });
+    }
+}
 
-    selects.forEach(select => {
-        if (select) {
-            select.innerHTML = '';
-            Object.keys(seriesFormulas).forEach(series => {
-                select.innerHTML += `<option value="${series}">${series} Series</option>`;
-            });
+function initializeAddWindowVendorSelector() {
+    const selector = document.getElementById('windowVendor');
+    const editSelector = document.getElementById('editWindowVendor');
+
+    if (selector) {
+        const suppliers = Object.keys(supplierMaster);
+        selector.innerHTML = '<option value="">-- Select Vendor --</option>';
+        suppliers.forEach(s => {
+            selector.innerHTML += `<option value="${s}">${s}</option>`;
+        });
+
+        // If a project is selected and has a preferred supplier, pre-select it
+        const activeProject = document.getElementById('projectName').value;
+        if (activeProject && projectSettings[activeProject] && projectSettings[activeProject].preferredSupplier) {
+            selector.value = projectSettings[activeProject].preferredSupplier;
+            filterSeriesByVendor();
         }
+    }
+
+    if (editSelector) {
+        const suppliers = Object.keys(supplierMaster);
+        editSelector.innerHTML = '<option value="">-- Select Vendor --</option>';
+        suppliers.forEach(s => {
+            editSelector.innerHTML += `<option value="${s}">${s}</option>`;
+        });
+    }
+}
+
+function filterSeriesByVendor() {
+    const vendor = document.getElementById('windowVendor').value;
+    const seriesSelect = document.getElementById('series');
+
+    if (!vendor) {
+        seriesSelect.innerHTML = '<option value="">-- Select Vendor First --</option>';
+        return;
+    }
+
+    const availableSeries = Object.keys(supplierMaster[vendor] || {});
+    seriesSelect.innerHTML = '';
+
+    if (availableSeries.length === 0) {
+        seriesSelect.innerHTML = '<option value="">No Series Found</option>';
+        return;
+    }
+
+    availableSeries.forEach(s => {
+        seriesSelect.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+}
+
+function filterEditSeriesByVendor() {
+    const vendor = document.getElementById('editWindowVendor').value;
+    const seriesSelect = document.getElementById('editSeries');
+
+    if (!vendor) {
+        seriesSelect.innerHTML = '<option value="">-- Select Vendor First --</option>';
+        return;
+    }
+
+    const availableSeries = Object.keys(supplierMaster[vendor] || {});
+    seriesSelect.innerHTML = '';
+
+    if (availableSeries.length === 0) {
+        seriesSelect.innerHTML = '<option value="">No Series Found</option>';
+        return;
+    }
+
+    availableSeries.forEach(s => {
+        seriesSelect.innerHTML += `<option value="${s}">${s}</option>`;
     });
 }
 
@@ -383,6 +532,7 @@ function addWindow(event) {
     const window = {
         configId: document.getElementById('configId').value,
         projectName: document.getElementById('projectName').value,
+        vendor: document.getElementById('windowVendor').value,
         width: convertToInches(widthRaw),
         height: convertToInches(heightRaw),
         tracks: tracks,
@@ -400,12 +550,14 @@ function addWindow(event) {
 
     showAlert('✅ Window ' + window.configId + ' added successfully!');
     refreshProjectSelector();
+    displayWindows(); // Refresh the list
 }
 
 function clearForm() {
     document.getElementById('windowForm').reset();
     document.getElementById('configId').value = 'W01';
     document.getElementById('projectName').value = 'check';
+    initializeAddWindowVendorSelector();
 }
 
 function displayWindows() {
@@ -423,6 +575,7 @@ function displayWindows() {
                 <h3>${w.configId} - ${w.description}</h3>
                 <div class="window-details">
                     <div><strong>Project:</strong> ${w.projectName}</div>
+                    <div><strong>Vendor:</strong> ${w.vendor || 'Not Set'}</div>
                     <div><strong>Size:</strong> ${w.width}" × ${w.height}"</div>
                     <div><strong>Tracks:</strong> ${w.tracks}</div>
                     <div><strong>Shutters:</strong> ${w.shutters}</div>
@@ -450,6 +603,12 @@ function editWindow(idx) {
     document.getElementById('editTracks').value = win.tracks;
     document.getElementById('editShutters').value = win.shutters;
     document.getElementById('editMosquitoShutters').value = win.mosquitoShutters;
+
+    // Set Vendor and filter series
+    const vendorSelector = document.getElementById('editWindowVendor');
+    vendorSelector.value = win.vendor || '';
+    filterEditSeriesByVendor();
+
     document.getElementById('editSeries').value = win.series;
     document.getElementById('editDescription').value = win.description;
     document.getElementById('editWindowModal').classList.add('active');
@@ -482,6 +641,7 @@ function saveWindowEdit(event) {
     windows[idx] = {
         configId: document.getElementById('editConfigId').value,
         projectName: document.getElementById('editProjectName').value,
+        vendor: document.getElementById('editWindowVendor').value,
         width: convertToInches(widthRaw),
         height: convertToInches(heightRaw),
         tracks: parseInt(document.getElementById('editTracks').value),
@@ -513,34 +673,48 @@ function deleteWindow(idx) {
 
 function refreshFormulasDisplay() {
     const container = document.getElementById('formulasList');
+    if (!container) return;
     let html = '';
 
     Object.entries(seriesFormulas).forEach(([series, formulas]) => {
-        html += `<div class="formula-card">
-            <h3>${series} Series
-                <button class="btn btn-success btn-sm" style="float: right; margin-left: 10px;" onclick="showAddComponentModal('${series}')">➕ Add Component</button>
-                <button class="btn btn-danger btn-sm" style="float: right;" onclick="deleteSeries('${series}')">🗑️ Delete Series</button>
-            </h3>`;
+        html += `
+        <details class="formula-card" style="margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+            <summary style="padding: 15px; background: #f8f9fa; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; font-weight: bold; font-size: 1.1em; border-bottom: 1px solid #eee;">
+                <span>🧪 ${series} Series</span>
+                <div onclick="event.preventDefault();">
+                    <button class="btn btn-success btn-sm" onclick="showAddComponentModal('${series}')">➕ Add Component</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteSeries('${series}')">🗑️ Delete Series</button>
+                    <span style="font-size: 0.8em; color: #666; margin-left: 10px;">(${formulas.length} items)</span>
+                </div>
+            </summary>
+            <div style="padding: 15px;">`;
 
         formulas.forEach((f, idx) => {
-            html += `<div class="formula-item">
-                <div class="formula-content">
-                    <strong>${f.desc}:</strong><br>
-                    Component: <code>${f.component}</code><br>
-                    Quantity: <code>${f.qty}</code> pieces<br>
-                    Length: <code>${f.length}</code> inches
-                </div>
-                <div class="formula-actions">
-                    <button class="btn btn-warning btn-sm" onclick="editFormula('${series}', ${idx})">✏️ Edit</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteFormula('${series}', ${idx})">🗑️</button>
-                </div>
-            </div>`;
+            html += `
+                <div class="formula-item" style="border-bottom: 1px solid #f0f0f0; margin-bottom: 15px; padding-bottom: 15px; last-child { border-bottom: none; }">
+                    <div class="formula-content">
+                        <strong>${f.desc}:</strong><br>
+                        Component: <code>${f.component}</code><br>
+                        Quantity: <code>${f.qty}</code> pieces<br>
+                        Length: <code>${f.length}</code> inches
+                    </div>
+                    <div class="formula-actions" style="margin-top: 10px;">
+                        <button class="btn btn-warning btn-sm" onclick="editFormula('${series}', ${idx})">✏️ Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteFormula('${series}', ${idx})">🗑️</button>
+                    </div>
+                </div>`;
         });
 
-        html += '</div>';
+        if (formulas.length === 0) {
+            html += `<p style="color: #666; font-style: italic;">No components added for this series yet.</p>`;
+        }
+
+        html += `
+            </div>
+        </details>`;
     });
 
-    container.innerHTML = html;
+    container.innerHTML = html || '<p class="alert alert-warning">No series formulas configured yet.</p>';
 }
 
 function showAddComponentModal(series) {
@@ -868,14 +1042,54 @@ function refreshProjectSelector() {
 
     select.onchange = function () {
         const info = document.getElementById('projectInfo');
+        const supplierSelect = document.getElementById('projectSupplierSelector');
+
         if (this.value) {
             const count = windows.filter(w => w.projectName === this.value).length;
             const seriesTypes = [...new Set(windows.filter(w => w.projectName === this.value).map(w => w.series))];
             info.innerHTML = `<strong>${count}</strong> windows | Series: <strong>${seriesTypes.join(', ')}</strong>`;
+
+            // Load saved supplier for this project
+            if (projectSettings[this.value] && projectSettings[this.value].preferredSupplier) {
+                supplierSelect.value = projectSettings[this.value].preferredSupplier;
+            } else {
+                supplierSelect.value = '';
+            }
         } else {
             info.innerHTML = 'No project selected';
+            supplierSelect.value = '';
         }
     };
+}
+
+function initializeProjectSupplierSelector() {
+    const selector = document.getElementById('projectSupplierSelector');
+    if (!selector) return;
+
+    const suppliers = Object.keys(supplierMaster);
+    selector.innerHTML = '<option value="">-- Generic (Automatic) --</option>';
+    suppliers.forEach(s => {
+        selector.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+}
+
+function saveProjectSupplier() {
+    const project = document.getElementById('projectSelector').value;
+    const supplier = document.getElementById('projectSupplierSelector').value;
+
+    if (!project) {
+        showAlert('⚠️ Please select a project first!');
+        document.getElementById('projectSupplierSelector').value = '';
+        return;
+    }
+
+    if (!projectSettings[project]) {
+        projectSettings[project] = {};
+    }
+
+    projectSettings[project].preferredSupplier = supplier;
+    autoSaveProjectSettings();
+    showAlert(`✅ Preferred supplier for ${project} set to: ${supplier || 'Automatic'}`);
 }
 
 // ============================================================================
@@ -1009,6 +1223,7 @@ window.onload = function () {
     loadAllData();
     initializeDefaults();
     initializeSupplierMaster(); // New
+    initializeProjectSupplierSelector(); // New
     refreshAllUI();
 };
 // ============================================================================
@@ -1224,11 +1439,18 @@ function openSectionSelectModal(materialKey) {
     currentSelectingMaterial = materialKey;
     document.getElementById('selectMaterialName').textContent = materialKey;
 
+    // Get project filter
+    const project = document.getElementById('projectSelector').value;
+    const prefSupplier = (project && projectSettings[project]) ? projectSettings[project].preferredSupplier : null;
+
     // Get all matching sections
     const [series, materialName] = materialKey.split(' | ');
     availableSections = [];
 
     Object.entries(supplierMaster).forEach(([supplier, seriesObj]) => {
+        // Apply preference filter
+        if (prefSupplier && supplier !== prefSupplier) return;
+
         if (seriesObj[series]) {
             // Find material matches (partial match)
             const matMatches = Object.keys(seriesObj[series]).filter(k =>
@@ -1339,7 +1561,13 @@ function populateCatalogueList(series, materialName) {
     const catalogueDiv = document.getElementById('catalogueList');
     catalogueDiv.innerHTML = '';
 
+    const project = document.getElementById('projectSelector').value;
+    const prefSupplier = (project && projectSettings[project]) ? projectSettings[project].preferredSupplier : null;
+
     Object.entries(supplierMaster).forEach(([supplier, seriesObj]) => {
+        // Apply preference filter
+        if (prefSupplier && supplier !== prefSupplier) return;
+
         if (seriesObj[series]) {
             const matMatches = Object.keys(seriesObj[series]).filter(k =>
                 k.toLowerCase().includes(materialName.toLowerCase()) ||
