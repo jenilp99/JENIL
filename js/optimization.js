@@ -70,7 +70,33 @@ function runOptimization() {
             continue;
         }
 
-        const plans = optimizeMaterialSmart(pieces, stockInfo, kerf);
+        // --- NEW: WEIGHT-BASED COST CALCULATION ---
+        // Derived from aluminumRate and sectional weight if available
+        let weight = stockInfo.weight;
+        // Priority: selected section in results > stock item weight
+        if (optimizationResults && optimizationResults.componentSections && optimizationResults.componentSections[compoundKey]) {
+            weight = optimizationResults.componentSections[compoundKey].weight;
+        }
+
+        let effectiveStock1Cost = stockInfo.stock1Cost || 100;
+        let effectiveStock2Cost = stockInfo.stock2Cost || 125;
+        const currentRate = (typeof aluminumRate !== 'undefined') ? aluminumRate : 280;
+
+        if (weight) {
+            // weight is for 12' (144")
+            effectiveStock1Cost = (stockInfo.stock1 / 144) * weight * currentRate;
+            if (stockInfo.stock2) {
+                effectiveStock2Cost = (stockInfo.stock2 / 144) * weight * currentRate;
+            }
+        }
+
+        const effectiveStockInfo = {
+            ...stockInfo,
+            stock1Cost: effectiveStock1Cost,
+            stock2Cost: effectiveStock2Cost
+        };
+
+        const plans = optimizeMaterialSmart(pieces, effectiveStockInfo, kerf);
         const displayKey = `${materialSeries} | ${materialName}`;
         results[displayKey] = plans;
 

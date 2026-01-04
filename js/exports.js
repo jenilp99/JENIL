@@ -146,7 +146,7 @@ function displayResults() {
             html += '<td>' + plan.used.toFixed(2) + '"</td>';
             html += '<td>' + plan.waste.toFixed(2) + '"</td>';
             html += '<td>' + plan.efficiency + '%</td>';
-            html += '<td>₹' + plan.cost + '</td>';
+            html += '<td>₹' + plan.cost.toFixed(0) + '</td>';
             html += '</tr>';
             
             const stockLength = parseFloat(plan.stock.replace('"', ''));
