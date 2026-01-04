@@ -453,7 +453,7 @@ function renderSupplierMaster() {
                         <tr>
                             <th>Section No.</th>
                             <th>T (mm)</th>
-                            <th>Wt (Kg/12ft)</th>
+                            <th>Wt (Kg/12')</th>
                             <th style="width: 80px; text-align: center;">Actions</th>
                         </tr>
                     </thead>
@@ -704,7 +704,7 @@ function showSelectedSectionDetails() {
             <strong>Material:</strong> ${section.materialKey}<br>
             <strong>Section Number:</strong> ${section.sectionNo}<br>
             <strong>Thickness (T):</strong> ${section.t} mm<br>
-            <strong>Weight per 12ft stick:</strong> ${section.weight} Kg
+            <strong>Weight (per 12' reference):</strong> ${section.weight} Kg
         </div>
     `;
 

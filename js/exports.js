@@ -140,7 +140,7 @@ function displayResults() {
             
             html += '<tr>';
             html += '<td>' + (idx + 1) + '</td>';
-            html += '<td>' + plan.stock + '</td>';
+            html += '<td>' + formatInchesToFeet(parseFloat(plan.stock.replace('"', ''))) + '</td>';
             html += '<td><strong>' + cutSequence + '</strong></td>';
             html += '<td>' + piecesStr + '</td>';
             html += '<td>' + plan.used.toFixed(2) + '"</td>';

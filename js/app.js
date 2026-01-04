@@ -36,6 +36,7 @@ let stockMaster = {};
 let optimizationResults = null;
 let projectSettings = {}; // Global per-project configuration
 let kerf = 0.125;
+let aluminumRate = 280;
 let unitMode = 'inch';
 
 // New: Rate & Price configuration
@@ -257,42 +258,42 @@ function initializeDefaults() {
                 { material: '1" C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
             ],
             '19mm UMA': [
-                { material: 'Handle Profile', stock1: 144, stock1Cost: 100 },
-                { material: 'Top Bottom Profile', stock1: 144, stock1Cost: 100 },
-                { material: 'Track (Horiz)', stock1: 144, stock1Cost: 100 },
-                { material: 'Interlock (Vert)', stock1: 144, stock1Cost: 100 },
-                { material: 'Auxiliary', stock1: 144, stock1Cost: 100 }
+                { material: 'Handle Profile', stock1: 189, stock1Cost: 100 },
+                { material: 'Top Bottom Profile', stock1: 189, stock1Cost: 100 },
+                { material: 'Track (Horiz)', stock1: 189, stock1Cost: 100 },
+                { material: 'Interlock (Vert)', stock1: 189, stock1Cost: 100 },
+                { material: 'Auxiliary', stock1: 189, stock1Cost: 100 }
             ],
             'Vitco 25mm Gulf': [
-                { material: 'Track (Horiz)', stock1: 144, stock1Cost: 100 },
-                { material: 'Frame (Vert)', stock1: 144, stock1Cost: 100 },
-                { material: 'Sash Component', stock1: 144, stock1Cost: 100 },
-                { material: 'Hardware', stock1: 144, stock1Cost: 100 }
+                { material: 'Track (Horiz)', stock1: 189, stock1Cost: 100 },
+                { material: 'Frame (Vert)', stock1: 189, stock1Cost: 100 },
+                { material: 'Sash Component', stock1: 189, stock1Cost: 100 },
+                { material: 'Hardware', stock1: 189, stock1Cost: 100 }
             ],
             'Vitco 25mm High-End': [
-                { material: 'Track (Horiz)', stock1: 144, stock1Cost: 100 },
-                { material: 'Frame (Vert)', stock1: 144, stock1Cost: 100 },
-                { material: 'Sash Component', stock1: 144, stock1Cost: 100 }
+                { material: 'Track (Horiz)', stock1: 189, stock1Cost: 100 },
+                { material: 'Frame (Vert)', stock1: 189, stock1Cost: 100 },
+                { material: 'Sash Component', stock1: 189, stock1Cost: 100 }
             ],
             '27mm Gulf': [
-                { material: '2 Track Top/Bottom', stock1: 144, stock1Cost: 100 },
-                { material: '3 Track Top/Bottom', stock1: 144, stock1Cost: 100 },
-                { material: '27mm Shutter Handle', stock1: 144, stock1Cost: 100 }
+                { material: '2 Track Top/Bottom', stock1: 189, stock1Cost: 100 },
+                { material: '3 Track Top/Bottom', stock1: 189, stock1Cost: 100 },
+                { material: '27mm Shutter Handle', stock1: 189, stock1Cost: 100 }
             ],
             '31mm Gulf': [
-                { material: 'Two Track Top & Bottom', stock1: 144, stock1Cost: 100 },
-                { material: 'Three Track Top & Bottom', stock1: 144, stock1Cost: 100 },
-                { material: '31mm Shutter Handle', stock1: 144, stock1Cost: 100 }
+                { material: 'Two Track Top & Bottom', stock1: 189, stock1Cost: 100 },
+                { material: 'Three Track Top & Bottom', stock1: 189, stock1Cost: 100 },
+                { material: '31mm Shutter Handle', stock1: 189, stock1Cost: 100 }
             ],
             '35mm Gulf': [
-                { material: 'Two Track Top & Bottom', stock1: 144, stock1Cost: 100 },
-                { material: 'Three Track Top & Bottom', stock1: 144, stock1Cost: 100 },
-                { material: '35mm Shutter Handle', stock1: 144, stock1Cost: 100 }
+                { material: 'Two Track Top & Bottom', stock1: 189, stock1Cost: 100 },
+                { material: 'Three Track Top & Bottom', stock1: 189, stock1Cost: 100 },
+                { material: '35mm Shutter Handle', stock1: 189, stock1Cost: 100 }
             ],
             '40mm Pro': [
-                { material: 'Two Track Top Bottom', stock1: 144, stock1Cost: 100 },
-                { material: 'Three Track Top Bottom', stock1: 144, stock1Cost: 100 },
-                { material: '40mm Shutter Handle', stock1: 144, stock1Cost: 100 }
+                { material: 'Two Track Top Bottom', stock1: 189, stock1Cost: 100 },
+                { material: 'Three Track Top Bottom', stock1: 189, stock1Cost: 100 },
+                { material: '40mm Shutter Handle', stock1: 189, stock1Cost: 100 }
             ]
         };
     }
@@ -1131,6 +1132,11 @@ function deleteStock(series, idx) {
 
 function updateKerf() {
     kerf = parseFloat(document.getElementById('kerfGlobal').value);
+    autoSaveSettings();
+}
+
+function updateAluminumRate() {
+    aluminumRate = parseFloat(document.getElementById('aluminumRate').value);
     autoSaveSettings();
 }
 

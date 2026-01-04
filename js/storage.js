@@ -12,6 +12,7 @@ const StorageManager = {
         RESULTS: 'niruma_results',
         HARDWARE: 'niruma_hardware',
         SUPPLIER: 'niruma_supplier',
+        ALUMINUM_RATE: 'niruma_aluminum_rate',
         PROJECT_SETTINGS: 'niruma_project_settings'
     },
 
@@ -92,16 +93,18 @@ const StorageManager = {
     },
 
     // Save settings
-    saveSettings(kerf, unit) {
+    saveSettings(kerf, unit, aluminumRate) {
         this.save(this.KEYS.KERF, kerf);
         this.save(this.KEYS.UNIT, unit);
+        this.save(this.KEYS.ALUMINUM_RATE, aluminumRate);
     },
 
     // Load settings
     loadSettings() {
         return {
             kerf: this.load(this.KEYS.KERF, 0.125),
-            unit: this.load(this.KEYS.UNIT, 'inch')
+            unit: this.load(this.KEYS.UNIT, 'inch'),
+            aluminumRate: this.load(this.KEYS.ALUMINUM_RATE, 280)
         };
     },
 
@@ -195,7 +198,7 @@ function autoSaveStock() {
 }
 
 function autoSaveSettings() {
-    StorageManager.saveSettings(kerf, unitMode);
+    StorageManager.saveSettings(kerf, unitMode, aluminumRate);
     console.log('✅ Settings auto-saved');
 }
 
@@ -248,11 +251,17 @@ function loadAllData() {
 
     kerf = settings.kerf;
     unitMode = settings.unit;
+    aluminumRate = settings.aluminumRate;
 
     // Update kerf if element exists
     const kerfElement = document.getElementById('kerfGlobal');
     if (kerfElement) {
         kerfElement.value = kerf;
+    }
+
+    const rateElement = document.getElementById('aluminumRate');
+    if (rateElement) {
+        rateElement.value = aluminumRate;
     }
 
     // Update all unit toggle checkboxes

@@ -83,7 +83,7 @@ function generateMaterialPurchaseListPDF(projectWindows, selectedProject) {
             section ? section.sectionNo : '-',
             key,
             data.length,
-            (data[0].stockLength / 12) + "'",
+            formatInchesToFeet(data[0].stockLength),
             (data.reduce((sum, p) => sum + (section ? section.weight : 0), 0)).toFixed(2)
         ]);
     }
@@ -596,7 +596,7 @@ function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requesti
                     wt += weightForWindow;
                 }
             }
-            const profCost = wt * 280;
+            const profCost = wt * (typeof aluminumRate !== 'undefined' ? aluminumRate : 280);
             const sub = profCost + pcCost + glassCost + hardwareCost;
             grandTotal += sub;
 
@@ -1007,7 +1007,7 @@ function generateQuotationHTML(projectWindows, selectedProject) {
             }
         }
 
-        const profileCost = weightTotal * 280;
+        const profileCost = weightTotal * (typeof aluminumRate !== 'undefined' ? aluminumRate : 280);
         const winTotal = profileCost + powderCoatingCost + glassCost + hardwareCost + rubberCost;
         grandTotal += winTotal;
 
@@ -1056,7 +1056,7 @@ function generateMaterialPurchaseHTML(projectWindows, selectedProject) {
             <td style="padding: 10px;">${section ? section.sectionNo : '-'}</td>
             <td style="padding: 10px;">${key}</td>
             <td style="padding: 10px; text-align: center;">${data.length}</td>
-            <td style="padding: 10px; text-align: center;">${stickLength / 12}'</td>
+            <td style="padding: 10px; text-align: center;">${formatInchesToFeet(stickLength)}</td>
             <td style="padding: 10px; text-align: right;">${totalWeight.toFixed(2)}</td>
         </tr>`;
     }
@@ -1267,4 +1267,11 @@ function findStockInfo(materialKey, length) {
         if (stock) return stock;
     }
     return null;
+}
+function formatInchesToFeet(totalInches) {
+    if (!totalInches || totalInches <= 0) return '0\'';
+    const feet = Math.floor(totalInches / 12);
+    const inches = Math.round(totalInches % 12);
+    if (inches === 0) return `${feet}'`;
+    return `${feet}' - ${inches}"`;
 }
