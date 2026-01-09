@@ -227,50 +227,65 @@ const DEFAULT_SUPPLIER_DATA = {
             ]
         },
         "25mm Gulf (Frame)": {
-            "Track (Horiz)": [
-                { sectionNo: "V-2545 (2T-1.2)", t: 1.20, weight: 3.731 },
-                { sectionNo: "V-2536 (2T-1.4)", t: 1.40, weight: 3.694 },
-                { sectionNo: "V-2541 (3T-1.2)", t: 1.20, weight: 5.377 },
-                { sectionNo: "V-2537 (3T-1.4)", t: 1.40, weight: 5.347 },
-                { sectionNo: "V-2547 (4T-1.2)", t: 1.20, weight: 6.744 }
-            ],
-            "Frame (Vert)": [
-                { sectionNo: "V-2546 (2T)", t: 1.20, weight: 2.560 },
-                { sectionNo: "V-2542 (3T)", t: 1.20, weight: 3.603 },
-                { sectionNo: "V-2938 (2T-Premium)", t: 1.20, weight: 3.072 },
-                { sectionNo: "V-2939 (3T-Premium)", t: 1.20, weight: 4.045 },
-                { sectionNo: "V-2548 (4T)", t: 1.20, weight: 4.791 }
+            "Track": [
+                { sectionNo: "V-2536 (2T Top)", t: 1.40, weight: 1.010 },
+                { sectionNo: "V-2536 (2T Bottom)", t: 1.40, weight: 1.010 },
+                { sectionNo: "V-2546 (2T Vertical)", t: 1.20, weight: 0.700 },
+                { sectionNo: "V-2537 (3T Top)", t: 1.40, weight: 1.462 },
+                { sectionNo: "V-2537 (3T Bottom)", t: 1.40, weight: 1.462 },
+                { sectionNo: "V-2542 (3T Vertical)", t: 1.20, weight: 0.985 },
+                { sectionNo: "V-2547 (4T Top/Bottom)", t: 1.20, weight: 1.844 },
+                { sectionNo: "V-2548 (4T Vertical)", t: 1.20, weight: 1.310 }
             ],
             "Auxiliary": [
-                { sectionNo: "V-2543 (Lock Adp)", t: 1.20, weight: 0.530 },
-                { sectionNo: "V-2544 (Top Guide)", t: 1.20, weight: 0.658 }
+                { sectionNo: "V-3535 (Rail Cap)", t: 1.20, weight: 0.163 },
+                { sectionNo: "V-2543 (Lock Adp)", t: 1.20, weight: 0.145 },
+                { sectionNo: "V-2544 (Top Guide)", t: 1.20, weight: 0.180 }
             ]
         },
         "25mm High-End (Frame)": {
-            "Track (Horiz)": [
-                { sectionNo: "V-2562 (2T)", t: 1.10, weight: 2.849 },
-                { sectionNo: "V-2563 (3T)", t: 1.10, weight: 4.996 },
-                { sectionNo: "V-2501 (2T-Basic)", t: 1.40, weight: 3.182 },
-                { sectionNo: "V-2502 (3T-Basic)", t: 1.40, weight: 5.121 },
-                { sectionNo: "V-2503 (2T-Prem)", t: 1.40, weight: 3.947 },
-                { sectionNo: "V-2504 (3T-Prem)", t: 1.40, weight: 6.031 },
-                { sectionNo: "V-2509 (2in1 Grill)", t: 1.40, weight: 5.249 }
+            "Track": [
+                { sectionNo: "V-2562 (2T)", t: 1.10, weight: 0.779 },
+                { sectionNo: "V-2501 (2T Basic)", t: 1.40, weight: 0.870 },
+                { sectionNo: "V-2503 (2T Premium)", t: 1.40, weight: 1.079 },
+                { sectionNo: "V-2563 (3T)", t: 1.10, weight: 1.366 },
+                { sectionNo: "V-2502 (3T Basic)", t: 1.40, weight: 1.400 },
+                { sectionNo: "V-2504 (3T Premium)", t: 1.40, weight: 1.649 },
+                { sectionNo: "V-2509 (2in1 Frame)", t: 1.40, weight: 1.435 }
             ],
             "Auxiliary": [
-                { sectionNo: "V-2560 (Rain Cover)", t: 1.25, weight: 0.578 }
+                { sectionNo: "UMA-17 (Angle)", t: 4.70, weight: 1.688 },
+                { sectionNo: "V-3535 (Rail Cap)", t: 1.20, weight: 0.163 }
             ]
         },
-        "25mm Series (Shutter)": {
-            "Sash Component": [
-                { sectionNo: "GENERIC-25-H (Handle)", t: 1.20, weight: 1.646 },
-                { sectionNo: "GENERIC-25-I (Interlock)", t: 1.20, weight: 1.829 },
-                { sectionNo: "GENERIC-25-TB (Top/Bottom)", t: 1.20, weight: 1.756 }
+        "25mm Shutter (Shared)": {
+            "Sash": [
+                { sectionNo: "V-2511 (SGU)", t: 1.20, weight: 0.770 },
+                { sectionNo: "V-2512 (DGU)", t: 1.20, weight: 0.690 },
+                { sectionNo: "V-2518 (Top/Bottom)", t: 1.20, weight: 0.620 },
+                { sectionNo: "V-2515 (Top/Bottom)", t: 1.20, weight: 0.574 }
+            ],
+            "Interlock": [
+                { sectionNo: "V-2523 (SGU Slim)", t: 1.20, weight: 0.445 },
+                { sectionNo: "V-2528 (SGU Slim)", t: 1.20, weight: 0.497 },
+                { sectionNo: "V-2530 (SGU Box)", t: 1.20, weight: 0.934 },
+                { sectionNo: "V-2529 (SGU Reinf)", t: 1.20, weight: 0.792 },
+                { sectionNo: "V-2521 (Universal)", t: 1.20, weight: 0.361 },
+                { sectionNo: "V-2522 (DGU Reinf)", t: 1.20, weight: 0.737 },
+                { sectionNo: "V-2527 (DGU Box)", t: 1.20, weight: 0.929 }
             ]
         },
-        "Auxiliary (Global)": {
-            "Hardware": [
-                { sectionNo: "V-3535 (Rail Cap)", t: 1.50, weight: 0.596 },
-                { sectionNo: "UMA-17 (Angle 63)", t: 4.70, weight: 6.174 }
+        "25mm Mosquito": {
+            "Sash": [
+                { sectionNo: "V-2513 (Screen)", t: 1.20, weight: 0.711 },
+                { sectionNo: "V-2517 (Shutter)", t: 1.20, weight: 0.737 }
+            ],
+            "Interlock": [
+                { sectionNo: "V-2516 (Slim)", t: 1.20, weight: 0.547 },
+                { sectionNo: "V-2521 (Universal)", t: 1.20, weight: 0.361 }
+            ],
+            "Auxiliary": [
+                { sectionNo: "V-2514 (Clip)", t: 1.20, weight: 0.104 }
             ]
         },
         "27mm Gulf": {

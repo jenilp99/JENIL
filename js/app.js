@@ -163,32 +163,35 @@ function initializeDefaults() {
                 { component: 'Track (Horiz)', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
                 { section: 'UMA-19', component: 'Auxiliary', qty: 'T', length: 'W', desc: 'U-Type Rail Clip (Bottom)' }
             ],
-            'Vitco 25mm Gulf': [
-                { component: 'Track (Horiz)', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
-                { component: 'Track (Horiz)', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
-                { component: 'Frame (Vert)', qty: '2', length: 'T==2 ? H : 0', desc: '2T Vertical Frame' },
-                { component: 'Track (Horiz)', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Top' },
-                { component: 'Track (Horiz)', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Bottom' },
-                { component: 'Frame (Vert)', qty: '2', length: 'T==3 ? H : 0', desc: '3T Vertical Frame' },
-                { component: 'Sash Component', qty: '2', length: 'H-1.125', desc: 'Shutter Handles' },
-                { component: 'Sash Component', qty: '2*S-2', length: 'H-1.125', desc: 'Interlocks' },
-                { component: 'Sash Component', qty: '2*S', length: '(W-5-2*(S-1))/S', desc: 'Sash Top/Bottom' },
-                { section: 'V-3535', component: 'Hardware', qty: 'T', length: 'W', desc: 'Rail Cap (Bottom)' },
-                { section: 'V-2544', component: 'Auxiliary', qty: 'T', length: 'W', desc: 'Top Track Guide' }
+            '25mm Gulf (Frame)': [
+                { component: 'Track', qty: '1', length: 'W', desc: 'Track Top' },
+                { component: 'Track', qty: '1', length: 'W', desc: 'Track Bottom' },
+                { component: 'Track', qty: '2', length: 'H', desc: 'Vertical Side Track' },
+                { series: '25mm Shutter (Shared)', component: 'Sash', qty: '2', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Vertical Handles' },
+                { series: '25mm Shutter (Shared)', component: 'Interlock', qty: 'IT == "slim" ? 2*S-2 : 0', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Slim Interlocks' },
+                { series: '25mm Shutter (Shared)', component: 'Interlock', qty: 'IT == "universal" ? 2*S-2 : 0', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Universal Interlock (V-2521)' },
+                { series: '25mm Shutter (Shared)', component: 'Sash', qty: '2*S', length: '(W - 1.02 + (IT == "slim" ? 0.787 : 0) * (S-1)) / S', desc: 'Shutter Top/Bottom' },
+                { component: 'Auxiliary', qty: 'T', length: 'W', desc: 'Rail Cap (Bottom)' },
+                { component: 'Auxiliary', qty: 'T', length: 'W', desc: 'Top Track Guide' },
+                { component: 'Auxiliary', qty: '2*S + (MS > 0 ? 1 : 0)', desc: 'Locking Adapter', length: '0' },
+                // Mosquito
+                { series: '25mm Mosquito', component: 'Sash', qty: 'MS > 0 ? 2 : 0', length: 'MT == "V-2517" ? H - 2.22 : H - 1.25', desc: 'MS Vertical' },
+                { series: '25mm Mosquito', component: 'Interlock', qty: 'MS > 0 ? 1 : 0', length: 'MT == "V-2517" ? H - 2.22 : H - 1.25', desc: 'MS Interlock' },
+                { series: '25mm Mosquito', component: 'Sash', qty: 'MS > 0 ? 2 : 0', length: '(W - 1.02 + 0.787 * (S-1)) / S', desc: 'MS Top/Bottom' },
+                { series: '25mm Mosquito', component: 'Auxiliary', qty: '4 * MS', desc: 'Mosquito Clip', length: '0' }
             ],
-            'Vitco 25mm High-End': [
-                { component: 'Track (Horiz)', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
-                { component: 'Track (Horiz)', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
-                { component: 'Frame (Vert)', qty: '2', length: 'T==2 ? H : 0', desc: '2T Vertical Frame' },
-                { component: 'Track (Horiz)', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Top' },
-                { component: 'Track (Horiz)', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Bottom' },
-                { component: 'Frame (Vert)', qty: '2', length: 'T==3 ? H : 0', desc: '3T Vertical Frame' },
-                { component: 'Sash Component', qty: '2', length: 'H-1.125', desc: 'Shutter Handles' },
-                { component: 'Sash Component', qty: '2*S-2', length: 'H-1.125', desc: 'Interlocks' },
-                { component: 'Sash Component', qty: '2*S', length: '(W-5-2*(S-1))/S', desc: 'Sash Top/Bottom' },
-                { section: 'V-3535', component: 'Hardware', qty: 'T', length: 'W', desc: 'Rail Cap (Bottom)' },
-                { section: 'V-2560', component: 'Auxiliary', qty: '1', length: 'W', desc: 'Rain Cover (Bottom)' }
+            '25mm High-End (Frame)': [
+                { component: 'Track', qty: '4', length: 'H', desc: 'Track All Sides' },
+                { series: '25mm Shutter (Shared)', component: 'Sash', qty: '2', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Vertical Handles' },
+                { series: '25mm Shutter (Shared)', component: 'Interlock', qty: 'IT == "slim" ? 2*S-2 : 0', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Slim Interlocks' },
+                { series: '25mm Shutter (Shared)', component: 'Interlock', qty: 'IT == "universal" ? 2*S-2 : 0', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Universal Interlock (V-2521)' },
+                { series: '25mm Shutter (Shared)', component: 'Sash', qty: '2*S', length: '(W - 1.02 + (IT == "slim" ? 0.787 : 0) * (S-1)) / S', desc: 'Shutter Top/Bottom' },
+                { component: 'Auxiliary', qty: 'T', length: 'W', desc: 'Rail Cap (Bottom)' },
+                { component: 'Auxiliary', qty: '2*S + (MS > 0 ? 1 : 0)', desc: 'Locking Adapter', length: '0' }
             ],
+            // Aliases for shorter naming
+            '25mm Gulf': [], // Will be cloned from (Frame) below
+            '25mm High-End': [],
             '27mm Gulf': [
                 { component: '2 Track Top/Bottom', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
                 { component: '3 Track Top/Bottom', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
@@ -221,6 +224,10 @@ function initializeDefaults() {
                 { component: '40mm Shutter Interlock', qty: '(2*S-2)+(1*MS)', length: 'H-2.75', desc: 'Interlock' }
             ]
         };
+
+        // Populate Aliases
+        seriesFormulas['25mm Gulf'] = [...seriesFormulas['25mm Gulf (Frame)']];
+        seriesFormulas['25mm High-End'] = [...seriesFormulas['25mm High-End (Frame)']];
     }
 
     if (Object.keys(stockMaster).length === 0) {
@@ -264,36 +271,44 @@ function initializeDefaults() {
                 { material: 'Interlock (Vert)', stock1: 189, stock1Cost: 100 },
                 { material: 'Auxiliary', stock1: 189, stock1Cost: 100 }
             ],
-            'Vitco 25mm Gulf': [
-                { material: 'Track (Horiz)', stock1: 189, stock1Cost: 100 },
-                { material: 'Frame (Vert)', stock1: 189, stock1Cost: 100 },
-                { material: 'Sash Component', stock1: 189, stock1Cost: 100 },
-                { material: 'Hardware', stock1: 189, stock1Cost: 100 }
+            '25mm Gulf (Frame)': [
+                { material: 'Track', weight: 1.0, stock1: 189, stock1Cost: 100 },
+                { material: 'Auxiliary', weight: 0.2, stock1: 189, stock1Cost: 100 }
             ],
-            'Vitco 25mm High-End': [
-                { material: 'Track (Horiz)', stock1: 189, stock1Cost: 100 },
-                { material: 'Frame (Vert)', stock1: 189, stock1Cost: 100 },
-                { material: 'Sash Component', stock1: 189, stock1Cost: 100 }
+            '25mm High-End (Frame)': [
+                { material: 'Track', weight: 1.2, stock1: 189, stock1Cost: 100 },
+                { material: 'Auxiliary', weight: 0.2, stock1: 189, stock1Cost: 100 }
             ],
+            '25mm Shutter (Shared)': [
+                { material: 'Sash', weight: 0.6, stock1: 189, stock1Cost: 100 },
+                { material: 'Interlock', weight: 0.5, stock1: 189, stock1Cost: 100 }
+            ],
+            '25mm Mosquito': [
+                { material: 'Sash', weight: 0.4, stock1: 189, stock1Cost: 100 },
+                { material: 'Interlock', weight: 0.4, stock1: 189, stock1Cost: 100 },
+                { material: 'Auxiliary', weight: 0.1, stock1: 189, stock1Cost: 100 }
+            ],
+            '25mm Gulf': [], // Cloned below
+            '25mm High-End': [],
             '27mm Gulf': [
-                { material: '2 Track Top/Bottom', stock1: 189, stock1Cost: 100 },
-                { material: '3 Track Top/Bottom', stock1: 189, stock1Cost: 100 },
-                { material: '27mm Shutter Handle', stock1: 189, stock1Cost: 100 }
+                { material: 'Track', weight: 1.2, stock1: 189, stock1Cost: 100 },
+                { material: 'Sash', weight: 0.7, stock1: 189, stock1Cost: 100 },
+                { material: 'Interlock', weight: 0.6, stock1: 189, stock1Cost: 100 }
             ],
             '31mm Gulf': [
-                { material: 'Two Track Top & Bottom', stock1: 189, stock1Cost: 100 },
-                { material: 'Three Track Top & Bottom', stock1: 189, stock1Cost: 100 },
-                { material: '31mm Shutter Handle', stock1: 189, stock1Cost: 100 }
+                { material: 'Track', weight: 1.3, stock1: 189, stock1Cost: 100 },
+                { material: 'Sash', weight: 0.8, stock1: 189, stock1Cost: 100 },
+                { material: 'Interlock', weight: 0.7, stock1: 189, stock1Cost: 100 }
             ],
             '35mm Gulf': [
-                { material: 'Two Track Top & Bottom', stock1: 189, stock1Cost: 100 },
-                { material: 'Three Track Top & Bottom', stock1: 189, stock1Cost: 100 },
-                { material: '35mm Shutter Handle', stock1: 189, stock1Cost: 100 }
+                { material: 'Track', weight: 1.4, stock1: 189, stock1Cost: 100 },
+                { material: 'Sash', weight: 0.9, stock1: 189, stock1Cost: 100 },
+                { material: 'Interlock', weight: 0.8, stock1: 189, stock1Cost: 100 }
             ],
             '40mm Pro': [
-                { material: 'Two Track Top Bottom', stock1: 189, stock1Cost: 100 },
-                { material: 'Three Track Top Bottom', stock1: 189, stock1Cost: 100 },
-                { material: '40mm Shutter Handle', stock1: 189, stock1Cost: 100 }
+                { material: 'Track', weight: 1.5, stock1: 189, stock1Cost: 100 },
+                { material: 'Sash', weight: 1.0, stock1: 189, stock1Cost: 100 },
+                { material: 'Interlock', weight: 0.9, stock1: 189, stock1Cost: 100 }
             ]
         };
     }
@@ -733,7 +748,12 @@ function addWindow(event) {
         mosquitoShutters: parseInt(document.getElementById('mosquitoShutters').value),
         series: document.getElementById('series').value,
         description: document.getElementById('description').value,
-        glassType: document.getElementById('glassType').value
+        glassUnit: document.getElementById('glassUnit').value,
+        glassThickness: document.getElementById('glassThickness').value,
+        cornerJoint: document.getElementById('cornerJoint').value,
+        interlockType: document.getElementById('interlockType').value,
+        mosquitoType: document.getElementById('mosquitoType').value,
+        mosquitoInterlock: document.getElementById('mosquitoInterlock').value
     };
 
     windows.push(window);
@@ -805,13 +825,81 @@ function editWindow(idx) {
 
     document.getElementById('editSeries').value = win.series;
     document.getElementById('editDescription').value = win.description;
+
+    // New Vitco fields
+    if (document.getElementById('editGlassUnit')) {
+        document.getElementById('editGlassUnit').value = win.glassUnit || 'SGU';
+        updateEditGlassThicknessOptions();
+        document.getElementById('editGlassThickness').value = win.glassThickness || '5';
+    }
+    if (document.getElementById('editCornerJoint')) document.getElementById('editCornerJoint').value = win.cornerJoint || '90';
+    if (document.getElementById('editInterlockType')) document.getElementById('editInterlockType').value = win.interlockType || 'slim';
+
+    if (document.getElementById('editMosquitoType')) document.getElementById('editMosquitoType').value = win.mosquitoType || 'V-2513';
+    if (document.getElementById('editMosquitoInterlock')) document.getElementById('editMosquitoInterlock').value = win.mosquitoInterlock || 'V-2516';
+    toggleEditMosquitoConfig();
+
     document.getElementById('editWindowModal').classList.add('active');
     document.body.style.overflow = 'hidden';
+}
+
+function toggleMosquitoConfig() {
+    const msCount = parseInt(document.getElementById('mosquitoShutters').value);
+    const row = document.getElementById('mosquitoConfigRow');
+    if (row) {
+        row.style.display = msCount > 0 ? 'flex' : 'none';
+    }
+}
+
+function updateGlassThicknessOptions() {
+    const unit = document.getElementById('glassUnit').value;
+    const thicknessSelect = document.getElementById('glassThickness');
+    if (!thicknessSelect) return;
+
+    thicknessSelect.innerHTML = '';
+    if (unit === 'SGU') {
+        ['5', '6', '8'].forEach(t => {
+            thicknessSelect.innerHTML += `<option value="${t}">${t}mm</option>`;
+        });
+    } else if (unit === 'DGU') {
+        ['12', '15', '18'].forEach(t => {
+            thicknessSelect.innerHTML += `<option value="${t}">${t}mm</option>`;
+        });
+    } else {
+        thicknessSelect.innerHTML = '<option value="0">N/A</option>';
+    }
 }
 
 function closeEditWindowModal() {
     document.getElementById('editWindowModal').classList.remove('active');
     document.body.style.overflow = '';
+}
+
+function toggleEditMosquitoConfig() {
+    const msCount = parseInt(document.getElementById('editMosquitoShutters').value);
+    const row = document.getElementById('editMosquitoConfigRow');
+    if (row) {
+        row.style.display = msCount > 0 ? 'flex' : 'none';
+    }
+}
+
+function updateEditGlassThicknessOptions() {
+    const unit = document.getElementById('editGlassUnit').value;
+    const thicknessSelect = document.getElementById('editGlassThickness');
+    if (!thicknessSelect) return;
+
+    thicknessSelect.innerHTML = '';
+    if (unit === 'SGU') {
+        ['5', '6', '8'].forEach(t => {
+            thicknessSelect.innerHTML += `<option value="${t}">${t}mm</option>`;
+        });
+    } else if (unit === 'DGU') {
+        ['12', '15', '18'].forEach(t => {
+            thicknessSelect.innerHTML += `<option value="${t}">${t}mm</option>`;
+        });
+    } else {
+        thicknessSelect.innerHTML = '<option value="0">N/A</option>';
+    }
 }
 
 function saveWindowEdit(event) {
@@ -827,10 +915,6 @@ function saveWindowEdit(event) {
         showAlert('❌ Error: Width and Height must be greater than zero.', 'error');
         return;
     }
-    if (shutters <= 0) {
-        showAlert('❌ Error: Number of shutters must be at least 1.', 'error');
-        return;
-    }
 
     windows[idx] = {
         configId: document.getElementById('editConfigId').value,
@@ -842,7 +926,13 @@ function saveWindowEdit(event) {
         shutters: shutters,
         mosquitoShutters: parseInt(document.getElementById('editMosquitoShutters').value),
         series: document.getElementById('editSeries').value,
-        description: document.getElementById('editDescription').value
+        description: document.getElementById('editDescription').value,
+        glassUnit: document.getElementById('editGlassUnit')?.value || 'SGU',
+        glassThickness: document.getElementById('editGlassThickness')?.value || '5',
+        cornerJoint: document.getElementById('editCornerJoint')?.value || '90',
+        interlockType: document.getElementById('editInterlockType')?.value || 'slim',
+        mosquitoType: document.getElementById('editMosquitoType')?.value || 'V-2513',
+        mosquitoInterlock: document.getElementById('editMosquitoInterlock')?.value || 'V-2516'
     };
 
     autoSaveWindows();
@@ -1425,7 +1515,119 @@ window.onload = function () {
     initializeDefaults();
     initializeSupplierMaster(); // New
     initializeProjectSupplierSelector(); // New
+    repairVitcoFormulas(); // Force fix broken names/formulas
     refreshAllUI();
+
+    // Initialize Vitco UI state
+    updateGlassThicknessOptions();
+    toggleMosquitoConfig();
 };
+
+/**
+ * Force-repairs Vitco series data to fix naming mismatches and formula errors
+ */
+function repairVitcoFormulas() {
+    const gulfKey = '25mm Gulf (Frame)';
+    const highEndKey = '25mm High-End (Frame)';
+
+    const gulfFormulas = [
+        { component: 'Track', qty: '1', length: 'W', desc: 'Track Top' },
+        { component: 'Track', qty: '1', length: 'W', desc: 'Track Bottom' },
+        { component: 'Track', qty: '2', length: 'H', desc: 'Vertical Side Track' },
+        { series: '25mm Shutter (Shared)', component: 'Sash', qty: '2', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Vertical Handles' },
+        { series: '25mm Shutter (Shared)', component: 'Interlock', qty: 'IT == "slim" ? 2*S-2 : 0', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Slim Interlocks' },
+        { series: '25mm Shutter (Shared)', component: 'Interlock', qty: 'IT == "universal" ? 2*S-2 : 0', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Universal Interlock (V-2521)' },
+        { series: '25mm Shutter (Shared)', component: 'Sash', qty: '2*S', length: '(W - 1.02 + (IT == "slim" ? 0.787 : 0) * (S-1)) / S', desc: 'Shutter Top/Bottom' },
+        { component: 'Auxiliary', qty: 'T', length: 'W', desc: 'Rail Cap (Bottom)' },
+        { component: 'Auxiliary', qty: 'T', length: 'W', desc: 'Top Track Guide' },
+        { component: 'Auxiliary', qty: '2*S + (MS > 0 ? 1 : 0)', desc: 'Locking Adapter', length: '0' },
+        { series: '25mm Mosquito', component: 'Sash', qty: 'MS > 0 ? 2 : 0', length: 'MT == "V-2517" ? H - 2.22 : H - 1.25', desc: 'MS Vertical' },
+        { series: '25mm Mosquito', component: 'Interlock', qty: 'MS > 0 ? 1 : 0', length: 'MT == "V-2517" ? H - 2.22 : H - 1.25', desc: 'MS Interlock' },
+        { series: '25mm Mosquito', component: 'Sash', qty: 'MS > 0 ? 2 : 0', length: '(W - 1.02 + 0.787 * (S-1)) / S', desc: 'MS Top/Bottom' },
+        { series: '25mm Mosquito', component: 'Auxiliary', qty: '4 * MS', desc: 'Mosquito Clip', length: '0' }
+    ];
+
+    const highEndFormulas = [
+        { component: 'Track', qty: '4', length: 'H', desc: 'Track All Sides' },
+        { series: '25mm Shutter (Shared)', component: 'Sash', qty: '2', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Vertical Handles' },
+        { series: '25mm Shutter (Shared)', component: 'Interlock', qty: 'IT == "slim" ? 2*S-2 : 0', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Slim Interlocks' },
+        { series: '25mm Shutter (Shared)', component: 'Interlock', qty: 'IT == "universal" ? 2*S-2 : 0', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Universal Interlock (V-2521)' },
+        { series: '25mm Shutter (Shared)', component: 'Sash', qty: '2*S', length: '(W - 1.02 + (IT == "slim" ? 0.787 : 0) * (S-1)) / S', desc: 'Shutter Top/Bottom' },
+        { component: 'Auxiliary', qty: 'T', length: 'W', desc: 'Rail Cap (Bottom)' },
+        { component: 'Auxiliary', qty: '2*S + (MS > 0 ? 1 : 0)', desc: 'Locking Adapter', length: '0' }
+    ];
+
+    // Repair keys and formulas
+    seriesFormulas[gulfKey] = gulfFormulas;
+    seriesFormulas[highEndKey] = highEndFormulas;
+
+    // Remove old broken keys if they exist
+    delete seriesFormulas['Vitco 25mm Gulf'];
+    delete seriesFormulas['Vitco 25mm High-End'];
+
+    // Provide legacy aliases
+    seriesFormulas['25mm Gulf'] = gulfFormulas;
+    seriesFormulas['25mm High-End'] = highEndFormulas;
+
+    // --- REPAIR STOCK MASTER NAMES & MISSING SERIES ---
+    const shutterKey = '25mm Shutter (Shared)';
+    const mosquitoKey = '25mm Mosquito';
+
+    if (!stockMaster[shutterKey]) {
+        stockMaster[shutterKey] = [
+            { material: 'Sash', weight: 0.6, stock1: 189, stock1Cost: 100 },
+            { material: 'Interlock', weight: 0.5, stock1: 189, stock1Cost: 100 }
+        ];
+    }
+    if (!stockMaster[mosquitoKey]) {
+        stockMaster[mosquitoKey] = [
+            { material: 'Sash', weight: 0.4, stock1: 189, stock1Cost: 100 },
+            { material: 'Interlock', weight: 0.4, stock1: 189, stock1Cost: 100 },
+            { material: 'Auxiliary', weight: 0.1, stock1: 189, stock1Cost: 100 }
+        ];
+    }
+
+    // Fix names in Frame series
+    [gulfKey, highEndKey, '25mm Gulf', '25mm High-End'].forEach(key => {
+        if (stockMaster[key]) {
+            stockMaster[key].forEach(item => {
+                // Rename old fragmented names to unified ones
+                if (item.material === 'Track (Horiz)' || item.material === 'Frame (Vert)') {
+                    item.material = 'Track';
+                }
+                if (item.material === 'Sash Component' || item.material === 'Sash Profile') {
+                    item.material = 'Sash';
+                }
+                if (item.material === 'Hardware' || item.material === 'Extra') {
+                    item.material = 'Auxiliary';
+                }
+                // Ensure weight exists
+                if (!item.weight) {
+                    if (item.material === 'Track') item.weight = 1.1;
+                    else if (item.material === 'Sash') item.weight = 0.6;
+                    else if (item.material === 'Interlock') item.weight = 0.5;
+                    else item.weight = 0.3;
+                }
+            });
+
+            // Ensure we have 'Track' and 'Auxiliary' at minimum
+            if (!stockMaster[key].find(i => i.material === 'Track')) {
+                stockMaster[key].push({ material: 'Track', weight: 1.1, stock1: 189, stock1Cost: 100 });
+            }
+            if (!stockMaster[key].find(i => i.material === 'Auxiliary')) {
+                stockMaster[key].push({ material: 'Auxiliary', weight: 0.2, stock1: 189, stock1Cost: 100 });
+            }
+        } else {
+            // Missing entirely
+            stockMaster[key] = [
+                { material: 'Track', weight: 1.1, stock1: 189, stock1Cost: 100 },
+                { material: 'Auxiliary', weight: 0.2, stock1: 189, stock1Cost: 100 }
+            ];
+        }
+    });
+
+    autoSaveFormulas();
+    autoSaveStock();
+}
 // ============================================================================
 // (Supplier Master UI and Modal Logic removed, moved to js/supplier_master.js)

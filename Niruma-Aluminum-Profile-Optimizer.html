@@ -169,7 +169,7 @@
                         </div>
                         <div class="form-group">
                             <label>Mosquito Shutters (MS)</label>
-                            <select id="mosquitoShutters" required>
+                            <select id="mosquitoShutters" onchange="toggleMosquitoConfig()" required>
                                 <option value="0" selected>0 Mosquito Shutter</option>
                                 <option value="1">1 Mosquito Shutter</option>
                                 <option value="2">2 Mosquito Shutters</option>
@@ -194,16 +194,58 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Glass Type</label>
-                            <select id="glassType" required>
+                            <label>Glass Unit & Type</label>
+                            <select id="glassUnit" onchange="updateGlassThicknessOptions()" required>
                                 <option value="none">No Glass</option>
-                                <option value="toughened_5mm" selected>5mm Toughened Clear Glass</option>
-                                <option value="non_toughened_5mm">5mm Non-Toughened Clear Glass</option>
+                                <option value="SGU" selected>SGU (Single Glass 5-8mm)</option>
+                                <option value="DGU">DGU (Double Glass up to 18mm)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Glass Thickness</label>
+                            <select id="glassThickness" required>
+                                <option value="5">5mm</option>
+                                <option value="6">6mm</option>
+                                <option value="8">8mm</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Corner Joint</label>
+                            <select id="cornerJoint" required>
+                                <option value="90" selected>90° (Reduce handles)</option>
+                                <option value="45">45° (No reduction)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Interlock Design</label>
+                            <select id="interlockType" required>
+                                <option value="slim" selected>Slim Interlock (3-Side Shutter)</option>
+                                <option value="universal">Universal (4-Side Shutter + V-2521)</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Description</label>
-                            <input type="text" id="description" value="Living Room" required>
+                            <input type="text" id="description" value="Living Room Window" required>
+                        </div>
+                    </div>
+                    <!-- Mosquito Configuration Row (Dynamically shown if MS > 0) -->
+                    <div class="form-row" id="mosquitoConfigRow"
+                        style="display: none; background: #f0f7ff; padding: 10px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #3498db;">
+                        <div class="form-group">
+                            <label>Mosquito Shutter Type</label>
+                            <select id="mosquitoType">
+                                <option value="V-2513">V-2513 (Screen - 45°)</option>
+                                <option value="V-2517">V-2517 (Shutter - 90°)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Mosquito Interlock</label>
+                            <select id="mosquitoInterlock">
+                                <option value="V-2516" selected>V-2516 (Slim)</option>
+                                <option value="V-2521">V-2521 (Universal)</option>
+                            </select>
                         </div>
                     </div>
                     <button type="submit" class="btn btn-primary">➕ Add Window</button>
@@ -775,7 +817,7 @@
                         </div>
                         <div class="form-group">
                             <label>Mosquito</label>
-                            <select id="editMosquitoShutters" required>
+                            <select id="editMosquitoShutters" onchange="toggleEditMosquitoConfig()" required>
                                 <option value="0">0</option>
                                 <option value="1">1</option>
                                 <option value="2">2</option>
@@ -800,8 +842,52 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
+                            <label>Glass Unit</label>
+                            <select id="editGlassUnit" onchange="updateEditGlassThicknessOptions()">
+                                <option value="none">No Glass</option>
+                                <option value="SGU">SGU</option>
+                                <option value="DGU">DGU</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Glass Thickness</label>
+                            <select id="editGlassThickness"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Corner Joint</label>
+                            <select id="editCornerJoint">
+                                <option value="90">90°</option>
+                                <option value="45">45°</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Interlock Design</label>
+                            <select id="editInterlockType">
+                                <option value="slim">Slim</option>
+                                <option value="universal">Universal</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label>Description</label>
-                            <input type="text" id="editDescription" required>
+                            <input type="text" id="editDescription">
+                        </div>
+                    </div>
+                    <div class="form-row" id="editMosquitoConfigRow" style="display: none;">
+                        <div class="form-group">
+                            <label>Mosquito Type</label>
+                            <select id="editMosquitoType">
+                                <option value="V-2513">V-2513</option>
+                                <option value="V-2517">V-2517</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Mosquito Interlock</label>
+                            <select id="editMosquitoInterlock">
+                                <option value="V-2516">V-2516</option>
+                                <option value="V-2521">V-2521</option>
+                            </select>
                         </div>
                     </div>
                     <div style="margin-top: 20px;">

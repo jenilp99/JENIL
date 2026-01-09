@@ -42,9 +42,13 @@ function displayResults() {
     
     // Cost breakdown
     const materialCost = parseFloat(r.stats.totalCost || 0);
-    const wastePercentage = parseFloat(r.stats.totalWaste || 0) / (parseFloat(r.stats.totalUsed || 1) + parseFloat(r.stats.totalWaste || 0));
+    const totalUsed = parseFloat(r.stats.totalUsed || 0);
+    const totalWaste = parseFloat(r.stats.totalWaste || 0);
+    const totalLength = totalUsed + totalWaste;
+    
+    const wastePercentage = totalLength > 0 ? totalWaste / totalLength : 0;
     const wasteCost = (materialCost * wastePercentage).toFixed(0);
-    const usedCost = (materialCost - wasteCost).toFixed(0);
+    const usedCost = (materialCost - parseFloat(wasteCost)).toFixed(0);
     
     html += `<div class="cost-breakdown-card">
         <h3 style="margin-top: 0;">💰 Cost Breakdown</h3>

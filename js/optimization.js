@@ -25,7 +25,18 @@ function runOptimization() {
         // Check if formulas exist for window series
         const missingSeries = [];
         projectWindows.forEach(win => {
-            if (!seriesFormulas[win.series] && !seriesFormulas[win.series === '1' ? '1"' : win.series === '1"' ? '1' : win.series]) {
+            const seriesName = win.series;
+            const normName = seriesName.replace(/\(.*\)/, '').replace(/^Vitco\s+/i, '').trim();
+            const exists = seriesFormulas[seriesName] ||
+                seriesFormulas[normName] ||
+                seriesFormulas[normName + ' (Frame)'] ||
+                seriesFormulas['Vitco ' + normName] ||
+                (seriesName === '1' && seriesFormulas['1"']) ||
+                (seriesName === '1"' && seriesFormulas['1']) ||
+                (seriesName === '3/4' && seriesFormulas['3/4"']) ||
+                (seriesName === '3/4"' && seriesFormulas['3/4']);
+
+            if (!exists) {
                 if (!missingSeries.includes(win.series)) {
                     missingSeries.push(win.series);
                 }
@@ -48,7 +59,7 @@ function runOptimization() {
     let totalCost = 0;
 
     for (const [compoundKey, pieces] of Object.entries(piecesByMaterial)) {
-        const [materialSeries, materialName] = compoundKey.split('|');
+        const [materialSeries, materialName] = compoundKey.split(' | ');
 
         let stockList = stockMaster[materialSeries];
 
@@ -116,7 +127,7 @@ function runOptimization() {
             totalUsed: totalUsed.toFixed(2),
             totalWaste: totalWaste.toFixed(2),
             totalCost: totalCost.toFixed(0),
-            efficiency: ((totalUsed / (totalUsed + totalWaste)) * 100).toFixed(1)
+            efficiency: (totalUsed + totalWaste) > 0 ? ((totalUsed / (totalUsed + totalWaste)) * 100).toFixed(1) : "0.0"
         },
         config: { kerf }
     };
@@ -134,10 +145,10 @@ function runOptimization() {
 function safeEval(formula, context, defaultValue = 0) {
     try {
         // Create variables from context
-        const { W, H, S, MS, T, P } = context;
+        const { W, H, S, MS, T, P, CJ, IT, GT, MT, MIT } = context;
         // Use a function constructor for slightly better safety than eval()
-        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', `return ${formula}`);
-        return fn(W, H, S, MS, T, P);
+        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', 'CJ', 'IT', 'GT', 'MT', 'MIT', `return ${formula}`);
+        return fn(W, H, S, MS, T, P, CJ, IT, GT, MT, MIT);
     } catch (e) {
         console.error('SafeEval Error:', e, 'Formula:', formula);
         return defaultValue;
@@ -158,12 +169,21 @@ function calculatePieces(selectedProject) {
         const W = win.width;
         const H = win.height;
         const S = win.shutters;
-        const MS = win.mosquitoShutters;
+        const MS = win.mosquitoShutters || 0;
         const T = win.tracks;
         const id = win.configId;
 
         let seriesName = win.series;
+        // Robust lookup: Try exact name, then normalized name
         let formulas = seriesFormulas[seriesName];
+
+        if (!formulas) {
+            // Try normalization (strip brackets, Vitco prefix, etc.)
+            const normName = seriesName.replace(/\(.*\)/, '').replace(/^Vitco\s+/i, '').trim();
+            formulas = seriesFormulas[normName] ||
+                seriesFormulas[normName + ' (Frame)'] ||
+                seriesFormulas['Vitco ' + normName];
+        }
 
         // Fallback for series name migration (1 vs 1")
         if (!formulas) {
@@ -184,9 +204,14 @@ function calculatePieces(selectedProject) {
             W: win.width,
             H: win.height,
             S: win.shutters,
-            MS: win.mosquitoShutters || 0,
+            MS: MS,
             T: win.tracks,
-            P: (win.width * 2 + win.height * 2)
+            P: (win.width * 2 + win.height * 2),
+            CJ: win.cornerJoint || 90,
+            IT: win.interlockType || 'slim',
+            GT: win.glassUnit || 'SGU',
+            MT: win.mosquitoType || 'V-2513',
+            MIT: win.mosquitoInterlock || 'V-2516'
         };
 
         formulas.forEach(formula => {
@@ -204,7 +229,8 @@ function calculatePieces(selectedProject) {
             const length = Math.round(parseFloat(lenVal) * 100) / 100;
 
             if (qty > 0 && length > 0) {
-                addPieces(pieces, seriesName, formula.component, length, id + ' - ' + formula.desc, qty);
+                const targetSeries = formula.series || seriesName;
+                addPieces(pieces, targetSeries, formula.component, length, id + ' - ' + formula.desc, qty);
             } else {
                 console.log('⏭️ Skipped formula (qty or length is 0):', formula.desc, 'qty:', qty, 'length:', length);
             }
@@ -216,7 +242,7 @@ function calculatePieces(selectedProject) {
 }
 
 function addPieces(pieces, series, material, length, label, qty) {
-    const key = `${series}|${material}`;
+    const key = `${series} | ${material}`;
     if (!pieces[key]) {
         pieces[key] = [];
     }
