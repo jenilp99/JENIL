@@ -354,7 +354,7 @@ function refreshAllUI() {
     refreshHardwareMaster();
     refreshProjectSelector();
     updateDashboardStats();
-    updateSupplierDatalist(); // New
+    // updateSupplierDatalist(); // New (Function implementation seems missing, temporarily disabling)
     initializeAddWindowVendorSelector(); // New
     refreshRatesDisplay(); // New
     renderSupplierMaster(); // New
@@ -373,6 +373,8 @@ function refreshSeriesDropdown() {
 function initializeAddWindowVendorSelector() {
     const selector = document.getElementById('windowVendor');
     const editSelector = document.getElementById('editWindowVendor');
+
+    console.log('Initialize Vendor Selector. SupplierMaster keys:', Object.keys(supplierMaster));
 
     if (selector) {
         const suppliers = Object.keys(supplierMaster);
@@ -1400,3 +1402,162 @@ function repairVitcoFormulas() {
 }
 // ============================================================================
 // (Supplier Master UI and Modal Logic removed, moved to js/supplier_master.js)
+
+document.addEventListener('DOMContentLoaded', function () {
+    console.log('🚀 App Starting...');
+
+    // Load persisted data
+    if (typeof loadAllData === 'function') {
+        loadAllData();
+    }
+
+    // Initialize logic & defaults
+    initializeDefaults();
+
+    // Initial Render
+    refreshAllUI();
+
+    console.log('✅ App Initialized');
+});
+
+
+// ============================================================================
+// SECTION SELECTION MODAL (Restored)
+// ============================================================================
+
+let currentSelectionTarget = null; // Stores the material key we are selecting for
+
+function openSectionSelectModal(materialKey) {
+    currentSelectionTarget = materialKey;
+
+    // Parse the key to get Series Name and Component Name
+    // Format is usually "SeriesName | ComponentName"
+    const parts = materialKey.split(' | ');
+    let seriesName = parts[0];
+    let componentName = parts[1];
+
+    if (!seriesName || !componentName) {
+        // Fallback for non-series keys if any
+        seriesName = 'General';
+        componentName = materialKey;
+    }
+
+    // Attempt to find relevant sections from Stock Master or Supplier Registry
+    // We want to show ALL available options for this type of component
+
+    // 1. Get sections from Supplier Registry directly if possible (Highest fidelity)
+    // We need to loop through all suppliers and find sections that match this series/component
+    let options = [];
+
+    if (window.SUPPLIER_REGISTRY) {
+        Object.values(window.SUPPLIER_REGISTRY).forEach(supplierData => {
+            if (supplierData.sections && supplierData.sections[seriesName]) {
+                const sectionGroup = supplierData.sections[seriesName];
+                // Check if direct match exists
+                if (sectionGroup[componentName]) {
+                    // Add all variants
+                    sectionGroup[componentName].forEach(sec => {
+                        options.push({
+                            supplier: supplierData.name || 'Unknown', // We might need to store name in structure or infer it
+                            sectionNo: sec.sectionNo,
+                            weight: sec.weight,
+                            t: sec.t || 'N/A',
+                            desc: sec.desc || componentName
+                        });
+                    });
+                } else {
+                    // Fuzzy match? Or maybe the component name in results is generic (e.g. "Track") 
+                    // and registry has specific "2 Track", "3 Track".
+                    // For now, simple matching.
+                }
+            }
+        });
+    }
+
+    // 2. If no registry options found, fallback to looking at Stock Master (Legacy/Simple way)
+    if (options.length === 0 && stockMaster[seriesName]) {
+        stockMaster[seriesName].forEach(item => {
+            if (item.material === componentName) {
+                options.push({
+                    supplier: item.supplier || 'Generic',
+                    sectionNo: item.sectionNo || item.material,
+                    weight: item.weight,
+                    t: item.thickness || 'N/A',
+                    desc: item.material
+                });
+            }
+        });
+    }
+
+    // Populate Modal
+    const listContainer = document.getElementById('sectionSelectionList');
+    if (!listContainer) {
+        console.error('Section selection modal container not found!');
+        return;
+    }
+
+    listContainer.innerHTML = '';
+
+    if (options.length === 0) {
+        listContainer.innerHTML = '<p>No specific sections found for this component. Please add them in Supplier Master or Stock.</p>';
+    } else {
+        options.forEach(opt => {
+            const el = document.createElement('div');
+            el.className = 'section-option-card';
+            el.style.border = '1px solid #ddd';
+            el.style.padding = '10px';
+            el.style.marginBottom = '10px';
+            el.style.cursor = 'pointer';
+            el.style.borderRadius = '5px';
+            el.style.display = 'flex';
+            el.style.justifyContent = 'space-between';
+            el.style.alignItems = 'center';
+            el.onclick = () => selectSectionForResult(opt);
+
+            el.innerHTML = `
+                <div>
+                    <strong>${opt.sectionNo}</strong> <span style="color:#666">(${opt.desc})</span><br>
+                    <small>Weight: ${opt.weight} kg | Thickness: ${opt.t} mm</small>
+                </div>
+                <button class="btn btn-sm btn-primary">Select</button>
+            `;
+            listContainer.appendChild(el);
+        });
+    }
+
+    // Show Modal
+    const modal = document.getElementById('sectionSelectModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeSectionSelectModal() {
+    const modal = document.getElementById('sectionSelectModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+function selectSectionForResult(sectionData) {
+    if (!currentSelectionTarget || !optimizationResults) return;
+
+    // Save choice to optimization results
+    if (!optimizationResults.componentSections) {
+        optimizationResults.componentSections = {};
+    }
+
+    optimizationResults.componentSections[currentSelectionTarget] = sectionData;
+
+    // Auto-save results to persist choice
+    autoSaveResults();
+
+    closeSectionSelectModal();
+
+    // Re-render results to show selection
+    displayResults();
+
+    showAlert(`✅ Selected ${sectionData.sectionNo} for ${currentSelectionTarget}`);
+}
