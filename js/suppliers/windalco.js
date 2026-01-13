@@ -165,33 +165,38 @@ window.registerSupplier("Windalco Aluminium", {
     // 3. DEFAULT STOCK
     stock: {
         '3/4"': [
-            { material: '3/4" Handle', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '3/4" Interlock', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '3/4" Sash Top/Bottom', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { component: '3/4" Bearing Bottom', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '3/4" 2 Track Top', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '3/4" 2 Track Bottom', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '3/4" 3 Track Top', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '3/4" 3 Track Bottom', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '3/4" 4 Track Top', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '3/4" 4 Track Bottom', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 }
+            { material: '3/4" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '3/4" Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '3/4" Sash Top/Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { component: '3/4" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '3/4" Middle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '3/4" 2 Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '3/4" 2 Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '3/4" 3 Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '3/4" 3 Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '3/4" 4 Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '3/4" 4 Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
         ],
         '1"': [
-            { material: '1" Handle', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '1" Interlock', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '1" Sash Top/Bottom', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '1" Bearing Bottom', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '1" 2 Track Top', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '1" 2 Track Bottom', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '1" 3 Track Top', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '1" 3 Track Bottom', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 }
+            { material: '1" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '1" Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '1" Sash Top/Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '1" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '1" Middle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '1" 2 Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '1" 2 Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '1" 3 Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '1" 3 Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '1" 4 Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '1" 4 Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
         ],
         '27mm Domal': [
-            { material: '27mm Domal 2 Track', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '27mm Domal 3 Track', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '27mm Domal Shutter', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '27mm Domal Clip', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
-            { material: '27mm Domal C-channel', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 }
+            { material: '27mm Domal 2 Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '27mm Domal 3 Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '27mm Domal 4 Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '27mm Domal Shutter', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '27mm Domal Clip', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '27mm Domal C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
         ]
     }
 });
