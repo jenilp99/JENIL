@@ -4,30 +4,11 @@
 // HARDWARE MASTER CONFIGURATION
 // ============================================================================
 
-let hardwareMaster = {
-    'Domal': [
-        { hardware: 'Domal Shutter Lock', unit: 'Nos', rate: 150, formula: '2 + (MS > 0 ? 1 : 0)' },
-        { hardware: 'Domal Wool Pile Weather Strip', unit: 'Meter', rate: 50, formula: '((GL("Domal Shutter") * 2) + GL("Domal Clip")) * 0.0254' },
-        { hardware: 'Domal Bearing', unit: 'Nos', rate: 20, formula: '2 * (S + MS)' },
-        { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' },
-        { hardware: 'Corner Cleat', unit: 'Nos', rate: 10, formula: '4 * (S + MS)' },
-        { hardware: 'Shutter Wing Connector', unit: 'Nos', rate: 5, formula: '8 * S + 8 * MS' },
-        { hardware: 'Interlock Cap', unit: 'Nos', rate: 15, formula: 'S + MS' }
-    ],
-    '3/4': [
-        { hardware: '3/4 Sliding Shutter Lock', unit: 'Nos', rate: 120, formula: '2 + (MS > 0 ? 1 : 0)' },
-        { hardware: '3/4 Wool Pile Weather Strip', unit: 'Meter', rate: 45, formula: '(P * T + GL("Interlock")) * 0.0254' },
-        { hardware: '3/4 Bearing', unit: 'Nos', rate: 18, formula: '2 * (S + MS)' },
-        { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' }
-    ],
-    '1"': [
-        { hardware: '1" Sliding Shutter Lock', unit: 'Nos', rate: 130, formula: '2 + (MS > 0 ? 1 : 0)' },
-        { hardware: '1" Wool Pile Weather Strip', unit: 'Meter', rate: 48, formula: '(P * T + GL("Interlock")) * 0.0254' },
-        { hardware: '1" Bearing', unit: 'Nos', rate: 20, formula: '2 * (S + MS)' },
-        { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' }
-    ]
-};
+// ============================================================================
+// HARDWARE MASTER CONFIGURATION
+// ============================================================================
 
+let hardwareMaster = {}; // Populated from Supplier Registry
 
 // Global data store
 let windows = [];
@@ -90,300 +71,88 @@ const INCH_TO_MM = 25.4;
 // ============================================================================
 
 function initializeDefaults() {
-    // Only initialize if no data loaded from storage
+    // 1. Initialize Supplier Master Registry (Legacy & New Access)
+    if (typeof initializeSupplierMaster === 'function') {
+        initializeSupplierMaster();
+    }
+
+    // 2. Fetch Aggregated Defaults from Registry
+    const defaultFormulas = (typeof getAggregatedFormulas === 'function') ? getAggregatedFormulas() : {};
+    const defaultStock = (typeof getAggregatedStockDefaults === 'function') ? getAggregatedStockDefaults() : {};
+    const defaultHardware = (typeof getAggregatedHardware === 'function') ? getAggregatedHardware() : {};
+
+    // 3. Populate Hardware Master (Always overwrite from registry as it's not persisted yet)
+    // If we implement hardware persistence later, this logic will need to change.
+    hardwareMaster = defaultHardware;
+
+    // 4. Initialize Series Formulas
+    // Only initialize if no data loaded from storage, OR check if we need to add missing keys
     if (Object.keys(seriesFormulas).length === 0) {
-        seriesFormulas = {
-            'Domal': [
-                { component: 'Domal Shutter', qty: '2*S', length: 'H-2.75', desc: 'Shutter Vertical' },
-                { component: 'Domal Shutter', qty: '2*S', length: '(W-3+2.5*(S-1))/S', desc: 'Shutter Horizontal' },
-                { component: 'Domal Clip', qty: '2*(S-1)', length: 'H-2.75', desc: 'Domal Clip' },
-                { component: 'Domal 2 Track', qty: '1', length: 'T==2 ? W : 0', desc: 'Track Top' },
-                { component: 'Domal 2 Track', qty: '1', length: 'T==2 ? W : 0', desc: 'Track Bottom' },
-                { component: 'Domal 2 Track', qty: '2', length: 'T==2 ? H : 0', desc: 'Track Sides' },
-                { component: 'Domal 3 Track', qty: '1', length: 'T==3 ? W : 0', desc: 'Track Top' },
-                { component: 'Domal 3 Track', qty: '1', length: 'T==3 ? W : 0', desc: 'Track Bottom' },
-                { component: 'Domal 3 Track', qty: '2', length: 'T==3 ? H : 0', desc: 'Track Sides' },
-                { component: 'Domal 4 Track', qty: '1', length: 'T==4 ? W : 0', desc: 'Track Top' },
-                { component: 'Domal 4 Track', qty: '1', length: 'T==4 ? W : 0', desc: 'Track Bottom' },
-                { component: 'Domal 4 Track', qty: '2', length: 'T==4 ? H : 0', desc: 'Track Sides' },
-                { component: 'Domal C-channel', qty: '2*MS', length: 'H-2.75', desc: 'MS C-channel Vertical' },
-                { component: 'Domal C-channel', qty: '2*MS', length: '(W-3+2.5*(S-1))/S', desc: 'MS C-channel Horizontal' },
-                { component: 'Domal Shutter', qty: '2*MS', length: 'H-2.75', desc: 'MS Shutter Vertical' },
-                { component: 'Domal Shutter', qty: '2*MS', length: '(W-3+2.5*(S-1))/S', desc: 'MS Shutter Horizontal' },
-                { component: 'Domal Clip', qty: '1*MS', length: 'H-2.75', desc: 'MS Domal Clip' }
-            ],
-            '3/4"': [
-                { component: '3/4" Handle', qty: '2', length: 'H-1.5', desc: 'Handles' },
-                { component: '3/4" Interlock', qty: '2*S-2', length: 'H-1.5', desc: 'Interlocks' },
-                { component: '3/4" Bearing Bottom', qty: '2*S', length: '(W-5-1.5*(S-1))/S', desc: 'Bearing Bottom' },
-                { component: '3/4" 2 track top', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
-                { component: '3/4" 2 track bottom', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
-                { component: '3/4" 2 track top', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
-                { component: '3/4" 3 track top', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Top' },
-                { component: '3/4" 3 track bottom', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Bottom' },
-                { component: '3/4" 3 track top', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
-                { component: '3/4" 4 track top', qty: '1', length: 'T==4 ? W : 0', desc: '4T Track Top' },
-                { component: '3/4" 4 track bottom', qty: '1', length: 'T==4 ? W : 0', desc: '4T Track Bottom' },
-                { component: '3/4" 4 track top', qty: '2', length: 'T==4 ? H : 0', desc: '4T Track Sides' },
-                { component: '3/4" Handle', qty: '1*MS', length: 'H-1.5', desc: 'MS Handle' },
-                { component: '3/4" Interlock', qty: '1*MS', length: 'H-1.5', desc: 'MS Interlock' },
-                { component: '3/4" Bearing Bottom', qty: '2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS Bearing Bottom' },
-                { component: '3/4" C-channel', qty: '2*MS', length: 'H-1.5', desc: 'MS C-channel Vertical' },
-                { component: '3/4" C-channel', qty: '2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS C-channel Horizontal' }
-            ],
-            '1"': [
-                { component: '1" Handle', qty: '2', length: 'H-1.125', desc: 'Handles' },
-                { component: '1" Interlock', qty: '2*S-2', length: 'H-1.125', desc: 'Interlocks' },
-                { component: '1" Bearing Bottom', qty: '2*S', length: '(W-5-2*(S-1))/S', desc: 'Bearing Bottom' },
-                { component: '1" 2 track top', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
-                { component: '1" 2 track bottom', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
-                { component: '1" 2 track top', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
-                { component: '1" 3 track top', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Top' },
-                { component: '1" 3 track bottom', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Bottom' },
-                { component: '1" 3 track top', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
-                { component: '1" 4 track top', qty: '1', length: 'T==4 ? W : 0', desc: '4T Track Top' },
-                { component: '1" 4 track bottom', qty: '1', length: 'T==4 ? W : 0', desc: '4T Track Bottom' },
-                { component: '1" 4 track top', qty: '2', length: 'T==4 ? H : 0', desc: '4T Track Sides' },
-                { component: '1" Handle', qty: '1*MS', length: 'H-1.125', desc: 'MS Handle' },
-                { component: '1" Interlock', qty: '1*MS', length: 'H-1.125', desc: 'MS Interlock' },
-                { component: '1" Bearing Bottom', qty: '2*MS', length: '(W-5-2*(S-1))/S', desc: 'MS Bearing Bottom' },
-                { component: '1" C-channel', qty: '2*MS', length: 'H-1.125', desc: 'MS C-channel Vertical' },
-                { component: '1" C-channel', qty: '2*MS', length: '(W-5-2*(S-1))/S', desc: 'MS C-channel Horizontal' }
-            ],
-            '19mm UMA': [
-                { component: 'Handle Profile', qty: '(2*(S/S))+(1*MS)', length: 'H-1.5', desc: 'Shutter Handle' },
-                { section: 'UMA-11', component: 'Handle Profile', qty: '2', length: 'H-1.5', desc: 'Handles' },
-                { section: 'UMA-13', component: 'Slim Interlock Shutter', qty: '2*S-2', length: 'H-1.5', desc: 'Interlocks' },
-                { section: 'UMA-12', component: 'Top Bottom Profile', qty: '2*S', length: '(W-5-1.5*(S-1))/S', desc: 'Sash Top/Bottom' },
-                { component: 'Track (Horiz)', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
-                { component: 'Track (Horiz)', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
-                { component: 'Track (Horiz)', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
-                { component: 'Track (Horiz)', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Top' },
-                { component: 'Track (Horiz)', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Bottom' },
-                { component: 'Track (Horiz)', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
-                { section: 'UMA-19', component: 'Auxiliary', qty: 'T', length: 'W', desc: 'U-Type Rail Clip (Bottom)' }
-            ],
-            '25mm Gulf (Frame)': [
-                { component: 'Track', qty: '1', length: 'W', desc: 'Track Top' },
-                { component: 'Track', qty: '1', length: 'W', desc: 'Track Bottom' },
-                { component: 'Track', qty: '2', length: 'H', desc: 'Vertical Side Track' },
-                { series: '25mm Shutter (Shared)', component: 'Sash', qty: '2', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Vertical Handles' },
-                { series: '25mm Shutter (Shared)', component: 'Interlock', qty: 'IT == "slim" ? 2*S-2 : 0', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Slim Interlocks' },
-                { series: '25mm Shutter (Shared)', component: 'Interlock', qty: 'IT == "universal" ? 2*S-2 : 0', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Universal Interlock (V-2521)' },
-                { series: '25mm Shutter (Shared)', component: 'Sash', qty: '2*S', length: '(W - 1.02 + (IT == "slim" ? 0.787 : 0) * (S-1)) / S', desc: 'Shutter Top/Bottom' },
-                { component: 'Auxiliary', qty: 'T', length: 'W', desc: 'Rail Cap (Bottom)' },
-                { component: 'Auxiliary', qty: 'T', length: 'W', desc: 'Top Track Guide' },
-                { component: 'Auxiliary', qty: '2*S + (MS > 0 ? 1 : 0)', desc: 'Locking Adapter', length: '0' },
-                // Mosquito
-                { series: '25mm Mosquito', component: 'Sash', qty: 'MS > 0 ? 2 : 0', length: 'MT == "V-2517" ? H - 2.22 : H - 1.25', desc: 'MS Vertical' },
-                { series: '25mm Mosquito', component: 'Interlock', qty: 'MS > 0 ? 1 : 0', length: 'MT == "V-2517" ? H - 2.22 : H - 1.25', desc: 'MS Interlock' },
-                { series: '25mm Mosquito', component: 'Sash', qty: 'MS > 0 ? 2 : 0', length: '(W - 1.02 + 0.787 * (S-1)) / S', desc: 'MS Top/Bottom' },
-                { series: '25mm Mosquito', component: 'Auxiliary', qty: '4 * MS', desc: 'Mosquito Clip', length: '0' }
-            ],
-            '25mm High-End (Frame)': [
-                { component: 'Track', qty: '4', length: 'H', desc: 'Track All Sides' },
-                { series: '25mm Shutter (Shared)', component: 'Sash', qty: '2', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Vertical Handles' },
-                { series: '25mm Shutter (Shared)', component: 'Interlock', qty: 'IT == "slim" ? 2*S-2 : 0', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Slim Interlocks' },
-                { series: '25mm Shutter (Shared)', component: 'Interlock', qty: 'IT == "universal" ? 2*S-2 : 0', length: 'CJ == 90 ? H - 2.22 : H - 1.25', desc: 'Universal Interlock (V-2521)' },
-                { series: '25mm Shutter (Shared)', component: 'Sash', qty: '2*S', length: '(W - 1.02 + (IT == "slim" ? 0.787 : 0) * (S-1)) / S', desc: 'Shutter Top/Bottom' },
-                { component: 'Auxiliary', qty: 'T', length: 'W', desc: 'Rail Cap (Bottom)' },
-                { component: 'Auxiliary', qty: '2*S + (MS > 0 ? 1 : 0)', desc: 'Locking Adapter', length: '0' }
-            ],
-            // Aliases for shorter naming
-            '25mm Gulf': [], // Will be cloned from (Frame) below
-            '25mm High-End': [],
-            '27mm Gulf': [
-                { component: '2 Track Top/Bottom', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
-                { component: '3 Track Top/Bottom', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
-                { component: '2 Track Vertical', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
-                { component: '3 Track Vertical', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
-                { component: '27mm Shutter Handle', qty: '(2*(S/S))+(1*MS)', length: 'H-1.125', desc: 'Shutter Handle' },
-                { component: '27mm Shutter Interlock', qty: '(2*S-2)+(1*MS)', length: 'H-1.125', desc: 'Interlock' }
-            ],
-            '31mm Gulf': [
-                { component: 'Two Track Top & Bottom', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
-                { component: 'Three Track Top & Bottom', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
-                { component: 'Two Track Vertical', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
-                { component: 'Three Track Vertical', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
-                { component: '31mm Shutter Handle', qty: '(2*(S/S))+(1*MS)', length: 'H-1.125', desc: 'Shutter Handle' },
-                { component: '31mm Shutter Interlock', qty: '(2*S-2)+(1*MS)', length: 'H-1.125', desc: 'Interlock' }
-            ],
-            '35mm Gulf': [
-                { component: 'Two Track Top & Bottom', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
-                { component: 'Three Track Top & Bottom', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
-                { component: 'Two Track Vertical', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
-                { component: 'Three Track Vertical', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
-                { component: '35mm Shutter Handle', qty: '(2*(S/S))+(1*MS)', length: 'H-2.75', desc: 'Shutter Handle' },
-                { component: '35mm Shutter Interlock', qty: '(2*S-2)+(1*MS)', length: 'H-2.75', desc: 'Interlock' }
-            ],
-            '40mm Pro': [
-                { component: 'Two Track Top Bottom', qty: '2', length: 'T==2 ? W : 0', desc: '2T Track Top/Bottom' },
-                { component: 'Three Track Top Bottom', qty: '2', length: 'T==3 ? W : 0', desc: '3T Track Top/Bottom' },
-                { component: 'Two Track Premium Type', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
-                { component: '40mm Shutter Handle', qty: '(2*(S/S))+(1*MS)', length: 'H-2.75', desc: 'Shutter Handle' },
-                { component: '40mm Shutter Interlock', qty: '(2*S-2)+(1*MS)', length: 'H-2.75', desc: 'Interlock' }
-            ]
-        };
-
-        // Populate Aliases
-        seriesFormulas['25mm Gulf'] = [...seriesFormulas['25mm Gulf (Frame)']];
-        seriesFormulas['25mm High-End'] = [...seriesFormulas['25mm High-End (Frame)']];
-    }
-
-    if (Object.keys(stockMaster).length === 0) {
-        stockMaster = {
-            'Domal': [
-                { material: 'Domal Shutter', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: 'Domal Clip', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: 'Domal 2 Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: 'Domal 3 Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: 'Domal 4 Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: 'Domal C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
-            ],
-            '3/4"': [
-                { material: '3/4" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4" Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4" 2 track top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4" 2 track bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4" 3 track top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4" 3 track bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4" 4 track top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4" 4 track bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '3/4" C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
-            ],
-            '1"': [
-                { material: '1" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '1" Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '1" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '1" 2 track top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '1" 2 track bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '1" 3 track top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '1" 3 track bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '1" 4 track top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '1" 4 track bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-                { material: '1" C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
-            ],
-            '19mm UMA': [
-                { material: 'Handle Profile', stock1: 189, stock1Cost: 100 },
-                { material: 'Top Bottom Profile', stock1: 189, stock1Cost: 100 },
-                { material: 'Track (Horiz)', stock1: 189, stock1Cost: 100 },
-                { material: 'Interlock (Vert)', stock1: 189, stock1Cost: 100 },
-                { material: 'Auxiliary', stock1: 189, stock1Cost: 100 }
-            ],
-            '25mm Gulf (Frame)': [
-                { material: 'Track', weight: 1.0, stock1: 189, stock1Cost: 100 },
-                { material: 'Auxiliary', weight: 0.2, stock1: 189, stock1Cost: 100 }
-            ],
-            '25mm High-End (Frame)': [
-                { material: 'Track', weight: 1.2, stock1: 189, stock1Cost: 100 },
-                { material: 'Auxiliary', weight: 0.2, stock1: 189, stock1Cost: 100 }
-            ],
-            '25mm Shutter (Shared)': [
-                { material: 'Sash', weight: 0.6, stock1: 189, stock1Cost: 100 },
-                { material: 'Interlock', weight: 0.5, stock1: 189, stock1Cost: 100 }
-            ],
-            '25mm Mosquito': [
-                { material: 'Sash', weight: 0.4, stock1: 189, stock1Cost: 100 },
-                { material: 'Interlock', weight: 0.4, stock1: 189, stock1Cost: 100 },
-                { material: 'Auxiliary', weight: 0.1, stock1: 189, stock1Cost: 100 }
-            ],
-            '25mm Gulf': [], // Cloned below
-            '25mm High-End': [],
-            '27mm Gulf': [
-                { material: 'Track', weight: 1.2, stock1: 189, stock1Cost: 100 },
-                { material: 'Sash', weight: 0.7, stock1: 189, stock1Cost: 100 },
-                { material: 'Interlock', weight: 0.6, stock1: 189, stock1Cost: 100 }
-            ],
-            '31mm Gulf': [
-                { material: 'Track', weight: 1.3, stock1: 189, stock1Cost: 100 },
-                { material: 'Sash', weight: 0.8, stock1: 189, stock1Cost: 100 },
-                { material: 'Interlock', weight: 0.7, stock1: 189, stock1Cost: 100 }
-            ],
-            '35mm Gulf': [
-                { material: 'Track', weight: 1.4, stock1: 189, stock1Cost: 100 },
-                { material: 'Sash', weight: 0.9, stock1: 189, stock1Cost: 100 },
-                { material: 'Interlock', weight: 0.8, stock1: 189, stock1Cost: 100 }
-            ],
-            '40mm Pro': [
-                { material: 'Track', weight: 1.5, stock1: 189, stock1Cost: 100 },
-                { material: 'Sash', weight: 1.0, stock1: 189, stock1Cost: 100 },
-                { material: 'Interlock', weight: 0.9, stock1: 189, stock1Cost: 100 }
-            ]
-        };
-    }
-
-    // Initialize Hardware Master if not loaded
-    const defaultHardwareMaster = {
-        'Domal': [
-            { hardware: 'Domal Shutter Lock', unit: 'Nos', rate: 150, formula: '2 + (MS > 0 ? 1 : 0)' },
-            { hardware: 'Domal Wool Pile Weather Strip', unit: 'Meter', rate: 50, formula: '((GL("Domal Shutter") * 2) + GL("Domal Clip")) * 0.0254' },
-            { hardware: 'Domal Bearing', unit: 'Nos', rate: 20, formula: '2 * (S + MS)' },
-            { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' },
-            { hardware: 'Corner Cleat', unit: 'Nos', rate: 10, formula: '4 * (S + MS)' },
-            { hardware: 'Shutter Wing Connector', unit: 'Nos', rate: 5, formula: '8 * S + 8 * MS' },
-            { hardware: 'Interlock Cap', unit: 'Nos', rate: 15, formula: 'S + MS' }
-        ],
-        '3/4"': [
-            { hardware: '3/4" Sliding Shutter Lock', unit: 'Nos', rate: 120, formula: '2 + (MS > 0 ? 1 : 0)' },
-            { hardware: '3/4" Wool Pile Weather Strip', unit: 'Meter', rate: 45, formula: '(P * T + GL("Interlock")) * 0.0254' },
-            { hardware: '3/4" Bearing', unit: 'Nos', rate: 18, formula: '2 * (S + MS)' },
-            { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' }
-        ],
-        '1"': [
-            { hardware: '1" Sliding Shutter Lock', unit: 'Nos', rate: 130, formula: '2 + (MS > 0 ? 1 : 0)' },
-            { hardware: '1" Wool Pile Weather Strip', unit: 'Meter', rate: 48, formula: '(P * T + GL("Interlock")) * 0.0254' },
-            { hardware: '1" Bearing', unit: 'Nos', rate: 20, formula: '2 * (S + MS)' },
-            { hardware: 'Silicon', unit: 'Bottle', rate: 80, formula: 'Math.ceil(P * 0.0254 / 1)' }
-        ]
-    };
-
-    if (Object.keys(hardwareMaster).length === 0) {
-        hardwareMaster = JSON.parse(JSON.stringify(defaultHardwareMaster));
-        autoSaveHardwareMaster();
+        seriesFormulas = JSON.parse(JSON.stringify(defaultFormulas));
+        autoSaveFormulas();
     } else {
-        // Ensure formulas exist for existing items (migration helper)
+        // Restore missing series keys if they exist in defaults but not in storage
         let updated = false;
-        Object.entries(hardwareMaster).forEach(([series, items]) => {
-            const defaults = defaultHardwareMaster[series] || [];
-            items.forEach(item => {
-                if (!item.formula) {
-                    const defaultItem = defaults.find(d => d.hardware === item.hardware);
-                    if (defaultItem) {
-                        item.formula = defaultItem.formula;
-                        updated = true;
-                    }
+        Object.keys(defaultFormulas).forEach(series => {
+            if (!seriesFormulas[series]) {
+                console.log(`Restoring missing formula series: ${series}`);
+                seriesFormulas[series] = defaultFormulas[series];
+                updated = true;
+            }
+        });
+        if (updated) autoSaveFormulas();
+    }
+
+    // 5. Initialize Stock Master
+    if (Object.keys(stockMaster).length === 0) {
+        stockMaster = JSON.parse(JSON.stringify(defaultStock));
+        autoSaveStock();
+    } else {
+        // Ensure standard items exist (restore missing defaults)
+        let updated = false;
+
+        // Cleanup: Remove generic "Domal Track" if present (Legacy cleanup)
+        if (stockMaster['Domal']) {
+            const genericIdx = stockMaster['Domal'].findIndex(i => i.material === 'Domal Track');
+            if (genericIdx !== -1) {
+                console.log('Removing legacy Generic Domal Track');
+                stockMaster['Domal'].splice(genericIdx, 1);
+                updated = true;
+            }
+        }
+
+        Object.entries(defaultStock).forEach(([series, items]) => {
+            if (!stockMaster[series]) {
+                stockMaster[series] = [];
+            }
+
+            items.forEach(defaultItem => {
+                const exists = stockMaster[series].find(i => i.material === defaultItem.material);
+                if (!exists) {
+                    console.log(`Restoring missing stock item: ${series} - ${defaultItem.material}`);
+                    stockMaster[series].push(defaultItem);
+                    updated = true;
                 }
             });
         });
-        if (updated) autoSaveHardwareMaster();
+
+        if (updated) {
+            autoSaveStock();
+        }
     }
 
-    // Initialize windows array if empty
-    if (windows.length === 0) {
-        windows = [{
-            configId: 'W01',
-            projectName: 'check',
-            width: 65,
-            height: 56,
-            tracks: 3,
-            shutters: 3,
-            mosquitoShutters: 0,
-            series: '3/4"',
-            description: 'Living Room Main',
-            glassType: 'toughened_5mm'
-        }];
+    // Default Project Configuration if missing
+    if (Object.keys(projectSettings).length === 0) {
+        projectSettings = {
+            projectName: "Default Project",
+            clientName: "Guest",
+            supplier: "" // Empty means Generic/Automatic
+        };
     }
-
-    // Initialize Rates if not loaded
-    if (!localStorage.getItem('ratesConfig')) {
-        autoSaveRates();
-    } else {
-        ratesConfig = JSON.parse(localStorage.getItem('ratesConfig'));
-    }
-
-    refreshAllUI();
 }
+
+
+
 
 // ============================================================================
 // RATE MANAGEMENT
