@@ -174,8 +174,27 @@ function calculatePieces(selectedProject) {
         const id = win.configId;
 
         let seriesName = win.series;
-        // Robust lookup: Try exact name, then normalized name
-        let formulas = seriesFormulas[seriesName];
+        // Robust lookup: Try specific supplier formulas FIRST
+        let formulas = null;
+
+        if (win.vendor && window.SUPPLIER_REGISTRY && window.SUPPLIER_REGISTRY[win.vendor]) {
+            const supplierData = window.SUPPLIER_REGISTRY[win.vendor];
+            if (supplierData.formulas && supplierData.formulas[seriesName]) {
+                formulas = supplierData.formulas[seriesName];
+                console.log(`%c✅ USING SUPPLIER REGISTRY: ${win.vendor} → ${seriesName}`, 'background: #28a745; color: white; padding: 2px 6px; border-radius: 3px;');
+                console.log('   Formulas loaded:', formulas.length, 'items');
+            } else {
+                console.log(`%c⚠️ Registry has ${win.vendor} but NO formulas for "${seriesName}"`, 'background: #ffc107; color: black; padding: 2px 6px;');
+            }
+        } else {
+            console.log(`%c⚠️ No registry entry for vendor: "${win.vendor}"`, 'background: #ffc107; color: black; padding: 2px 6px;');
+        }
+
+        // Fallback: Use Global/Saved formulas
+        if (!formulas) {
+            console.log(`%cℹ️ FALLBACK: Using global seriesFormulas for "${seriesName}"`, 'background: #17a2b8; color: white; padding: 2px 6px;');
+            formulas = seriesFormulas[seriesName];
+        }
 
         if (!formulas) {
             // Try normalization (strip brackets, Vitco prefix, etc.)
@@ -194,11 +213,11 @@ function calculatePieces(selectedProject) {
         }
 
         if (!formulas) {
-            console.warn('⚠️ No formulas found for series:', seriesName, 'Available series:', Object.keys(seriesFormulas));
+            console.warn('%c❌ NO FORMULAS FOUND for series: ' + seriesName, 'background: #dc3545; color: white; padding: 2px 6px;');
             return;
         }
 
-        console.log('📐 Processing window:', id, 'Series:', seriesName, 'Formula count:', formulas.length);
+        console.log(`%c📐 Window ${id} | Vendor: ${win.vendor} | Series: ${seriesName} | MS: ${MS} | Formulas: ${formulas.length}`, 'background: #343a40; color: white; padding: 2px 6px; border-radius: 3px;');
 
         const context = {
             W: win.width,

@@ -174,14 +174,16 @@
                             </div>
                         </div>
                         <div class="wizard-actions">
-                            <button type="button" class="btn btn-primary" onclick="nextStep(2)">Next: Select Supplier ➡️</button>
+                            <button type="button" class="btn btn-primary" onclick="nextStep(2)">Next: Select Supplier
+                                ➡️</button>
                         </div>
                     </div>
 
                     <!-- STEP 2: Supplier Selection -->
                     <div class="wizard-step hidden" id="step2">
                         <div class="alert alert-info">
-                            Showing suppliers available for <strong><span id="selectedSeriesDisplay">...</span></strong> series.
+                            Showing suppliers available for <strong><span id="selectedSeriesDisplay">...</span></strong>
+                            series.
                         </div>
                         <div class="form-row">
                             <div class="form-group">
@@ -194,7 +196,8 @@
                         </div>
                         <div class="wizard-actions">
                             <button type="button" class="btn btn-secondary" onclick="prevStep(1)">⬅️ Back</button>
-                            <button type="button" class="btn btn-primary" onclick="nextStep(3)">Next: Hardware & Planning ➡️</button>
+                            <button type="button" class="btn btn-primary" onclick="nextStep(3)">Next: Hardware &
+                                Planning ➡️</button>
                         </div>
                     </div>
 
@@ -1005,6 +1008,24 @@
                 <button type="submit" class="btn btn-success">💾 Save Changes</button>
                 <button type="button" class="btn btn-danger" onclick="closeEditFormulaModal()">Cancel</button>
             </form>
+        </div>
+    </div>
+
+    <!-- Section Selection Modal -->
+    <div id="sectionSelectModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>📐 Select Thickness / Section</h3>
+                <button class="close-btn" onclick="closeSectionSelectModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+                <div id="sectionSelectionList">
+                    <!-- Options will be populated dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSectionSelectModal()">Cancel</button>
+            </div>
         </div>
     </div>
 

@@ -95,34 +95,45 @@ window.registerSupplier("JK ALU EXTRUSION", {
             ]
         },
         "27mm Domal": {
-            "27mm Domal 2 Track": [
+            "DOMAL 2 TRACK": [
                 { sectionNo: "4201", t: 1.35, weight: 3.200 },
                 { sectionNo: "4202", t: 1.54, weight: 3.500 }
             ],
-            "27mm Domal 3 Track": [
+            "DOMAL 3 TRACK": [
                 { sectionNo: "4301", t: 1.40, weight: 5.000 },
-                { sectionNo: "4302", t: 1.50, weight: 5.500 },
-                { sectionNo: "4310", t: 1.30, weight: 5.500, desc: "3 Track With Leg" } // Matches "DOMAL 3 TRACK WITH LEG"
+                { sectionNo: "4302", t: 1.50, weight: 5.500 }
             ],
-            "27mm Domal 4 Track": [
+            "DOMAL 3 TRACK WITH LEG": [
+                { sectionNo: "4310", t: 1.30, weight: 5.500 }
+            ],
+            "DOMAL 4 TRACK": [
                 { sectionNo: "4401", t: 1.41, weight: 7.000 }
             ],
-            "27mm Domal Shutter": [ // Using "DOMAL SHUTTER (27MM)"
+            "DOMAL SHUTTER (27MM)": [
                 { sectionNo: "4551", t: 1.21, weight: 2.900 },
                 { sectionNo: "4552", t: 1.45, weight: 3.300 }
             ],
-            "27mm Domal Clip": [ // Using "DOMAL CLIP (27MM)"
+            "DOMAL CLIP (27MM)": [
                 { sectionNo: "4651", t: 1.20, weight: 1.150 }
-            ],
-            "27mm Domal C-channel": [
-                { sectionNo: "PENDING", weight: 0.500, desc: "Mosquito C-channel" }
             ]
-            // Note: Domal 27mm Interlock/Handle often shared or specific - images showed Clip/Shutter explicitly.
-            // Will use placeholders/standard logic for others if needed.
+        },
+        "Mini Domal": {
+            "MINI DOMAL 2 TRACK": [
+                { sectionNo: "4211", t: 1.25, weight: 2.800 }
+            ],
+            "MINI DOMAL 3 TRACK": [
+                { sectionNo: "4311", t: 1.25, weight: 4.000 }
+            ],
+            "MINI DOMAL SHUTTER": [
+                { sectionNo: "4511", t: 1.50, weight: 2.900 }
+            ],
+            "MINI DOMAL CLIP": [
+                { sectionNo: "4611", t: 1.00, weight: 1.000 }
+            ]
         }
     },
 
-    // 2. SERIES FORMULAS (Standard 3/4" Logic)
+    // 2. SERIES FORMULAS
     formulas: {
         '3/4"': [
             { component: '3/4" Handle', qty: '2', length: 'H-1.5', desc: 'Handles' },
@@ -142,7 +153,7 @@ window.registerSupplier("JK ALU EXTRUSION", {
             { component: '3/4" 4 Track Bottom', qty: '1', length: 'T==4 ? W : 0', desc: '4T Track Bottom' },
             { component: '3/4" 4 Track Top', qty: '2', length: 'T==4 ? H : 0', desc: '4T Track Sides' },
 
-            // Mosquito: Same as Glass Shutter + C-channel
+            // Mosquito
             { component: '3/4" Handle', qty: '1*MS', length: 'H-1.5', desc: 'MS Handle' },
             { component: '3/4" Interlock', qty: '1*MS', length: 'H-1.5', desc: 'MS Interlock' },
             { component: '3/4" Bearing Bottom', qty: '1*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS Bottom' },
@@ -168,7 +179,7 @@ window.registerSupplier("JK ALU EXTRUSION", {
             { component: '1" 4 Track Bottom', qty: '1', length: 'T==4 ? W : 0', desc: '4T Track Bottom' },
             { component: '1" 4 Track Top', qty: '2', length: 'T==4 ? H : 0', desc: '4T Track Sides' },
 
-            // Mosquito: Same as Glass Shutter + C-channel
+            // Mosquito
             { component: '1" Handle', qty: '1*MS', length: 'H-1.125', desc: 'MS Handle' },
             { component: '1" Interlock', qty: '1*MS', length: 'H-1.125', desc: 'MS Interlock' },
             { component: '1" Bearing Bottom', qty: '1*MS', length: '(W-5-2*(S-1))/S', desc: 'MS Bottom' },
@@ -177,33 +188,46 @@ window.registerSupplier("JK ALU EXTRUSION", {
             { component: '1" C-channel', qty: '2*MS', length: '(W-5-2*(S-1))/S', desc: 'MS C-channel H' }
         ],
         '27mm Domal': [
-            { component: '27mm Domal Shutter', qty: '2*S', length: 'H-2.75', desc: 'Shutter Verticals' },
-            { component: '27mm Domal Shutter', qty: '2*S', length: '(W-3+2.5*(S-1))/S', desc: 'Shutter Horizontals' },
-            { component: '27mm Domal Clip', qty: '2*(S-1)', length: 'H-2.75', desc: 'Interlock Clips' },
-            // Assuming C-channel logic same as usual, but might need adding to sections if specific
+            // Glass Shutter
+            { component: 'DOMAL SHUTTER (27MM)', qty: '2*S', length: 'H-2.75', desc: 'Shutter Verticals' },
+            { component: 'DOMAL SHUTTER (27MM)', qty: '2*S', length: '(W-3+2.5*(S-1))/S', desc: 'Shutter Horizontals' },
+            { component: 'DOMAL CLIP (27MM)', qty: '2*(S-1)', length: 'H-2.75', desc: 'Interlock Clips' },
 
-            { component: '27mm Domal 2 Track', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
-            { component: '27mm Domal 2 Track', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
-            { component: '27mm Domal 2 Track', qty: '2', length: 'T==2 ? H : 0', desc: '2T Track Sides' },
+            // Tracks (Dynamic based on T)
+            { component: 'DOMAL 2 TRACK', qty: '1', length: 'T==2 ? W : 0', desc: '2 Track Top' },
+            { component: 'DOMAL 2 TRACK', qty: '1', length: 'T==2 ? W : 0', desc: '2 Track Bottom' },
+            { component: 'DOMAL 2 TRACK', qty: '2', length: 'T==2 ? H : 0', desc: '2 Track Sides' },
 
-            { component: '27mm Domal 3 Track', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Top' },
-            { component: '27mm Domal 3 Track', qty: '1', length: 'T==3 ? W : 0', desc: '3T Track Bottom' },
-            { component: '27mm Domal 3 Track', qty: '2', length: 'T==3 ? H : 0', desc: '3T Track Sides' },
+            { component: 'DOMAL 3 TRACK', qty: '1', length: 'T==3 ? W : 0', desc: '3 Track Top' },
+            { component: 'DOMAL 3 TRACK', qty: '1', length: 'T==3 ? W : 0', desc: '3 Track Bottom' },
+            { component: 'DOMAL 3 TRACK', qty: '2', length: 'T==3 ? H : 0', desc: '3 Track Sides' },
 
-            { component: '27mm Domal 4 Track', qty: '1', length: 'T==4 ? W : 0', desc: '4T Track Top' },
-            { component: '27mm Domal 4 Track', qty: '1', length: 'T==4 ? W : 0', desc: '4T Track Bottom' },
-            { component: '27mm Domal 4 Track', qty: '2', length: 'T==4 ? H : 0', desc: '4T Track Sides' },
+            { component: 'DOMAL 4 TRACK', qty: '1', length: 'T==4 ? W : 0', desc: '4 Track Top' },
+            { component: 'DOMAL 4 TRACK', qty: '1', length: 'T==4 ? W : 0', desc: '4 Track Bottom' },
+            { component: 'DOMAL 4 TRACK', qty: '2', length: 'T==4 ? H : 0', desc: '4 Track Sides' },
 
-            // Mosquito: Domal Shutter + C-channel
-            { component: '27mm Domal Shutter', qty: '2*MS', length: 'H-2.75', desc: 'MS Verticals' },
-            { component: '27mm Domal Shutter', qty: '2*MS', length: '(W-3+2.5*(S-1))/S', desc: 'MS Horizontals' },
-            { component: '27mm Domal C-channel', qty: '2*MS', length: 'H-2.75', desc: 'MS C-channel V' },
-            { component: '27mm Domal C-channel', qty: '2*MS', length: '(W-3+2.5*(S-1))/S', desc: 'MS C-channel H' }
+            // Mosquito (MS) - uses same shutter/clip profiles
+            { component: 'DOMAL SHUTTER (27MM)', qty: '2*MS', length: 'H-2.75', desc: 'MS Shutter Vert' },
+            { component: 'DOMAL SHUTTER (27MM)', qty: '2*MS', length: '(W-3+2.5*(S-1))/S', desc: 'MS Shutter Horiz' },
+            { component: 'DOMAL CLIP (27MM)', qty: '1*MS', length: 'H-2.75', desc: 'MS Clip' }
+        ],
+        'Mini Domal': [
+            // Mini Domal Shutter
+            { component: 'MINI DOMAL SHUTTER', qty: '2*S', length: 'H-2.5', desc: 'Shutter Verticals' },
+            { component: 'MINI DOMAL SHUTTER', qty: '2*S', length: '(W-3)/S', desc: 'Shutter Horizontals' },
+            { component: 'MINI DOMAL CLIP', qty: '2*(S-1)', length: 'H-2.5', desc: 'Interlock Clips' },
+
+            // Tracks
+            { component: 'MINI DOMAL 2 TRACK', qty: '1', length: 'T==2 ? W : 0', desc: '2 Track Top' },
+            { component: 'MINI DOMAL 2 TRACK', qty: '1', length: 'T==2 ? W : 0', desc: '2 Track Bottom' },
+            { component: 'MINI DOMAL 2 TRACK', qty: '2', length: 'T==2 ? H : 0', desc: '2 Track Sides' },
+            { component: 'MINI DOMAL 3 TRACK', qty: '1', length: 'T==3 ? W : 0', desc: '3 Track Top' },
+            { component: 'MINI DOMAL 3 TRACK', qty: '1', length: 'T==3 ? W : 0', desc: '3 Track Bottom' },
+            { component: 'MINI DOMAL 3 TRACK', qty: '2', length: 'T==3 ? H : 0', desc: '3 Track Sides' }
         ]
     },
 
-    // 3. STOCK DEFAULTS (Based on Catalog Kg/12ft -> 144 inches)
-    // Note: User can customize this. Setting 144" as primary default.
+    // 3. STOCK DEFAULTS
     stock: {
         '3/4"': [
             { material: '3/4" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
@@ -234,12 +258,18 @@ window.registerSupplier("JK ALU EXTRUSION", {
             { material: '1" 4 Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
         ],
         '27mm Domal': [
-            { material: '27mm Domal 2 Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-            { material: '27mm Domal 3 Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-            { material: '27mm Domal 4 Track', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-            { material: '27mm Domal Shutter', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-            { material: '27mm Domal Clip', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-            { material: '27mm Domal C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
+            { material: 'DOMAL 2 TRACK', stock1: 144, stock1Cost: 0, stock2: 192, stock2Cost: 0 },
+            { material: 'DOMAL 3 TRACK', stock1: 144, stock1Cost: 0, stock2: 192, stock2Cost: 0 },
+            { material: 'DOMAL 3 TRACK WITH LEG', stock1: 144, stock1Cost: 0, stock2: 192, stock2Cost: 0 },
+            { material: 'DOMAL 4 TRACK', stock1: 144, stock1Cost: 0, stock2: 192, stock2Cost: 0 },
+            { material: 'DOMAL SHUTTER (27MM)', stock1: 144, stock1Cost: 0, stock2: 192, stock2Cost: 0 },
+            { material: 'DOMAL CLIP (27MM)', stock1: 144, stock1Cost: 0, stock2: 192, stock2Cost: 0 }
+        ],
+        'Mini Domal': [
+            { material: 'MINI DOMAL 2 TRACK', stock1: 144, stock1Cost: 0, stock2: 192, stock2Cost: 0 },
+            { material: 'MINI DOMAL 3 TRACK', stock1: 144, stock1Cost: 0, stock2: 192, stock2Cost: 0 },
+            { material: 'MINI DOMAL SHUTTER', stock1: 144, stock1Cost: 0, stock2: 192, stock2Cost: 0 },
+            { material: 'MINI DOMAL CLIP', stock1: 144, stock1Cost: 0, stock2: 192, stock2Cost: 0 }
         ]
     }
 });

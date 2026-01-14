@@ -1401,6 +1401,13 @@ function repairVitcoFormulas() {
     delete seriesFormulas['Vitco 25mm Gulf'];
     delete seriesFormulas['Vitco 25mm High-End'];
 
+    // Patch for JK ALU - Domal Legacy Name Fix
+    // This forces it to re-load from the Registry (jk_alu.js) where we renamed components
+    if (seriesFormulas['27mm Domal'] && seriesFormulas['27mm Domal'][0].component === '27mm Domal Shutter') {
+        console.log('🧹 Clearing legacy 27mm Domal formulas to allow registry refresh.');
+        delete seriesFormulas['27mm Domal'];
+    }
+
     // Provide legacy aliases
     seriesFormulas['25mm Gulf'] = gulfFormulas;
     seriesFormulas['25mm High-End'] = highEndFormulas;
@@ -1514,16 +1521,21 @@ function openSectionSelectModal(materialKey) {
     // We need to loop through all suppliers and find sections that match this series/component
     let options = [];
 
+    console.log(`%c🔍 Searching for sections: Series="${seriesName}", Component="${componentName}"`, 'background: #6f42c1; color: white; padding: 2px 6px;');
+
     if (window.SUPPLIER_REGISTRY) {
-        Object.values(window.SUPPLIER_REGISTRY).forEach(supplierData => {
+        Object.entries(window.SUPPLIER_REGISTRY).forEach(([supplierName, supplierData]) => {
+            console.log(`   Checking supplier: ${supplierName}`);
             if (supplierData.sections && supplierData.sections[seriesName]) {
                 const sectionGroup = supplierData.sections[seriesName];
+                console.log(`   ✓ Found series "${seriesName}" in ${supplierName}, keys:`, Object.keys(sectionGroup));
                 // Check if direct match exists
                 if (sectionGroup[componentName]) {
+                    console.log(`   ✓ Found component "${componentName}" with ${sectionGroup[componentName].length} variants`);
                     // Add all variants
                     sectionGroup[componentName].forEach(sec => {
                         options.push({
-                            supplier: supplierData.name || 'Unknown', // We might need to store name in structure or infer it
+                            supplier: supplierName,
                             sectionNo: sec.sectionNo,
                             weight: sec.weight,
                             t: sec.t || 'N/A',
@@ -1531,6 +1543,7 @@ function openSectionSelectModal(materialKey) {
                         });
                     });
                 } else {
+                    console.log(`   ✗ Component "${componentName}" NOT found in this series`);
                     // Fuzzy match? Or maybe the component name in results is generic (e.g. "Track") 
                     // and registry has specific "2 Track", "3 Track".
                     // For now, simple matching.
@@ -1538,6 +1551,8 @@ function openSectionSelectModal(materialKey) {
             }
         });
     }
+
+    console.log(`   Total options found: ${options.length}`);
 
     // 2. If no registry options found, fallback to looking at Stock Master (Legacy/Simple way)
     if (options.length === 0 && stockMaster[seriesName]) {

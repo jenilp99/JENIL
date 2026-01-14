@@ -474,15 +474,25 @@ window.registerSupplier("Atlantis Aluminium", {
         "25x45 Slim Partition": [],
         "25mm Ventana": [],
         "27mm Domal": [
-            { component: '27mm Domal 2 Track', qty: '1', length: 'T==2 ? W : 0', desc: 'Top' },
-            { component: '27mm Domal 2 Track', qty: '1', length: 'T==2 ? W : 0', desc: 'Bottom' },
-            { component: '27mm Domal 2 Track', qty: '2', length: 'T==2 ? H : 0', desc: 'Sides' },
-            { component: '27mm Domal 3 Track', qty: '1', length: 'T==3 ? W : 0', desc: 'Top' },
-            { component: '27mm Domal 3 Track', qty: '1', length: 'T==3 ? W : 0', desc: 'Bottom' },
-            { component: '27mm Domal 3 Track', qty: '2', length: 'T==3 ? H : 0', desc: 'Sides' },
+            // Glass Shutter
             { component: '27mm Domal Shutter', qty: '2*S', length: 'H-2.75', desc: 'Shutter Vert' },
-            { component: '27mm Domal Shutter', qty: '2*S', length: '(W-3)/S', desc: 'Shutter Horz' },
-            { component: '27mm Domal Inter Clip', qty: '2*(S-1)', length: 'H-2.75', desc: 'Clip' }
+            { component: '27mm Domal Shutter', qty: '2*S', length: '(W-3+2.5*(S-1))/S', desc: 'Shutter Horz' },
+            { component: '27mm Domal Inter Clip', qty: '2*(S-1)', length: 'H-2.75', desc: 'Clip' },
+
+            // Tracks (Dynamic based on T)
+            { component: '27mm Domal 2 Track', qty: '1', length: 'T==2 ? W : 0', desc: 'Track Top' },
+            { component: '27mm Domal 2 Track', qty: '1', length: 'T==2 ? W : 0', desc: 'Track Bottom' },
+            { component: '27mm Domal 2 Track', qty: '2', length: 'T==2 ? H : 0', desc: 'Track Sides' },
+            { component: '27mm Domal 3 Track', qty: '1', length: 'T==3 ? W : 0', desc: 'Track Top' },
+            { component: '27mm Domal 3 Track', qty: '1', length: 'T==3 ? W : 0', desc: 'Track Bottom' },
+            { component: '27mm Domal 3 Track', qty: '2', length: 'T==3 ? H : 0', desc: 'Track Sides' },
+
+            // Mosquito (MS)
+            { component: '27mm Domal Mosquito', qty: '2*MS', length: 'H-2.75', desc: 'MS C-channel Vert' },
+            { component: '27mm Domal Mosquito', qty: '2*MS', length: '(W-3+2.5*(S-1))/S', desc: 'MS C-channel Horz' },
+            { component: '27mm Domal Shutter', qty: '2*MS', length: 'H-2.75', desc: 'MS Shutter Vert' },
+            { component: '27mm Domal Shutter', qty: '2*MS', length: '(W-3+2.5*(S-1))/S', desc: 'MS Shutter Horz' },
+            { component: '27mm Domal Inter Clip', qty: '1*MS', length: 'H-2.75', desc: 'MS Clip' }
         ],
         "27mm Ventana": [
             { component: '27mm Ventana 2 Track', qty: '1', length: 'T==2 ? W : 0', desc: 'Top' },
@@ -603,6 +613,7 @@ window.registerSupplier("Atlantis Aluminium", {
             { material: '27mm Domal 3 Track', stock1: 189, stock1Cost: 0, stock2: 0, stock2Cost: 0 },
             { material: '27mm Domal Shutter', stock1: 189, stock1Cost: 0, stock2: 0, stock2Cost: 0 },
             { material: '27mm Domal Inter Clip', stock1: 189, stock1Cost: 0, stock2: 0, stock2Cost: 0 },
+            { material: '27mm Domal Mosquito', stock1: 189, stock1Cost: 0, stock2: 0, stock2Cost: 0 },
             { material: '27mm Domal Double Inter Lock', stock1: 189, stock1Cost: 0, stock2: 0, stock2Cost: 0 },
             { material: '27mm Domal Additional Track', stock1: 189, stock1Cost: 0, stock2: 0, stock2Cost: 0 }
         ],
