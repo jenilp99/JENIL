@@ -6,13 +6,16 @@
 
 function runOptimization() {
     const selectedProject = document.getElementById('projectSelector').value;
+    const preferredSupplier = document.getElementById('optimizationSupplier')?.value || '';
 
     if (!selectedProject) {
         showAlert('❌ Please select a project first!');
         return;
     }
 
-    const piecesByMaterial = calculatePieces(selectedProject);
+    console.log(`%c🏭 Optimization started with Preferred Supplier: "${preferredSupplier || 'NONE'}"`, 'background: #007bff; color: white; padding: 2px 6px;');
+
+    const piecesByMaterial = calculatePieces(selectedProject, preferredSupplier);
 
     if (Object.keys(piecesByMaterial).length === 0) {
         const projectWindows = windows.filter(w => w.projectName === selectedProject);
@@ -155,12 +158,13 @@ function safeEval(formula, context, defaultValue = 0) {
     }
 }
 
-function calculatePieces(selectedProject) {
+function calculatePieces(selectedProject, preferredSupplier) {
     const pieces = {};
     const projectWindows = windows.filter(w => w.projectName === selectedProject);
 
     console.log('🔍 calculatePieces:', {
         project: selectedProject,
+        preferredSupplier: preferredSupplier || 'None',
         windowCount: projectWindows.length,
         windows: projectWindows
     });
@@ -173,21 +177,24 @@ function calculatePieces(selectedProject) {
         const T = win.tracks;
         const id = win.configId;
 
+        // Use preferred supplier if specified, otherwise fall back to window's vendor
+        const effectiveVendor = preferredSupplier || win.vendor;
+
         let seriesName = win.series;
         // Robust lookup: Try specific supplier formulas FIRST
         let formulas = null;
 
-        if (win.vendor && window.SUPPLIER_REGISTRY && window.SUPPLIER_REGISTRY[win.vendor]) {
-            const supplierData = window.SUPPLIER_REGISTRY[win.vendor];
+        if (effectiveVendor && window.SUPPLIER_REGISTRY && window.SUPPLIER_REGISTRY[effectiveVendor]) {
+            const supplierData = window.SUPPLIER_REGISTRY[effectiveVendor];
             if (supplierData.formulas && supplierData.formulas[seriesName]) {
                 formulas = supplierData.formulas[seriesName];
-                console.log(`%c✅ USING SUPPLIER REGISTRY: ${win.vendor} → ${seriesName}`, 'background: #28a745; color: white; padding: 2px 6px; border-radius: 3px;');
+                console.log(`%c✅ USING SUPPLIER REGISTRY: ${effectiveVendor} → ${seriesName}`, 'background: #28a745; color: white; padding: 2px 6px; border-radius: 3px;');
                 console.log('   Formulas loaded:', formulas.length, 'items');
             } else {
-                console.log(`%c⚠️ Registry has ${win.vendor} but NO formulas for "${seriesName}"`, 'background: #ffc107; color: black; padding: 2px 6px;');
+                console.log(`%c⚠️ Registry has ${effectiveVendor} but NO formulas for "${seriesName}"`, 'background: #ffc107; color: black; padding: 2px 6px;');
             }
         } else {
-            console.log(`%c⚠️ No registry entry for vendor: "${win.vendor}"`, 'background: #ffc107; color: black; padding: 2px 6px;');
+            console.log(`%c⚠️ No registry entry for vendor: "${effectiveVendor}"`, 'background: #ffc107; color: black; padding: 2px 6px;');
         }
 
         // Fallback: Use Global/Saved formulas
