@@ -355,7 +355,8 @@ function refreshAllUI() {
     refreshProjectSelector();
     updateDashboardStats();
     // updateSupplierDatalist(); // New (Function implementation seems missing, temporarily disabling)
-    initializeAddWindowVendorSelector(); // New
+    initializeAddWindowSeriesSelector(); // New Wizard Flow
+    initializeAddWindowVendorSelector(); // For Edit Modal (only)
     refreshRatesDisplay(); // New
     renderSupplierMaster(); // New
 }
@@ -371,26 +372,8 @@ function refreshSeriesDropdown() {
 }
 
 function initializeAddWindowVendorSelector() {
-    const selector = document.getElementById('windowVendor');
+    // Only for Edit Modal
     const editSelector = document.getElementById('editWindowVendor');
-
-    console.log('Initialize Vendor Selector. SupplierMaster keys:', Object.keys(supplierMaster));
-
-    if (selector) {
-        const suppliers = Object.keys(supplierMaster);
-        selector.innerHTML = '<option value="">-- Select Vendor --</option>';
-        suppliers.forEach(s => {
-            selector.innerHTML += `<option value="${s}">${s}</option>`;
-        });
-
-        // If a project is selected and has a preferred supplier, pre-select it
-        const activeProject = document.getElementById('projectName').value;
-        if (activeProject && projectSettings[activeProject] && projectSettings[activeProject].preferredSupplier) {
-            selector.value = projectSettings[activeProject].preferredSupplier;
-            filterSeriesByVendor();
-        }
-    }
-
     if (editSelector) {
         const suppliers = Object.keys(supplierMaster);
         editSelector.innerHTML = '<option value="">-- Select Vendor --</option>';
@@ -400,26 +383,108 @@ function initializeAddWindowVendorSelector() {
     }
 }
 
-function filterSeriesByVendor() {
-    const vendor = document.getElementById('windowVendor').value;
-    const seriesSelect = document.getElementById('series');
+// ============================================================================
+// WIZARD FLOW LOGIC
+// ============================================================================
 
-    if (!vendor) {
-        seriesSelect.innerHTML = '<option value="">-- Select Vendor First --</option>';
-        return;
+let currentWizardStep = 1;
+
+function showStep(step) {
+    document.querySelectorAll('.wizard-step').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.step-dot').forEach(el => el.classList.remove('active'));
+
+    const target = document.getElementById(`step${step}`);
+    if (target) target.classList.remove('hidden');
+
+    for (let i = 1; i <= step; i++) {
+        const dot = document.querySelector(`.step-dot[data-step="${i}"]`);
+        if (dot) dot.classList.add('active');
+    }
+    currentWizardStep = step;
+}
+
+function nextStep(targetStep) {
+    if (targetStep === 2) {
+        const width = document.getElementById('width').value;
+        const height = document.getElementById('height').value;
+        const series = document.getElementById('series').value;
+
+        if (!width || !height) { showAlert('❌ Please enter valid dimensions', 'error'); return; }
+        if (!series) { showAlert('❌ Please select a Series Type', 'error'); return; }
+
+        // Populate vendors for this series
+        updateVendorOptionsForSeries(series);
     }
 
-    const availableSeries = Object.keys(supplierMaster[vendor] || {});
-    seriesSelect.innerHTML = '';
-
-    if (availableSeries.length === 0) {
-        seriesSelect.innerHTML = '<option value="">No Series Found</option>';
-        return;
+    if (targetStep === 3) {
+        const vendor = document.getElementById('windowVendor').value;
+        if (!vendor) { showAlert('❌ Please select a Supplier', 'error'); return; }
     }
 
-    availableSeries.forEach(s => {
-        seriesSelect.innerHTML += `<option value="${s}">${s}</option>`;
+    showStep(targetStep);
+}
+
+function prevStep(targetStep) {
+    showStep(targetStep);
+}
+
+function getAllUniqueSeries() {
+    const seriesSet = new Set();
+    Object.values(supplierMaster).forEach(seriesObj => {
+        Object.keys(seriesObj).forEach(s => seriesSet.add(s));
     });
+    return Array.from(seriesSet).sort();
+}
+
+function initializeAddWindowSeriesSelector() {
+    const selector = document.getElementById('series');
+    if (!selector) return;
+
+    const allSeries = getAllUniqueSeries();
+    selector.innerHTML = '<option value="">-- Select Series First --</option>';
+    allSeries.forEach(s => {
+        selector.innerHTML += `<option value="${s}">${s}</option>`;
+    });
+}
+
+function onSeriesChanged() {
+    const series = document.getElementById('series').value;
+    const display = document.getElementById('selectedSeriesDisplay');
+    if (display) display.textContent = series || '...';
+}
+
+function updateVendorOptionsForSeries(series) {
+    const selector = document.getElementById('windowVendor');
+    if (!selector) return;
+
+    selector.innerHTML = '<option value="">-- Select Vendor --</option>';
+    if (!series) return;
+
+    const validSuppliers = Object.keys(supplierMaster).filter(supName =>
+        supplierMaster[supName] && supplierMaster[supName][series]
+    );
+
+    if (validSuppliers.length === 0) {
+        selector.innerHTML = '<option value="">❌ No Suppliers Found</option>';
+    } else {
+        validSuppliers.forEach(s => {
+            selector.innerHTML += `<option value="${s}">${s}</option>`;
+        });
+
+        // Auto-select if only one supplier
+        if (validSuppliers.length === 1) {
+            selector.value = validSuppliers[0];
+        }
+
+        // Pre-select if project preference matches
+        const activeProject = document.getElementById('projectName').value;
+        if (activeProject && projectSettings[activeProject] && projectSettings[activeProject].preferredSupplier) {
+            const pref = projectSettings[activeProject].preferredSupplier;
+            if (validSuppliers.includes(pref)) {
+                selector.value = pref;
+            }
+        }
+    }
 }
 
 function filterEditSeriesByVendor() {
