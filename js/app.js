@@ -1351,93 +1351,122 @@ function refreshStockMaster() {
     if (!container) return;
     container.innerHTML = '';
 
+    // Reorganize stockMaster by Supplier -> Series -> Items
+    const bySupplier = {};
+
     Object.entries(stockMaster).forEach(([series, stocks]) => {
-        // Sort stocks by Material then Thickness for better readability
-        stocks.sort((a, b) => {
-            if (a.material < b.material) return -1;
-            if (a.material > b.material) return 1;
-            return (parseFloat(a.thickness) || 0) - (parseFloat(b.thickness) || 0);
+        stocks.forEach((stock, idx) => {
+            const supplierName = stock.supplier || 'Unknown Supplier';
+            if (!bySupplier[supplierName]) bySupplier[supplierName] = {};
+            if (!bySupplier[supplierName][series]) bySupplier[supplierName][series] = [];
+            bySupplier[supplierName][series].push({ ...stock, _origIdx: idx, _origSeries: series });
         });
+    });
 
-        const details = document.createElement('details');
-        details.className = 'rate-group';
-        details.style.marginBottom = '10px';
-        details.style.border = '1px solid #ddd';
-        details.style.borderRadius = '8px';
-        details.style.background = 'white';
-        // Auto-expand Door series for visibility
-        if (series.includes('Door')) details.open = true;
+    // Create UI for each supplier
+    Object.entries(bySupplier).forEach(([supplierName, seriesData]) => {
+        // Count total items for this supplier
+        let totalItems = 0;
+        Object.values(seriesData).forEach(items => totalItems += items.length);
 
-        details.innerHTML = `
-            <summary style="padding: 12px 15px; cursor: pointer; font-weight: bold; background: #f8f9fa; border-radius: 8px; list-style: none; display: flex; justify-content: space-between; align-items: center;">
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <span>📦 ${series} Series Materials</span>
-                    <button class="btn btn-outline-secondary btn-sm" onclick="event.preventDefault(); resetStockSeries('${series}')" style="font-size: 0.7em; padding: 2px 6px;">↻ Refetch Defaults</button>
-                </div>
-                <span style="font-size: 0.8em; color: #666;">(${stocks.length} items)</span>
+        // Supplier-level collapsible
+        const supplierDetails = document.createElement('details');
+        supplierDetails.className = 'supplier-group';
+        supplierDetails.style.marginBottom = '15px';
+        supplierDetails.style.border = '2px solid #3498db';
+        supplierDetails.style.borderRadius = '10px';
+        supplierDetails.style.background = 'white';
+        supplierDetails.open = true;
+
+        supplierDetails.innerHTML = `
+            <summary style="padding: 15px; cursor: pointer; font-weight: bold; background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); color: white; border-radius: 8px 8px 0 0; list-style: none; display: flex; justify-content: space-between; align-items: center;">
+                <span>🏭 ${supplierName}</span>
+                <span style="font-size: 0.85em; background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px;">${totalItems} items</span>
             </summary>
-            
-            <div style="padding: 15px; border-top: 1px solid #eee; overflow-x: auto;">
-                <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px; background: #f0f7ff; padding: 10px; border-radius: 6px;">
-                    <label><strong>Rate (₹/kg):</strong></label>
-                    <input type="number" value="${stockRates[series] || 250}" onchange="updateStockRate('${series}', this.value)" style="width: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
-                    <small style="color: #666;">(Calculates Cost = Weight × Rate × Length)</small>
-                </div>
-
-                <table style="width: 100%; border-collapse: collapse; min-width: 900px;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid #eee; text-align: left;">
-                            <th style="padding: 8px;">Material</th>
-                            <th style="padding: 8px;">Section / Details</th>
-                            <th style="padding: 8px;">Thickness</th>
-                            <th style="padding: 8px;">Weight (kg)</th>
-                            <th style="padding: 8px;">Stock 1 (in)</th>
-                            <th style="padding: 8px;">Cost (₹)</th>
-                            <th style="padding: 8px;">Stock 2 (in)</th>
-                            <th style="padding: 8px;">Cost (₹)</th>
-                            <th style="padding: 8px; text-align: center;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
+            <div class="supplier-content" style="padding: 10px;"></div>
         `;
 
-        const tbody = details.querySelector('tbody');
-        const rate = parseFloat(stockRates[series] || 250);
+        const supplierContent = supplierDetails.querySelector('.supplier-content');
 
-        stocks.forEach((stock, idx) => {
-            const row = tbody.insertRow();
-            row.style.borderBottom = '1px solid #f0f0f0';
+        // Create series-level collapsibles inside supplier
+        Object.entries(seriesData).forEach(([series, stocks]) => {
+            // Sort by material then thickness
+            stocks.sort((a, b) => {
+                if (a.material < b.material) return -1;
+                if (a.material > b.material) return 1;
+                return (parseFloat(a.thickness) || 0) - (parseFloat(b.thickness) || 0);
+            });
 
-            // Weight is now intrinsic to the row (synced from registry)
-            let currentWeight = stock.weight || 0;
+            const seriesDetails = document.createElement('details');
+            seriesDetails.className = 'series-group';
+            seriesDetails.style.marginBottom = '8px';
+            seriesDetails.style.border = '1px solid #ddd';
+            seriesDetails.style.borderRadius = '6px';
+            seriesDetails.style.background = '#fafafa';
+            // Auto-expand Door series
+            if (series.includes('Door')) seriesDetails.open = true;
 
-            // Calculate Cost
-            const calcCost1 = (currentWeight > 0) ? Math.round((parseFloat(stock.stock1 || 0) / 144) * currentWeight * rate) : stock.stock1Cost;
-            const calcCost2 = (currentWeight > 0) ? Math.round((parseFloat(stock.stock2 || 0) / 144) * currentWeight * rate) : stock.stock2Cost;
-
-            row.innerHTML = `
-                <td style="padding: 8px; font-weight: 500;">${stock.material}</td>
-                <td style="padding: 8px; font-size: 0.8em; color: #666;">
-                    ${stock.supplier || ''}<br>
-                    ${stock.sectionNo || '-'}
-                </td>
-                <td style="padding: 8px; font-weight: bold; color: #007bff;">
-                     ${stock.thickness ? stock.thickness + 'mm' : '-'}
-                </td>
-                <td style="padding: 8px; color: #555;">${currentWeight ? parseFloat(currentWeight).toFixed(3) : '-'}</td>
-                <td style="padding: 8px;"><input type="number" value="${stock.stock1}" onchange="updateStock('${series}', ${idx}, 'stock1', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
-                <td style="padding: 8px;"><input type="number" value="${calcCost1}" onchange="updateStock('${series}', ${idx}, 'stock1Cost', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;" readonly></td>
-                <td style="padding: 8px;"><input type="number" value="${stock.stock2}" onchange="updateStock('${series}', ${idx}, 'stock2', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
-                <td style="padding: 8px;"><input type="number" value="${calcCost2}" onchange="updateStock('${series}', ${idx}, 'stock2Cost', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;" readonly></td>
-                <td style="padding: 8px; text-align:center">
-                    <button class="btn btn-danger btn-sm" onclick="deleteStock('${series}', ${idx})" style="padding: 4px 8px;">🗑️</button>
-                </td>
+            seriesDetails.innerHTML = `
+                <summary style="padding: 10px 12px; cursor: pointer; font-weight: 600; background: #f0f0f0; border-radius: 6px; list-style: none; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span>📦 ${series} Series</span>
+                        <button class="btn btn-outline-secondary btn-sm" onclick="event.preventDefault(); resetStockSeries('${series}')" style="font-size: 0.65em; padding: 2px 5px;">↻ Refetch</button>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-size: 0.75em; color: #666;">(${stocks.length} items)</span>
+                        <input type="number" value="${stockRates[series] || 250}" onchange="updateStockRate('${series}', this.value)" style="width: 65px; padding: 3px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.8em;" title="Rate ₹/kg">
+                    </div>
+                </summary>
+                <div style="padding: 10px; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #eee; text-align: left;">
+                                <th style="padding: 6px;">Material</th>
+                                <th style="padding: 6px;">Section No</th>
+                                <th style="padding: 6px;">Thickness</th>
+                                <th style="padding: 6px;">Weight</th>
+                                <th style="padding: 6px;">Stock 1</th>
+                                <th style="padding: 6px;">Cost ₹</th>
+                                <th style="padding: 6px;">Stock 2</th>
+                                <th style="padding: 6px;">Cost ₹</th>
+                                <th style="padding: 6px; text-align: center;">❌</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             `;
+
+            const tbody = seriesDetails.querySelector('tbody');
+            const rate = parseFloat(stockRates[series] || 250);
+
+            stocks.forEach((stock) => {
+                const row = tbody.insertRow();
+                row.style.borderBottom = '1px solid #f0f0f0';
+
+                const currentWeight = stock.weight || 0;
+                const calcCost1 = (currentWeight > 0) ? Math.round((parseFloat(stock.stock1 || 0) / 144) * currentWeight * rate) : stock.stock1Cost;
+                const calcCost2 = (currentWeight > 0) ? Math.round((parseFloat(stock.stock2 || 0) / 144) * currentWeight * rate) : stock.stock2Cost;
+                const origSeries = stock._origSeries;
+                const origIdx = stock._origIdx;
+
+                row.innerHTML = `
+                    <td style="padding: 6px; font-weight: 500;">${stock.material}</td>
+                    <td style="padding: 6px; font-size: 0.85em; color: #666;">${stock.sectionNo || '-'}</td>
+                    <td style="padding: 6px; font-weight: bold; color: #007bff;">${stock.thickness ? stock.thickness + 'mm' : '-'}</td>
+                    <td style="padding: 6px; color: #555;">${currentWeight ? parseFloat(currentWeight).toFixed(3) : '-'}</td>
+                    <td style="padding: 6px;"><input type="number" value="${stock.stock1}" onchange="updateStock('${origSeries}', ${origIdx}, 'stock1', this.value)" style="width: 60px; padding: 4px; border: 1px solid #ddd; border-radius: 3px;"></td>
+                    <td style="padding: 6px;"><input type="number" value="${calcCost1}" style="width: 60px; padding: 4px; border: 1px solid #ddd; border-radius: 3px; background: #f9f9f9;" readonly></td>
+                    <td style="padding: 6px;"><input type="number" value="${stock.stock2}" onchange="updateStock('${origSeries}', ${origIdx}, 'stock2', this.value)" style="width: 60px; padding: 4px; border: 1px solid #ddd; border-radius: 3px;"></td>
+                    <td style="padding: 6px;"><input type="number" value="${calcCost2}" style="width: 60px; padding: 4px; border: 1px solid #ddd; border-radius: 3px; background: #f9f9f9;" readonly></td>
+                    <td style="padding: 6px; text-align:center"><button class="btn btn-danger btn-sm" onclick="deleteStock('${origSeries}', ${origIdx})" style="padding: 2px 6px; font-size: 0.75em;">🗑️</button></td>
+                `;
+            });
+
+            supplierContent.appendChild(seriesDetails);
         });
 
-        container.appendChild(details);
+        container.appendChild(supplierDetails);
     });
 }
 
@@ -2152,7 +2181,7 @@ function syncStockWithRegistry(showDebug) {
             // Build a Set of existing items
             const existingKeys = new Set();
             stockMaster[series].forEach(s => {
-                existingKeys.add(s.material + '_' + parseFloat(s.thickness || 0));
+                existingKeys.add(s.material + '_' + parseFloat(s.thickness || 0) + '_' + (s.supplier || ''));
             });
 
             // Iterate components
@@ -2169,7 +2198,7 @@ function syncStockWithRegistry(showDebug) {
                         if (variant.t === undefined || variant.t === null) return;
 
                         const tVal = parseFloat(variant.t);
-                        const key = compName + '_' + tVal;
+                        const key = compName + '_' + tVal + '_' + supplier;
 
                         if (!existingKeys.has(key)) {
                             stockMaster[series].push({
