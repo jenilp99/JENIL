@@ -19,6 +19,31 @@ let optimizationResults = null;
 let projectSettings = {}; // Global per-project configuration
 let kerf = 0.125;
 
+// Config ID counters for Windows and Doors
+let windowCounter = 1;
+let doorCounter = 1;
+
+// Get next config ID based on category
+function getNextConfigId(category) {
+    if (category === 'Door') {
+        return 'D' + String(doorCounter).padStart(2, '0');
+    } else {
+        return 'W' + String(windowCounter).padStart(2, '0');
+    }
+}
+
+// Increment counter after adding
+function incrementConfigCounter(category) {
+    if (category === 'Door') {
+        doorCounter++;
+    } else {
+        windowCounter++;
+    }
+    // Save counters
+    localStorage.setItem('windowCounter', windowCounter);
+    localStorage.setItem('doorCounter', doorCounter);
+}
+
 let aluminumRate = 280;
 let unitMode = 'inch';
 
@@ -77,6 +102,12 @@ function initializeDefaults() {
     if (typeof initializeSupplierMaster === 'function') {
         initializeSupplierMaster();
     }
+
+    // 1b. Load Config ID counters from localStorage
+    const savedWindowCounter = localStorage.getItem('windowCounter');
+    const savedDoorCounter = localStorage.getItem('doorCounter');
+    if (savedWindowCounter) windowCounter = parseInt(savedWindowCounter);
+    if (savedDoorCounter) doorCounter = parseInt(savedDoorCounter);
 
     // 2. Fetch Aggregated Defaults from Registry
     const defaultFormulas = (typeof getAggregatedFormulas === 'function') ? getAggregatedFormulas() : {};
@@ -445,9 +476,8 @@ function selectCategory(category) {
     if (category === 'Window') {
         windowBtn.classList.add('active');
         categoryInput.value = 'Window';
-        if (configIdInput.value.startsWith('D')) {
-            configIdInput.value = 'W' + configIdInput.value.substring(1);
-        }
+        // Auto-generate next Window ID
+        configIdInput.value = getNextConfigId('Window');
         if (submitBtn) submitBtn.textContent = '✅ Add Window';
 
         // Show window-specific fields, hide door fields
@@ -455,9 +485,8 @@ function selectCategory(category) {
     } else {
         doorBtn.classList.add('active', 'door-active');
         categoryInput.value = 'Door';
-        if (configIdInput.value.startsWith('W')) {
-            configIdInput.value = 'D' + configIdInput.value.substring(1);
-        }
+        // Auto-generate next Door ID
+        configIdInput.value = getNextConfigId('Door');
         if (submitBtn) submitBtn.textContent = '✅ Add Door';
 
         // Show door-specific fields, hide window fields
@@ -478,28 +507,157 @@ function selectCategory(category) {
 }
 
 function toggleWindowDoorFields(category) {
-    // Window-specific rows
-    const windowRows = [
-        document.getElementById('tracks')?.closest('.form-row'),
-        document.getElementById('shutters')?.closest('.form-row'),
-        document.getElementById('mosquitoShutters')?.closest('.form-row'),
-        document.getElementById('mosquitoConfigRow')
+    // Window-specific rows (hide for Doors)
+    const windowOnlyRows = [
+        document.getElementById('windowTracksRow'),     // Tracks, Shutters, Mosquito Shutters
+        document.getElementById('windowGlassRow'),      // Glass Unit, Thickness, Corner Joint
+        document.getElementById('windowInterlockRow'),  // Interlock Design, Description
+        document.getElementById('mosquitoConfigRow')    // Mosquito Shutter Type/Interlock
     ];
 
-    // Door-specific rows
+    // Door-specific container
     const doorConfigRow = document.getElementById('doorConfigRow');
 
     if (category === 'Window') {
         // Show window fields
-        windowRows.forEach(row => { if (row) row.style.display = 'flex'; });
+        windowOnlyRows.forEach(row => { if (row) row.style.display = 'flex'; });
+        // Always hide mosquito config unless mosquitoShutters > 0
+        const ms = parseInt(document.getElementById('mosquitoShutters')?.value || 0);
+        const mosquitoRow = document.getElementById('mosquitoConfigRow');
+        if (mosquitoRow) mosquitoRow.style.display = ms > 0 ? 'flex' : 'none';
         // Hide door fields
         if (doorConfigRow) doorConfigRow.style.display = 'none';
     } else {
-        // Hide window fields (except glass which applies to both)
-        windowRows.forEach(row => { if (row) row.style.display = 'none'; });
-        // Show door fields
+        // Hide ALL window-only fields for Doors
+        windowOnlyRows.forEach(row => { if (row) row.style.display = 'none'; });
+        // Show door config
         if (doorConfigRow) doorConfigRow.style.display = 'block';
     }
+}
+
+// Update Partition Thickness options based on selected material
+function updateDoorPartitionThickness() {
+    const material = document.getElementById('doorPartitionMaterial')?.value || 'Glass';
+    const thicknessSelect = document.getElementById('doorPartitionThickness');
+    if (!thicknessSelect) return;
+
+    // Define thickness options per material
+    const thicknessOptions = {
+        'Glass': [{ v: '5', t: '5mm' }, { v: '6', t: '6mm' }, { v: '8', t: '8mm' }],
+        'Bakelite': [{ v: '2.5', t: '2.5mm' }, { v: '4', t: '4mm' }],
+        'ACP': [{ v: '3', t: '3mm' }, { v: '4', t: '4mm' }, { v: '6', t: '6mm' }],
+        'Louvers': [{ v: '0', t: 'N/A' }],
+        'SSMosquito': [{ v: '0', t: 'N/A' }],
+        'ParticleBoard': [{ v: '12', t: '12mm' }, { v: '18', t: '18mm' }],
+        'PartitionSheet': [{ v: '3', t: '3mm' }, { v: '4', t: '4mm' }]
+    };
+
+    const options = thicknessOptions[material] || [{ v: '0', t: 'N/A' }];
+    thicknessSelect.innerHTML = options.map(o =>
+        `<option value="${o.v}">${o.t}</option>`
+    ).join('');
+}
+
+// Switch between Window and Door add modes
+function switchAddMode(mode) {
+    const windowContainer = document.getElementById('windowFormContainer');
+    const doorContainer = document.getElementById('doorFormContainer');
+    const windowTab = document.getElementById('modeTabWindow');
+    const doorTab = document.getElementById('modeTabDoor');
+
+    if (mode === 'Window') {
+        windowContainer.style.display = 'block';
+        doorContainer.style.display = 'none';
+        windowTab.classList.add('active');
+        doorTab.classList.remove('active');
+    } else {
+        windowContainer.style.display = 'none';
+        doorContainer.style.display = 'block';
+        windowTab.classList.remove('active');
+        doorTab.classList.add('active');
+        // Update the door config ID
+        document.getElementById('doorConfigId').value = getNextConfigId('Door');
+    }
+}
+
+// Add Door from single-page form
+function addDoor(event) {
+    event.preventDefault();
+
+    const widthRaw = parseFloat(document.getElementById('doorWidth').value);
+    const heightRaw = parseFloat(document.getElementById('doorHeight').value);
+    const bottomProfile = document.getElementById('doorBottomProfileNew').value;
+
+    // Calculate bottom width based on profile
+    let bottomWidth = 114.5;
+    if (bottomProfile === 'Door Top 47.5') bottomWidth = 47.5;
+    else if (bottomProfile === 'Door Top 85') bottomWidth = 85;
+
+    const doorData = {
+        category: 'Door',
+        configId: document.getElementById('doorConfigId').value,
+        projectName: document.getElementById('doorProjectName').value,
+        vendor: document.getElementById('doorVendor').value,
+        width: convertToInches(widthRaw),
+        height: convertToInches(heightRaw),
+        series: 'Door',
+        description: document.getElementById('doorDescription').value,
+        glassUnit: document.getElementById('doorGlassTypeNew')?.value || 'SGU',
+        glassThickness: '6',
+        cornerJoint: '90', // Doors always 90°
+        frame: parseInt(document.getElementById('doorFrameSelect').value),
+        doorGlassType: document.getElementById('doorGlassTypeNew').value,
+        partitionMaterial: document.getElementById('doorPartitionMaterialNew').value,
+        partitionThickness: document.getElementById('doorPartitionThicknessNew').value,
+        handleProfile: document.getElementById('doorHandleProfileNew').value,
+        bottomProfile: bottomProfile,
+        verticalWidth: 47.5,
+        topWidth: parseFloat(document.getElementById('doorTopWidthNew').value),
+        middleWidth: parseFloat(document.getElementById('doorMiddleWidthNew').value),
+        bottomWidth: bottomWidth,
+        shutters: 1,
+        tracks: 0,
+        mosquitoShutters: 0
+    };
+
+    windows.push(doorData);
+    autoSaveWindows();
+
+    // Increment counter and update ID
+    incrementConfigCounter('Door');
+    document.getElementById('doorConfigId').value = getNextConfigId('Door');
+
+    showAlert(`✅ Door ${doorData.configId} added successfully!`);
+    refreshProjectSelector();
+    displayWindows();
+}
+
+// Clear Door form
+function clearDoorForm() {
+    document.getElementById('doorForm').reset();
+    document.getElementById('doorConfigId').value = getNextConfigId('Door');
+}
+
+// Update Partition Thickness for new Door form
+function updateDoorPartitionThicknessNew() {
+    const material = document.getElementById('doorPartitionMaterialNew')?.value || 'Glass';
+    const thicknessSelect = document.getElementById('doorPartitionThicknessNew');
+    if (!thicknessSelect) return;
+
+    const thicknessOptions = {
+        'Glass': [{ v: '5', t: '5mm' }, { v: '6', t: '6mm' }, { v: '8', t: '8mm' }],
+        'Bakelite': [{ v: '2.5', t: '2.5mm' }, { v: '4', t: '4mm' }],
+        'ACP': [{ v: '3', t: '3mm' }, { v: '4', t: '4mm' }, { v: '6', t: '6mm' }],
+        'Louvers': [{ v: '0', t: 'N/A' }],
+        'SSMosquito': [{ v: '0', t: 'N/A' }],
+        'ParticleBoard': [{ v: '12', t: '12mm' }, { v: '18', t: '18mm' }],
+        'PartitionSheet': [{ v: '3', t: '3mm' }, { v: '4', t: '4mm' }]
+    };
+
+    const options = thicknessOptions[material] || [{ v: '0', t: 'N/A' }];
+    thicknessSelect.innerHTML = options.map(o =>
+        `<option value="${o.v}">${o.t}</option>`
+    ).join('');
 }
 
 function toggleDoorFrame() {
@@ -514,6 +672,26 @@ function toggleDoorFrame() {
     // Show/hide frame info based on selection
     if (frameInfo) {
         frameInfo.style.display = frameSelect.value === '1' ? 'flex' : 'none';
+    }
+}
+
+// Toggle Interlock row visibility based on vendor
+// Only VITCO has multiple interlock options; JK ALU and Windalco have single option per series
+function toggleInterlockByVendor() {
+    const vendor = document.getElementById('windowVendor')?.value || '';
+    const interlockRow = document.getElementById('windowInterlockRow');
+    const interlockSelect = document.getElementById('interlockType');
+
+    if (!interlockRow) return;
+
+    // Only show interlock selection for VITCO
+    if (vendor.toUpperCase().includes('VITCO')) {
+        interlockRow.style.display = 'flex';
+    } else {
+        // Hide for JK ALU, Windalco, etc. - they have single interlock option
+        interlockRow.style.display = 'none';
+        // Set default interlock type
+        if (interlockSelect) interlockSelect.value = 'slim';
     }
 }
 
@@ -695,6 +873,8 @@ function addWindow(event) {
     if (category === 'Door') {
         windowData.frame = parseInt(document.getElementById('doorFrame')?.value || '1');
         windowData.doorGlassType = document.getElementById('doorGlassType')?.value || 'SGU';
+        windowData.partitionMaterial = document.getElementById('doorPartitionMaterial')?.value || 'Glass';
+        windowData.partitionThickness = document.getElementById('doorPartitionThickness')?.value || '6';
         windowData.handleProfile = document.getElementById('doorHandleProfile')?.value || 'Door Vertical';
         windowData.bottomProfile = document.getElementById('doorBottomProfile')?.value || 'Door Bottom';
 
@@ -704,8 +884,10 @@ function addWindow(event) {
         windowData.middleWidth = parseFloat(document.getElementById('doorMiddleWidth')?.value || '47.5');
 
         // Bottom width depends on selected profile
-        if (windowData.bottomProfile === 'Door Top') {
+        if (windowData.bottomProfile === 'Door Top 47.5') {
             windowData.bottomWidth = 47.5;
+        } else if (windowData.bottomProfile === 'Door Top 85') {
+            windowData.bottomWidth = 85;
         } else {
             windowData.bottomWidth = 114.5; // Door Bottom (Standard) is 114.5mm
         }
@@ -718,10 +900,9 @@ function addWindow(event) {
     windows.push(windowData);
     autoSaveWindows();
 
-    // Update config ID prefix based on category
-    const prefix = category === 'Door' ? 'D' : 'W';
-    const lastNum = parseInt(windowData.configId.substring(1));
-    document.getElementById('configId').value = prefix + String(lastNum + 1).padStart(2, '0');
+    // Increment counter and set next ID
+    incrementConfigCounter(category);
+    document.getElementById('configId').value = getNextConfigId(category);
 
     showAlert(`✅ ${category} ${windowData.configId} added successfully!`);
     refreshProjectSelector();
@@ -739,33 +920,75 @@ function displayWindows() {
     const container = document.getElementById('windowList');
 
     if (windows.length === 0) {
-        container.innerHTML = '<p style="color: #7f8c8d; text-align: center; padding: 40px;">No windows added yet.</p>';
+        container.innerHTML = '<p style="color: #7f8c8d; text-align: center; padding: 40px;">No windows or doors added yet.</p>';
         return;
     }
 
+    // Separate Windows and Doors
+    const windowItems = windows.filter(w => w.category !== 'Door');
+    const doorItems = windows.filter(w => w.category === 'Door');
+
     let html = '';
-    windows.forEach((w, idx) => {
-        html += `<div class="window-card">
-            <div>
-                <h3>${w.configId} - ${w.description}</h3>
-                <div class="window-details">
-                    <div><strong>Project:</strong> ${w.projectName}</div>
-                    <div><strong>Vendor:</strong> ${w.vendor || 'Not Set'}</div>
-                    <div><strong>Size:</strong> ${w.width}" × ${w.height}"</div>
-                    <div><strong>Tracks:</strong> ${w.tracks}</div>
-                    <div><strong>Shutters:</strong> ${w.shutters}</div>
-                    <div><strong>Mosquito Shutters:</strong> ${w.mosquitoShutters}</div>
-                    <div><strong>Series:</strong> ${w.series}</div>
-                </div>
-                <div class="window-actions">
-                    <button class="btn btn-warning btn-sm" onclick="editWindow(${idx})">✏️ Edit</button>
-                    <button class="btn btn-danger btn-sm" onclick="deleteWindow(${idx})">🗑️ Delete</button>
-                </div>
-            </div>
-        </div>`;
-    });
+
+    // Windows Section
+    if (windowItems.length > 0) {
+        html += `<details class="list-group-section" open>
+            <summary class="list-group-header">
+                <span>🪟 Windows (${windowItems.length})</span>
+                <span class="toggle-icon">▼</span>
+            </summary>
+            <div class="list-group-content">`;
+
+        windowItems.forEach((w, _) => {
+            const idx = windows.indexOf(w);
+            html += renderWindowCard(w, idx);
+        });
+
+        html += `</div></details>`;
+    }
+
+    // Doors Section
+    if (doorItems.length > 0) {
+        html += `<details class="list-group-section" open>
+            <summary class="list-group-header">
+                <span>🚪 Doors (${doorItems.length})</span>
+                <span class="toggle-icon">▼</span>
+            </summary>
+            <div class="list-group-content">`;
+
+        doorItems.forEach((w, _) => {
+            const idx = windows.indexOf(w);
+            html += renderWindowCard(w, idx);
+        });
+
+        html += `</div></details>`;
+    }
 
     container.innerHTML = html;
+}
+
+// Helper function to render a window/door card
+function renderWindowCard(w, idx) {
+    const isDoor = w.category === 'Door';
+    return `<div class="window-card ${isDoor ? 'door-card' : ''}">
+        <div>
+            <h3>${w.configId} - ${w.description}</h3>
+            <div class="window-details">
+                <div><strong>Project:</strong> ${w.projectName}</div>
+                <div><strong>Vendor:</strong> ${w.vendor || 'Not Set'}</div>
+                <div><strong>Size:</strong> ${w.width}" × ${w.height}"</div>
+                ${isDoor ? `<div><strong>Frame:</strong> ${w.frame ? 'Yes' : 'No'}</div>` :
+            `<div><strong>Tracks:</strong> ${w.tracks}</div>
+                <div><strong>Shutters:</strong> ${w.shutters}</div>
+                <div><strong>Mosquito:</strong> ${w.mosquitoShutters}</div>`}
+                <div><strong>Series:</strong> ${w.series}</div>
+            </div>
+            <div class="window-actions">
+                <button class="btn btn-warning btn-sm" onclick="editWindow(${idx})">✏️ Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteWindow(${idx})">🗑️ Delete</button>
+            </div>
+        </div>
+    </div>`;
 }
 
 function editWindow(idx) {
