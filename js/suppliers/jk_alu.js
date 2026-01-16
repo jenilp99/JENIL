@@ -327,27 +327,30 @@ window.registerSupplier("JK ALU EXTRUSION", {
         // DH = Door Height = H - (F * 1.575) [40mm/25.4 = 1.575"]
         // Vertical deduction = 41.5mm = 1.634" (38.5 + 1.5 + 1.5)
         // HW = Handle/Hing Width = 47.5mm = 1.87" (default, or 85mm = 3.35")
-        // TW = Door Top Width = 44.5mm = 1.752"
-        // BW = Door Bottom Width = 44.5mm = 1.752" (or 25mm = 0.984")
-        // MW = Door Middle Double Width = 44.5mm = 1.752"
+        // TW = Door Top Width (from user selection)
+        // BW = Door Bottom Width (from user selection)
+        // MW = Door Middle Double Width (from user selection)
+        // VW = Vertical Width (Handle + Hing, from user selection)
         'Door': [
-            // Door Vertical Handle (Options: Tips Vertical, Door Vertical, Door Middle Single)
-            // Length = DoorHeight - 38.5mm - 1.5mm - 1.5mm = DoorHeight - 41.5mm
+            // Door Vertical Handle
+            // Length = DoorHeight - Frame Top Deduct - LEG_PARTITION_WIDTH - 1.5mm play top - 1.5mm play bottom
+            // LEG_PARTITION_WIDTH = 38.5mm = 1.516"
             { component: 'Door Vertical', qty: '1', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Handle' },
 
-            // Door Vertical Hing (Uses Door Vertical profile)
+            // Door Vertical Hing (Same as Handle)
             { component: 'Door Vertical', qty: '1', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Hing' },
 
             // Door Top
-            // Length = DoorWidth - (Frame deduction if selected) - HandleWidth - HingWidth
-            // = DW - (F*3.15) - 1.87 - 1.87 = W - (F*3.15) - 3.74
-            { component: 'Door Top', qty: '1', length: 'W - (F*3.15) - 3.74', desc: 'Top Rail' },
+            // Length = DoorWidth - (Frame side deductions) - Handle Width - Hing Width
+            // = W - (F*3.15) - VW - VW = W - (F*3.15) - 2*VW
+            { component: 'Door Top', qty: '1', length: 'W - (F*3.15) - 2*VW', desc: 'Top Rail' },
 
-            // Door Bottom (Same formula as Door Top)
-            { component: 'Door Bottom', qty: '1', length: 'W - (F*3.15) - 3.74', desc: 'Bottom Rail' },
+            // Door Bottom
+            // Length = DoorWidth - (Frame deductions) - Handle Width - Hing Width
+            { component: 'Door Bottom', qty: '1', length: 'W - (F*3.15) - 2*VW', desc: 'Bottom Rail' },
 
             // Door Middle Double
-            { component: 'Door Middle Double', qty: '1', length: 'W - (F*3.15) - 3.74', desc: 'Middle Rail' },
+            { component: 'Door Middle Double', qty: '1', length: 'W - (F*3.15) - 2*VW', desc: 'Middle Rail' },
 
             // Frame - Leg Partition (Only if F=1)
             { component: 'Door Leg Partition', qty: '1*F', length: 'W', desc: 'Frame Top' },
@@ -355,14 +358,12 @@ window.registerSupplier("JK ALU EXTRUSION", {
             { component: 'Door Leg Partition', qty: '1*F', length: 'H', desc: 'Frame Right' },
 
             // Door Glazing Clip - Vertical (Qty: 8 = 4 per glass pane × 2 panes)
-            // Length = (DoorHeight - FrameDeduct - DoorTopWidth - DoorBottomWidth - DoorMiddleDoubleWidth) / 2
-            // = (H - F*1.575 - 1.752 - 1.752 - 1.752) / 2
-            { component: 'Door Glazing Clip', qty: '8', length: '(H - (F*1.575) - 5.256) / 2', desc: 'Glazing Clip Vertical' },
+            // Length = (DoorHeight - FrameDeduct - TopWidth - BottomWidth - MiddleWidth) / 2
+            { component: 'Door Glazing Clip', qty: '8', length: '(H - (F*1.575) - TW - BW - MW) / 2', desc: 'Glazing Clip Vertical' },
 
             // Door Glazing Clip - Horizontal (Qty: 8)
             // Length = DoorWidth - FrameDeduct - HandleWidth - HingWidth
-            // = W - (F*1.634) - 1.87 - 1.87 = W - (F*1.634) - 3.74
-            { component: 'Door Glazing Clip', qty: '8', length: 'W - (F*1.634) - 3.74', desc: 'Glazing Clip Horizontal' }
+            { component: 'Door Glazing Clip', qty: '8', length: 'W - (F*3.15) - 2*VW', desc: 'Glazing Clip Horizontal' }
         ]
     },
 

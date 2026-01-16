@@ -302,6 +302,7 @@
                             </div>
                         </div>
                         <!-- Door Configuration Row (Shown when Door category selected) -->
+                        <!-- Door Configuration Row (Shown when Door category selected) -->
                         <div id="doorConfigRow"
                             style="display: none; background: #fff5e6; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #e67e22;">
                             <h4 style="margin-top: 0; color: #e67e22;">🚪 Door Configuration</h4>
@@ -309,23 +310,60 @@
                                 <div class="form-group">
                                     <label>Frame (Leg Partition)</label>
                                     <select id="doorFrame" onchange="toggleDoorFrame()">
-                                        <option value="1" selected>YES - 3 Side Frame (Top, Left, Right)</option>
+                                        <option value="1" selected>YES - 3 Side Frame</option>
                                         <option value="0">NO - No Frame</option>
                                     </select>
-                                    <input type="hidden" id="frameValue" value="1">
                                 </div>
                                 <div class="form-group">
                                     <label>Glass Type</label>
                                     <select id="doorGlassType">
-                                        <option value="SGU" selected>SGU (Single Glass)</option>
-                                        <option value="DGU">DGU (Double Glass)</option>
+                                        <option value="SGU" selected>SGU (Single)</option>
+                                        <option value="DGU">DGU (Double)</option>
                                     </select>
                                 </div>
                             </div>
+
+                            <!-- Profile Selection -->
+                            <h5
+                                style="margin: 15px 0 10px; color: #d35400; border-bottom: 1px solid #f0c27b; padding-bottom: 5px;">
+                                📐 Profile Selection</h5>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Handle Profile (Verticals)</label>
+                                    <select id="doorHandleProfile">
+                                        <option value="Door Vertical" selected>Door Vertical (Standard)</option>
+                                        <option value="Door Tips Vertical">Door Tips Vertical</option>
+                                        <option value="Door Middle Single">Door Middle Single</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Bottom Profile</label>
+                                    <select id="doorBottomProfile">
+                                        <option value="Door Bottom" selected>Door Bottom</option>
+                                        <option value="Door Top">Door Top (Slim)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Door Middle Width</label>
+                                    <select id="doorMiddleWidth">
+                                        <option value="47.5" selected>47.5mm (Standard)</option>
+                                        <option value="85">85mm (Wide)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Door Top Width</label>
+                                    <select id="doorTopWidth">
+                                        <option value="47.5" selected>47.5mm (Standard)</option>
+                                        <option value="85">85mm (Wide)</option>
+                                    </select>
+                                </div>
+                            </div>
+
                             <div class="form-row" id="doorFrameInfo" style="margin-top: 10px;">
                                 <div class="alert alert-warning" style="flex: 1; padding: 10px; margin: 0;">
-                                    <strong>Frame Deductions:</strong> Width: 80mm (40mm each side) | Height: 40mm (top
-                                    only)<br>
+                                    <strong>Frame Deductions:</strong> Width: 80mm | Height: 40mm<br>
                                     <strong>Joint:</strong> 45° with corner connector
                                 </div>
                             </div>
@@ -883,33 +921,83 @@
                             <input type="number" id="editHeight" step="0.25" required>
                         </div>
                     </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Tracks</label>
-                            <select id="editTracks" required>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                            </select>
+                    <!-- Window Specific Fields -->
+                    <div id="editWindowSpecificFields">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tracks</label>
+                                <select id="editTracks">
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Shutters</label>
+                                <select id="editShutters">
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Mosquito</label>
+                                <select id="editMosquitoShutters" onchange="toggleEditMosquitoConfig()">
+                                    <option value="0">0</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Shutters</label>
-                            <select id="editShutters" required>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                            </select>
+                    </div>
+
+                    <!-- Door Specific Fields -->
+                    <div id="editDoorSpecificFields"
+                        style="display: none; background: #fff5e6; padding: 10px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid #e67e22;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Frame (Leg Partition)</label>
+                                <select id="editDoorFrame" onchange="toggleEditDoorFrame()">
+                                    <option value="1">YES - 3 Side Frame</option>
+                                    <option value="0">NO - No Frame</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Mosquito</label>
-                            <select id="editMosquitoShutters" onchange="toggleEditMosquitoConfig()" required>
-                                <option value="0">0</option>
-                                <option value="1">1</option>
-                                <option value="2">2</option>
-                                <option value="3">3</option>
-                                <option value="4">4</option>
-                            </select>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Handle Profile</label>
+                                <select id="editDoorHandleProfile">
+                                    <option value="Door Vertical">Door Vertical (Standard)</option>
+                                    <option value="Door Tips Vertical">Door Tips Vertical</option>
+                                    <option value="Door Middle Single">Door Middle Single</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Bottom Profile</label>
+                                <select id="editDoorBottomProfile">
+                                    <option value="Door Bottom">Door Bottom</option>
+                                    <option value="Door Top">Door Top (Slim)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Middle Width</label>
+                                <select id="editDoorMiddleWidth">
+                                    <option value="47.5">47.5mm</option>
+                                    <option value="85">85mm</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Top Width</label>
+                                <select id="editDoorTopWidth">
+                                    <option value="47.5">47.5mm</option>
+                                    <option value="85">85mm</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div class="form-row">

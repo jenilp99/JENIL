@@ -14,9 +14,11 @@ let hardwareMaster = {}; // Populated from Supplier Registry
 let windows = [];
 let seriesFormulas = {};
 let stockMaster = {};
+let stockRates = {}; // Store rate per series (₹/kg)
 let optimizationResults = null;
 let projectSettings = {}; // Global per-project configuration
 let kerf = 0.125;
+
 let aluminumRate = 280;
 let unitMode = 'inch';
 
@@ -693,6 +695,20 @@ function addWindow(event) {
     if (category === 'Door') {
         windowData.frame = parseInt(document.getElementById('doorFrame')?.value || '1');
         windowData.doorGlassType = document.getElementById('doorGlassType')?.value || 'SGU';
+        windowData.handleProfile = document.getElementById('doorHandleProfile')?.value || 'Door Vertical';
+        windowData.bottomProfile = document.getElementById('doorBottomProfile')?.value || 'Door Bottom';
+
+        // Profile widths (in mm)
+        windowData.verticalWidth = 47.5; // Standard for all current handle options
+        windowData.topWidth = parseFloat(document.getElementById('doorTopWidth')?.value || '47.5');
+        windowData.middleWidth = parseFloat(document.getElementById('doorMiddleWidth')?.value || '47.5');
+
+        // Bottom width depends on selected profile
+        if (windowData.bottomProfile === 'Door Top') {
+            windowData.bottomWidth = 47.5;
+        } else {
+            windowData.bottomWidth = 114.5; // Door Bottom (Standard) is 114.5mm
+        }
         // For Door formulas: S=1 (single door), T=0 (no tracks), MS=0
         windowData.shutters = 1;
         windowData.tracks = 0;
@@ -784,6 +800,26 @@ function editWindow(idx) {
     if (document.getElementById('editMosquitoInterlock')) document.getElementById('editMosquitoInterlock').value = win.mosquitoInterlock || 'V-2516';
     toggleEditMosquitoConfig();
 
+    // Toggle specific fields based on series/category
+    const isDoor = (win.series === 'Door');
+    const winFields = document.getElementById('editWindowSpecificFields');
+    const doorFields = document.getElementById('editDoorSpecificFields');
+
+    if (isDoor) {
+        if (winFields) winFields.style.display = 'none';
+        if (doorFields) {
+            doorFields.style.display = 'block';
+            document.getElementById('editDoorFrame').value = win.frame || '1';
+            document.getElementById('editDoorHandleProfile').value = win.handleProfile || 'Door Vertical';
+            document.getElementById('editDoorBottomProfile').value = win.bottomProfile || 'Door Bottom';
+            document.getElementById('editDoorMiddleWidth').value = win.middleWidth || '47.5';
+            document.getElementById('editDoorTopWidth').value = win.topWidth || '47.5';
+        }
+    } else {
+        if (winFields) winFields.style.display = 'block';
+        if (doorFields) doorFields.style.display = 'none';
+    }
+
     document.getElementById('editWindowModal').classList.add('active');
     document.body.style.overflow = 'hidden';
 }
@@ -855,21 +891,20 @@ function saveWindowEdit(event) {
     const heightRaw = parseFloat(document.getElementById('editHeight').value);
     const shutters = parseInt(document.getElementById('editShutters').value, 10);
 
+    const isDoor = (document.getElementById('editSeries').value === 'Door');
+
     // Validation
     if (widthRaw <= 0 || heightRaw <= 0) {
         showAlert('❌ Error: Width and Height must be greater than zero.', 'error');
         return;
     }
 
-    windows[idx] = {
+    const updatedWindow = {
         configId: document.getElementById('editConfigId').value,
         projectName: document.getElementById('editProjectName').value,
         vendor: document.getElementById('editWindowVendor').value,
         width: convertToInches(widthRaw),
         height: convertToInches(heightRaw),
-        tracks: parseInt(document.getElementById('editTracks').value),
-        shutters: shutters,
-        mosquitoShutters: parseInt(document.getElementById('editMosquitoShutters').value),
         series: document.getElementById('editSeries').value,
         description: document.getElementById('editDescription').value,
         glassUnit: document.getElementById('editGlassUnit')?.value || 'SGU',
@@ -879,6 +914,29 @@ function saveWindowEdit(event) {
         mosquitoType: document.getElementById('editMosquitoType')?.value || 'V-2513',
         mosquitoInterlock: document.getElementById('editMosquitoInterlock')?.value || 'V-2516'
     };
+
+    if (isDoor) {
+        updatedWindow.frame = parseInt(document.getElementById('editDoorFrame').value);
+        updatedWindow.handleProfile = document.getElementById('editDoorHandleProfile').value;
+        updatedWindow.bottomProfile = document.getElementById('editDoorBottomProfile').value;
+        updatedWindow.verticalWidth = 47.5; // Standard
+        updatedWindow.topWidth = parseFloat(document.getElementById('editDoorTopWidth').value);
+        updatedWindow.middleWidth = parseFloat(document.getElementById('editDoorMiddleWidth').value);
+
+        // Bottom width logic
+        updatedWindow.bottomWidth = (updatedWindow.bottomProfile === 'Door Top') ? 47.5 : 114.5;
+
+        // Force defaults
+        updatedWindow.tracks = 0;
+        updatedWindow.shutters = 1;
+        updatedWindow.mosquitoShutters = 0;
+    } else {
+        updatedWindow.tracks = parseInt(document.getElementById('editTracks').value);
+        updatedWindow.shutters = parseInt(document.getElementById('editShutters').value);
+        updatedWindow.mosquitoShutters = parseInt(document.getElementById('editMosquitoShutters').value);
+    }
+
+    windows[idx] = updatedWindow;
 
     autoSaveWindows();
     closeEditWindowModal();
@@ -1071,24 +1129,45 @@ function refreshStockMaster() {
     container.innerHTML = '';
 
     Object.entries(stockMaster).forEach(([series, stocks]) => {
+        // Sort stocks by Material then Thickness for better readability
+        stocks.sort((a, b) => {
+            if (a.material < b.material) return -1;
+            if (a.material > b.material) return 1;
+            return (parseFloat(a.thickness) || 0) - (parseFloat(b.thickness) || 0);
+        });
+
         const details = document.createElement('details');
         details.className = 'rate-group';
         details.style.marginBottom = '10px';
         details.style.border = '1px solid #ddd';
         details.style.borderRadius = '8px';
         details.style.background = 'white';
+        // Auto-expand Door series for visibility
+        if (series.includes('Door')) details.open = true;
 
         details.innerHTML = `
             <summary style="padding: 12px 15px; cursor: pointer; font-weight: bold; background: #f8f9fa; border-radius: 8px; list-style: none; display: flex; justify-content: space-between; align-items: center;">
-                <span>📦 ${series} Series Materials</span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span>📦 ${series} Series Materials</span>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="event.preventDefault(); resetStockSeries('${series}')" style="font-size: 0.7em; padding: 2px 6px;">↻ Refetch Defaults</button>
+                </div>
                 <span style="font-size: 0.8em; color: #666;">(${stocks.length} items)</span>
             </summary>
+            
             <div style="padding: 15px; border-top: 1px solid #eee; overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse;">
+                <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 10px; background: #f0f7ff; padding: 10px; border-radius: 6px;">
+                    <label><strong>Rate (₹/kg):</strong></label>
+                    <input type="number" value="${stockRates[series] || 250}" onchange="updateStockRate('${series}', this.value)" style="width: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                    <small style="color: #666;">(Calculates Cost = Weight × Rate × Length)</small>
+                </div>
+
+                <table style="width: 100%; border-collapse: collapse; min-width: 900px;">
                     <thead>
                         <tr style="border-bottom: 2px solid #eee; text-align: left;">
                             <th style="padding: 8px;">Material</th>
-                            <th style="padding: 8px;">Supplier / Section</th>
+                            <th style="padding: 8px;">Section / Details</th>
+                            <th style="padding: 8px;">Thickness</th>
+                            <th style="padding: 8px;">Weight (kg)</th>
                             <th style="padding: 8px;">Stock 1 (in)</th>
                             <th style="padding: 8px;">Cost (₹)</th>
                             <th style="padding: 8px;">Stock 2 (in)</th>
@@ -1102,19 +1181,33 @@ function refreshStockMaster() {
         `;
 
         const tbody = details.querySelector('tbody');
+        const rate = parseFloat(stockRates[series] || 250);
+
         stocks.forEach((stock, idx) => {
             const row = tbody.insertRow();
             row.style.borderBottom = '1px solid #f0f0f0';
+
+            // Weight is now intrinsic to the row (synced from registry)
+            let currentWeight = stock.weight || 0;
+
+            // Calculate Cost
+            const calcCost1 = (currentWeight > 0) ? Math.round((parseFloat(stock.stock1 || 0) / 144) * currentWeight * rate) : stock.stock1Cost;
+            const calcCost2 = (currentWeight > 0) ? Math.round((parseFloat(stock.stock2 || 0) / 144) * currentWeight * rate) : stock.stock2Cost;
+
             row.innerHTML = `
                 <td style="padding: 8px; font-weight: 500;">${stock.material}</td>
                 <td style="padding: 8px; font-size: 0.8em; color: #666;">
-                    ${stock.supplier || 'N/A'}<br>
-                    ${stock.sectionNo || 'N/A'}
+                    ${stock.supplier || ''}<br>
+                    ${stock.sectionNo || '-'}
                 </td>
+                <td style="padding: 8px; font-weight: bold; color: #007bff;">
+                     ${stock.thickness ? stock.thickness + 'mm' : '-'}
+                </td>
+                <td style="padding: 8px; color: #555;">${currentWeight ? parseFloat(currentWeight).toFixed(3) : '-'}</td>
                 <td style="padding: 8px;"><input type="number" value="${stock.stock1}" onchange="updateStock('${series}', ${idx}, 'stock1', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
-                <td style="padding: 8px;"><input type="number" value="${stock.stock1Cost}" onchange="updateStock('${series}', ${idx}, 'stock1Cost', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                <td style="padding: 8px;"><input type="number" value="${calcCost1}" onchange="updateStock('${series}', ${idx}, 'stock1Cost', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;" readonly></td>
                 <td style="padding: 8px;"><input type="number" value="${stock.stock2}" onchange="updateStock('${series}', ${idx}, 'stock2', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
-                <td style="padding: 8px;"><input type="number" value="${stock.stock2Cost}" onchange="updateStock('${series}', ${idx}, 'stock2Cost', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                <td style="padding: 8px;"><input type="number" value="${calcCost2}" onchange="updateStock('${series}', ${idx}, 'stock2Cost', this.value)" style="width: 70px; padding: 5px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9;" readonly></td>
                 <td style="padding: 8px; text-align:center">
                     <button class="btn btn-danger btn-sm" onclick="deleteStock('${series}', ${idx})" style="padding: 4px 8px;">🗑️</button>
                 </td>
@@ -1749,4 +1842,146 @@ function selectSectionForResult(sectionData) {
     displayResults();
 
     showAlert(`✅ Selected ${sectionData.sectionNo} for ${currentSelectionTarget}`);
+}
+
+function toggleDoorFrame() {
+    const val = document.getElementById('doorFrame')?.value;
+    const info = document.getElementById('doorFrameInfo');
+    if (info) {
+        info.style.display = (val === '1') ? 'flex' : 'none';
+    }
+}
+
+function updateStockRate(series, val) {
+    stockRates[series] = parseFloat(val);
+    localStorage.setItem('stockRates', JSON.stringify(stockRates));
+    refreshStockMaster();
+}
+
+function updateStockThickness(series, idx, tStr) {
+    const t = parseFloat(tStr);
+    const stock = stockMaster[series][idx];
+    stock.thickness = tStr; // store as string to preserve selection if needed or float
+
+    // Find weight and section
+    const supplier = stock.supplier || 'JK ALU EXTRUSION';
+    if (SUPPLIER_REGISTRY[supplier] && SUPPLIER_REGISTRY[supplier].sections && SUPPLIER_REGISTRY[supplier].sections[series]) {
+        const sections = SUPPLIER_REGISTRY[supplier].sections[series][stock.material];
+        if (sections) {
+            const s = sections.find(s => s.t == t);
+            if (s) {
+                stock.weight = s.weight;
+                stock.sectionNo = s.sectionNo; // Update section number if it changes based on thickness
+            } else if (!t) {
+                stock.weight = 0;
+            }
+        }
+    }
+
+    // Trigger auto save logic
+    // We assume there is autoSaveStock, if not we call persistence manually
+    if (typeof autoSaveStock === 'function') {
+        autoSaveStock();
+    } else {
+        localStorage.setItem('stockMaster', JSON.stringify(stockMaster));
+    }
+
+    refreshStockMaster();
+}
+
+// Load stockRates on init
+window.addEventListener('load', function () {
+    try {
+        const stored = localStorage.getItem('stockRates');
+        if (stored) stockRates = JSON.parse(stored);
+    } catch (e) { console.error('Error loading stockRates', e); }
+
+    // Ensure refresh happens after load
+    setTimeout(() => {
+        syncStockWithRegistry();
+    }, 1000);
+});
+
+function resetStockSeries(series) {
+    if (confirm('Verify: This will reset stock items for ' + series + ' to defaults from the registry. Custom items might be lost. Continue?')) {
+        stockMaster[series] = []; // explicit clear
+        syncStockWithRegistry(true);
+        // refreshStockMaster(); // sync calls it
+    }
+}
+
+// Function to populate stockMaster with ALL variants from Registry
+function syncStockWithRegistry(showDebug) {
+    if (typeof SUPPLIER_REGISTRY === 'undefined') return;
+
+    let changed = false;
+    let debugReport = "Sync Report:\n";
+    let totalAdded = 0;
+
+    Object.keys(SUPPLIER_REGISTRY).forEach(supplier => {
+        if (!SUPPLIER_REGISTRY[supplier].sections) return;
+        const seriesMap = SUPPLIER_REGISTRY[supplier].sections;
+
+        Object.keys(seriesMap).forEach(series => {
+            const components = seriesMap[series];
+            if (!stockMaster[series]) stockMaster[series] = [];
+
+            // Build a Set of existing items
+            const existingKeys = new Set();
+            stockMaster[series].forEach(s => {
+                existingKeys.add(s.material + '_' + parseFloat(s.thickness || 0));
+            });
+
+            // Iterate components
+            let seriesAdded = 0;
+            Object.entries(components).forEach(([compName, variants]) => {
+                if (Array.isArray(variants)) {
+                    // Report for Door series
+                    if (showDebug && series === 'Door' && compName === 'Door Top') {
+                        debugReport += `Door Top: Found ${variants.length} variants.\n`;
+                    }
+
+                    variants.forEach(variant => {
+                        // Skip if thickness is not defined
+                        if (variant.t === undefined || variant.t === null) return;
+
+                        const tVal = parseFloat(variant.t);
+                        const key = compName + '_' + tVal;
+
+                        if (!existingKeys.has(key)) {
+                            stockMaster[series].push({
+                                material: compName,
+                                thickness: variant.t.toString(),
+                                weight: variant.weight || 0,
+                                sectionNo: variant.sectionNo || '',
+                                supplier: supplier,
+                                stock1: 144, stock1Cost: 0,
+                                stock2: 180, stock2Cost: 0
+                            });
+                            existingKeys.add(key);
+                            changed = true;
+                            seriesAdded++;
+                            totalAdded++;
+                        }
+                    });
+                }
+            });
+            if (showDebug && series.includes('Door')) {
+                debugReport += `Door Series: Added ${seriesAdded} new items.\n`;
+            }
+        });
+    });
+
+    if (changed) {
+        if (typeof autoSaveStock === 'function') autoSaveStock();
+        else localStorage.setItem('stockMaster', JSON.stringify(stockMaster));
+        refreshStockMaster();
+    } else {
+        refreshStockMaster();
+    }
+
+    if (showDebug) {
+        debugReport += `Total Added: ${totalAdded}\nItems in Door Series: ${stockMaster['Door'] ? stockMaster['Door'].length : 0}`;
+        alert(debugReport);
+    }
 }

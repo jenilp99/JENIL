@@ -810,10 +810,10 @@ function generateWindowDiagram(config) {
 // Safe evaluation helper for hardware formulas
 function safeEval(formula, context, defaultValue = 0) {
     try {
-        const { W, H, S, MS, T, P, GL } = context;
+        const { W, H, S, MS, T, P, GL, F, VW, TW, MW, BW } = context;
         // Use Function constructor for isolation and safety
-        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', 'GL', `return ${formula}`);
-        const result = fn(W, H, S, MS, T, P, GL);
+        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', 'GL', 'F', 'VW', 'TW', 'MW', 'BW', `return ${formula}`);
+        const result = fn(W, H, S, MS, T, P, GL, F, VW, TW, MW, BW);
         return isNaN(result) ? defaultValue : result;
     } catch (e) {
         console.error('SafeEval Error (Hardware):', e, 'Formula:', formula);
@@ -875,6 +875,12 @@ function calculateWindowHardware(window, optimizationResults = null) {
         S: window.shutters,
         MS: window.mosquitoShutters || 0,
         T: window.tracks,
+        F: window.frame || 0, // Frame for doors (1=YES, 0=NO)
+        // Profile widths for doors (stored in mm, convert to inches)
+        VW: (window.verticalWidth || 47.5) / 25.4,
+        TW: (window.topWidth || 47.5) / 25.4,
+        MW: (window.middleWidth || 47.5) / 25.4,
+        BW: (window.bottomWidth || 85) / 25.4,
         P: (window.width * 2 + window.height * 2),
         GL: GL // Passing the helper function itself
     };

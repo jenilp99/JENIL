@@ -30,7 +30,9 @@ function runOptimization() {
         projectWindows.forEach(win => {
             const seriesName = win.series;
             const normName = seriesName.replace(/\(.*\)/, '').replace(/^Vitco\s+/i, '').trim();
-            const exists = seriesFormulas[seriesName] ||
+
+            // Check global formulas
+            let exists = seriesFormulas[seriesName] ||
                 seriesFormulas[normName] ||
                 seriesFormulas[normName + ' (Frame)'] ||
                 seriesFormulas['Vitco ' + normName] ||
@@ -38,6 +40,14 @@ function runOptimization() {
                 (seriesName === '1"' && seriesFormulas['1']) ||
                 (seriesName === '3/4' && seriesFormulas['3/4"']) ||
                 (seriesName === '3/4"' && seriesFormulas['3/4']);
+
+            // Also check SUPPLIER_REGISTRY for vendor-specific formulas
+            if (!exists && win.vendor && window.SUPPLIER_REGISTRY && window.SUPPLIER_REGISTRY[win.vendor]) {
+                const supplierData = window.SUPPLIER_REGISTRY[win.vendor];
+                if (supplierData.formulas && supplierData.formulas[seriesName]) {
+                    exists = true;
+                }
+            }
 
             if (!exists) {
                 if (!missingSeries.includes(win.series)) {
@@ -148,10 +158,10 @@ function runOptimization() {
 function safeEval(formula, context, defaultValue = 0) {
     try {
         // Create variables from context
-        const { W, H, S, MS, T, P, CJ, IT, GT, MT, MIT, F } = context;
+        const { W, H, S, MS, T, P, CJ, IT, GT, MT, MIT, F, VW, TW, MW, BW } = context;
         // Use a function constructor for slightly better safety than eval()
-        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', 'CJ', 'IT', 'GT', 'MT', 'MIT', 'F', `return ${formula}`);
-        return fn(W, H, S, MS, T, P, CJ, IT, GT, MT, MIT, F);
+        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', 'CJ', 'IT', 'GT', 'MT', 'MIT', 'F', 'VW', 'TW', 'MW', 'BW', `return ${formula}`);
+        return fn(W, H, S, MS, T, P, CJ, IT, GT, MT, MIT, F, VW, TW, MW, BW);
     } catch (e) {
         console.error('SafeEval Error:', e, 'Formula:', formula);
         return defaultValue;
@@ -234,6 +244,11 @@ function calculatePieces(selectedProject, preferredSupplier) {
             MS: MS,
             T: win.tracks,
             F: win.frame || 0, // Frame for doors (1=YES, 0=NO)
+            // Profile widths for doors (stored in mm, convert to inches)
+            VW: (win.verticalWidth || 47.5) / 25.4,  // Vertical Width (Handle + Hing)
+            TW: (win.topWidth || 47.5) / 25.4,       // Top Width
+            MW: (win.middleWidth || 47.5) / 25.4,    // Middle Width  
+            BW: (win.bottomWidth || 85) / 25.4,      // Bottom Width
             P: (win.width * 2 + win.height * 2),
             CJ: win.cornerJoint || 90,
             IT: win.interlockType || 'slim',
@@ -257,8 +272,29 @@ function calculatePieces(selectedProject, preferredSupplier) {
             const length = Math.round(parseFloat(lenVal) * 100) / 100;
 
             if (qty > 0 && length > 0) {
+                // Override component name based on user selection
+                let componentName = formula.component;
+
+                // Special case: "Door Middle Single" implies Vertical Hing uses "Door Top"
+                if (win.handleProfile === 'Door Middle Single' && formula.desc === 'Vertical Hing') {
+                    componentName = 'Door Top';
+                }
+                // Standard case: Replace "Door Vertical" placeholder with selected handle profile
+                else if (win.handleProfile && componentName === 'Door Vertical') {
+                    componentName = win.handleProfile;
+                }
+
+                if (win.bottomProfile && componentName === 'Door Bottom') {
+                    componentName = win.bottomProfile;
+                }
+
+                // Top Rail Optimization: Use "Door Middle Single" if that is the handle profile (consolidate material)
+                if (componentName === 'Door Top' && win.handleProfile === 'Door Middle Single') {
+                    componentName = 'Door Middle Single';
+                }
+
                 const targetSeries = formula.series || seriesName;
-                addPieces(pieces, targetSeries, formula.component, length, id + ' - ' + formula.desc, qty);
+                addPieces(pieces, targetSeries, componentName, length, id + ' - ' + formula.desc, qty);
             } else {
                 console.log('⏭️ Skipped formula (qty or length is 0):', formula.desc, 'qty:', qty, 'length:', length);
             }
