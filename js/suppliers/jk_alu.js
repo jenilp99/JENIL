@@ -27,13 +27,8 @@ window.registerSupplier("JK ALU EXTRUSION", {
                 { sectionNo: "1207", t: 1.44, weight: 2.400 },
                 { sectionNo: "1208", t: 1.55, weight: 2.600 }
             ],
-            "1\" Sash Top/Bottom": [ // Labeled "1" Top Bottom"
-                { sectionNo: "1361", t: 0.85, weight: 1.600 }
-            ],
-            "1\" C-channel": [
-                { sectionNo: "PENDING", weight: 0.500, desc: "Mosquito C-channel" }
-            ],
-            "3/4\" Bearing Bottom": [ // Mapped from "BEARING BOTTOM"
+
+            "3/4\" Bearing Bottom": [
                 { sectionNo: "1311", t: 0.85, weight: 1.500 },
                 { sectionNo: "1312", t: 1.00, weight: 1.800 },
                 { sectionNo: "1313", t: 1.20, weight: 2.200 },
@@ -46,7 +41,6 @@ window.registerSupplier("JK ALU EXTRUSION", {
             "3/4\" C-channel": [
                 { sectionNo: "PENDING", weight: 0.500, desc: "Mosquito C-channel" }
             ],
-            // TRACKS
             "3/4\" 2 Track Top": [
                 { sectionNo: "2101", t: 0.80, weight: 1.600 },
                 { sectionNo: "2102", t: 0.87, weight: 1.800 },
@@ -90,6 +84,66 @@ window.registerSupplier("JK ALU EXTRUSION", {
                 { sectionNo: "2502", t: 1.20, weight: 4.300 },
                 { sectionNo: "2503", t: 1.45, weight: 5.000 }
             ],
+            "3/4\" 4 Track Bottom": [
+                { sectionNo: "2601", t: 1.00, weight: 4.500 },
+                { sectionNo: "2602", t: 1.28, weight: 5.200 }
+            ],
+            "3/4\" Singal Track Top": [
+                { sectionNo: "1901", t: 0.90, weight: 1.200 }
+            ],
+            "3/4\" Singal Track Bottom": [
+                { sectionNo: "2001", t: 0.90, weight: 1.300 }
+            ]
+        },
+        "1\"": {
+            "1\" Handle": [
+                { sectionNo: "1151", t: 0.78, weight: 1.600 },
+                { sectionNo: "1152", t: 0.93, weight: 1.800 },
+                { sectionNo: "1153", t: 1.08, weight: 2.000 },
+                { sectionNo: "1154", t: 1.23, weight: 2.200 },
+                { sectionNo: "1155", t: 1.38, weight: 2.400 },
+                { sectionNo: "1156", t: 1.53, weight: 2.600 }
+            ],
+            "1\" Interlock": [
+                { sectionNo: "1251", t: 1.10, weight: 2.300 },
+                { sectionNo: "1252", t: 1.20, weight: 2.600 },
+                { sectionNo: "1253", t: 1.50, weight: 3.200 }
+            ],
+            "1\" Middle": [
+                { sectionNo: "1451", t: 0.80, weight: 1.600 },
+                { sectionNo: "1452", t: 0.90, weight: 1.800 },
+                { sectionNo: "1453", t: 1.00, weight: 2.000 },
+                { sectionNo: "1454", t: 1.12, weight: 2.200 },
+                { sectionNo: "1455", t: 1.21, weight: 2.400 }
+            ],
+            "1\" Bearing Bottom": [
+                { sectionNo: "1351", t: 1.05, weight: 2.400 },
+                { sectionNo: "1352", t: 1.20, weight: 2.600 },
+                { sectionNo: "1353", t: 1.30, weight: 2.800 },
+                { sectionNo: "1354", t: 1.50, weight: 3.300 }
+            ],
+            "1\" C-channel": [
+                { sectionNo: "PENDING", weight: 0.500, desc: "Mosquito C-channel" }
+            ],
+            "1\" 2 Track Top": [
+                { sectionNo: "2151", t: 1.20, weight: 2.300 },
+                { sectionNo: "2152", t: 1.30, weight: 2.500 }
+            ],
+            "1\" 2 Track Bottom": [
+                { sectionNo: "2251", t: 1.20, weight: 2.600 },
+                { sectionNo: "2252", t: 1.30, weight: 3.000 }
+            ],
+            "1\" 3 Track Top": [
+                { sectionNo: "2351", t: 1.25, weight: 3.500 },
+                { sectionNo: "2352", t: 1.35, weight: 3.800 }
+            ],
+            "1\" 3 Track Bottom": [
+                { sectionNo: "2451", t: 1.18, weight: 3.800 },
+                { sectionNo: "2452", t: 1.30, weight: 4.400 }
+            ],
+            "1\" 4 Track Top": [
+                { sectionNo: "2551", t: 1.20, weight: 5.000 }
+            ],
             "1\" 4 Track Bottom": [
                 { sectionNo: "2651", t: 1.02, weight: 5.200 }
             ]
@@ -127,8 +181,7 @@ window.registerSupplier("JK ALU EXTRUSION", {
         '3/4"': [
             { component: '3/4" Handle', qty: '2', length: 'H-1.5', desc: 'Handles' },
             { component: '3/4" Interlock', qty: '2*S-2', length: 'H-1.5', desc: 'Interlocks' },
-            { component: '3/4" Bearing Bottom', qty: '2*S', length: '(W-5-1.5*(S-1))/S', desc: 'Bearing Bottom' },
-            { component: '3/4" Sash Top/Bottom', qty: '2*S', length: '(W-5-1.5*(S-1))/S', desc: 'Sash Top' },
+            { component: '3/4" Bearing Bottom', qty: '4*S', length: '(W-5-1.5*(S-1))/S', desc: 'Horizontal Top & Bottom' },
 
             { component: '3/4" 2 Track Top', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
             { component: '3/4" 2 Track Bottom', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
@@ -145,16 +198,14 @@ window.registerSupplier("JK ALU EXTRUSION", {
             // Mosquito
             { component: '3/4" Handle', qty: '1*MS', length: 'H-1.5', desc: 'MS Handle' },
             { component: '3/4" Interlock', qty: '1*MS', length: 'H-1.5', desc: 'MS Interlock' },
-            { component: '3/4" Bearing Bottom', qty: '1*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS Bottom' },
-            { component: '3/4" Sash Top/Bottom', qty: '1*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS Top' },
+            { component: '3/4" Bearing Bottom', qty: '2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS Horizontal' },
             { component: '3/4" C-channel', qty: '2*MS', length: 'H-1.5', desc: 'MS C-channel V' },
             { component: '3/4" C-channel', qty: '2*MS', length: '(W-5-1.5*(S-1))/S', desc: 'MS C-channel H' }
         ],
         '1"': [
             { component: '1" Handle', qty: '2', length: 'H-1.125', desc: 'Handles' },
             { component: '1" Interlock', qty: '2*S-2', length: 'H-1.125', desc: 'Interlocks' },
-            { component: '1" Bearing Bottom', qty: '2*S', length: '(W-5-2*(S-1))/S', desc: 'Bearing Bottom' },
-            { component: '1" Sash Top/Bottom', qty: '2*S', length: '(W-5-2*(S-1))/S', desc: 'Sash Top' },
+            { component: '1" Bearing Bottom', qty: '4*S', length: '(W-5-2*(S-1))/S', desc: 'Horizontal Top & Bottom' },
 
             { component: '1" 2 Track Top', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Top' },
             { component: '1" 2 Track Bottom', qty: '1', length: 'T==2 ? W : 0', desc: '2T Track Bottom' },
@@ -171,8 +222,7 @@ window.registerSupplier("JK ALU EXTRUSION", {
             // Mosquito
             { component: '1" Handle', qty: '1*MS', length: 'H-1.125', desc: 'MS Handle' },
             { component: '1" Interlock', qty: '1*MS', length: 'H-1.125', desc: 'MS Interlock' },
-            { component: '1" Bearing Bottom', qty: '1*MS', length: '(W-5-2*(S-1))/S', desc: 'MS Bottom' },
-            { component: '1" Sash Top/Bottom', qty: '1*MS', length: '(W-5-2*(S-1))/S', desc: 'MS Top' },
+            { component: '1" Bearing Bottom', qty: '2*MS', length: '(W-5-2*(S-1))/S', desc: 'MS Horizontal' },
             { component: '1" C-channel', qty: '2*MS', length: 'H-1.125', desc: 'MS C-channel V' },
             { component: '1" C-channel', qty: '2*MS', length: '(W-5-2*(S-1))/S', desc: 'MS C-channel H' }
         ],
@@ -210,10 +260,11 @@ window.registerSupplier("JK ALU EXTRUSION", {
         '3/4"': [
             { material: '3/4" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
             { material: '3/4" Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-            { material: '3/4" Sash Top/Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-            { component: '3/4" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '3/4" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
             { material: '3/4" Middle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
             { material: '3/4" C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '3/4" Singal Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: '3/4" Singal Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
             { material: '3/4" 2 Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
             { material: '3/4" 2 Track Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
             { material: '3/4" 3 Track Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
@@ -224,7 +275,6 @@ window.registerSupplier("JK ALU EXTRUSION", {
         '1"': [
             { material: '1" Handle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
             { material: '1" Interlock', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
-            { material: '1" Sash Top/Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
             { material: '1" Bearing Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
             { material: '1" Middle', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
             { material: '1" C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
