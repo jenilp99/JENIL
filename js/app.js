@@ -1351,6 +1351,32 @@ function refreshStockMaster() {
     if (!container) return;
     container.innerHTML = '';
 
+    // Backfill missing supplier info from Registry
+    if (window.SUPPLIER_REGISTRY) {
+        Object.entries(stockMaster).forEach(([series, stocks]) => {
+            // Check if this series belongs to a known supplier
+            let foundSupplier = null;
+            Object.entries(window.SUPPLIER_REGISTRY).forEach(([supName, supData]) => {
+                if (supData.sections && supData.sections[series]) {
+                    foundSupplier = supName;
+                }
+            });
+
+            // Heuristic for VITCO series not in registry (User Request)
+            if (!foundSupplier) {
+                if (series.includes('UMA') || series.includes('Gulf') || series.includes('Pro')) {
+                    foundSupplier = 'VITCO';
+                }
+            }
+
+            if (foundSupplier) {
+                stocks.forEach(stock => {
+                    if (!stock.supplier) stock.supplier = foundSupplier;
+                });
+            }
+        });
+    }
+
     // Reorganize stockMaster by Supplier -> Series -> Items
     const bySupplier = {};
 
