@@ -173,6 +173,72 @@ window.registerSupplier("JK ALU EXTRUSION", {
             "DOMAL C-CHANNEL": [
                 { sectionNo: "PENDING", t: 1.00, weight: 0.500, desc: "Mosquito C-channel" }
             ]
+        },
+        "Door": {
+            // Door Top (W=47.5mm or 85.0mm, H=44.5mm)
+            "Door Top": [
+                { sectionNo: "3601", t: 1.05, weight: 2.600, w: 47.5, h: 44.5 },
+                { sectionNo: "3602", t: 1.25, weight: 3.000, w: 47.5, h: 44.5 },
+                { sectionNo: "3603", t: 1.48, weight: 3.600, w: 47.5, h: 44.5 },
+                { sectionNo: "3604", t: 1.70, weight: 4.000, w: 47.5, h: 44.5 },
+                { sectionNo: "3605", t: 2.00, weight: 4.800, w: 47.5, h: 44.5 },
+                { sectionNo: "3651", t: 1.40, weight: 4.200, w: 85.0, h: 44.5 },
+                { sectionNo: "3652", t: 1.60, weight: 4.800, w: 85.0, h: 44.5 },
+                { sectionNo: "3653", t: 2.00, weight: 5.500, w: 85.0, h: 44.5 }
+            ],
+            // Door Vertical (W=47.5mm or 85.0mm, H=44.5mm)
+            "Door Vertical": [
+                { sectionNo: "3701", t: 1.05, weight: 2.600, w: 47.5, h: 44.5 },
+                { sectionNo: "3702", t: 1.25, weight: 3.000, w: 47.5, h: 44.5 },
+                { sectionNo: "3703", t: 1.48, weight: 3.600, w: 47.5, h: 44.5 },
+                { sectionNo: "3704", t: 1.70, weight: 4.000, w: 47.5, h: 44.5 },
+                { sectionNo: "3705", t: 2.00, weight: 4.800, w: 47.5, h: 44.5 },
+                { sectionNo: "3751", t: 1.30, weight: 4.200, w: 85.0, h: 44.5 },
+                { sectionNo: "3752", t: 1.50, weight: 4.800, w: 85.0, h: 44.5 },
+                { sectionNo: "3753", t: 1.90, weight: 5.500, w: 85.0, h: 44.5 }
+            ],
+            // Door Middle Double (W=47.5mm or 85.0mm, H=44.5mm)
+            "Door Middle Double": [
+                { sectionNo: "3801", t: 1.10, weight: 2.500, w: 47.5, h: 44.5 },
+                { sectionNo: "3802", t: 1.40, weight: 3.200, w: 47.5, h: 44.5 },
+                { sectionNo: "3803", t: 1.85, weight: 4.200, w: 47.5, h: 44.5 },
+                { sectionNo: "3851", t: 1.40, weight: 4.200, w: 85.0, h: 44.5 },
+                { sectionNo: "3852", t: 1.85, weight: 5.500, w: 85.0, h: 44.5 }
+            ],
+            // Door Middle Single (W=47.5mm or 85.0mm, H=44.5mm)
+            "Door Middle Single": [
+                { sectionNo: "3901", t: 1.08, weight: 2.500, w: 47.5, h: 44.5 },
+                { sectionNo: "3902", t: 1.40, weight: 3.000, w: 47.5, h: 44.5 },
+                { sectionNo: "3903", t: 1.80, weight: 4.000, w: 47.5, h: 44.5 },
+                { sectionNo: "3951", t: 1.40, weight: 4.000, w: 85.0, h: 44.5 }
+            ],
+            // Door Glazing Clip
+            "Door Glazing Clip": [
+                { sectionNo: "3201", t: 0.45, weight: 0.250 },
+                { sectionNo: "3202", t: 0.50, weight: 0.270 },
+                { sectionNo: "3203", t: 0.55, weight: 0.300 },
+                { sectionNo: "3204", t: 0.63, weight: 0.350 },
+                { sectionNo: "3205", t: 0.72, weight: 0.400 }
+            ],
+            // Door Leg Partition (Frame) - W=38.5mm, H=50mm
+            "Door Leg Partition": [
+                { sectionNo: "4001", t: 1.00, weight: 3.000, w: 38.5, h: 50.0 },
+                { sectionNo: "4002", t: 1.10, weight: 3.400, w: 38.5, h: 50.0 },
+                { sectionNo: "4003", t: 1.45, weight: 4.400, w: 38.5, h: 50.0 },
+                { sectionNo: "4004", t: 1.58, weight: 5.000, w: 38.5, h: 50.0 }
+            ],
+            // Door Tips Vertical (W=47.5mm)
+            "Door Tips Vertical": [
+                { sectionNo: "4051", t: 1.30, weight: 3.000, w: 47.5 },
+                { sectionNo: "4052", t: 1.50, weight: 3.400, w: 47.5 }
+            ],
+            // Door Bottom (L=25mm or 15mm)
+            "Door Bottom": [
+                { sectionNo: "4101", t: 1.16, weight: 4.400, l: 25, w: 114.5 },
+                { sectionNo: "4102", t: 1.36, weight: 4.800, l: 25, w: 114.5 },
+                { sectionNo: "4103", t: 1.60, weight: 5.500, l: 25, w: 114.5 },
+                { sectionNo: "4110", t: 1.13, weight: 4.200, l: 15, w: 114.5 }
+            ]
         }
     },
 
@@ -252,6 +318,51 @@ window.registerSupplier("JK ALU EXTRUSION", {
             { component: 'DOMAL SHUTTER (27MM)', qty: '2*MS', length: 'H-2.75', desc: 'MS Shutter Vert' },
             { component: 'DOMAL SHUTTER (27MM)', qty: '2*MS', length: '(W-3+2.5*(S-1))/S', desc: 'MS Shutter Horiz' },
             { component: 'DOMAL CLIP (27MM)', qty: '1*MS', length: 'H-2.75', desc: 'MS Clip' }
+        ],
+        // Door Series - F = Frame (1=YES, 0=NO)
+        // LEG_PARTITION_WIDTH = 38.5mm = 1.516", PLAY = 1.5mm = 0.059"
+        // Frame Side Deduction = 40mm = 1.575" (each side)
+        // Frame Top Deduction = 40mm = 1.575"
+        // DW = Door Width = W - (F * 3.15)  [80mm/25.4 = 3.15"]
+        // DH = Door Height = H - (F * 1.575) [40mm/25.4 = 1.575"]
+        // Vertical deduction = 41.5mm = 1.634" (38.5 + 1.5 + 1.5)
+        // HW = Handle/Hing Width = 47.5mm = 1.87" (default, or 85mm = 3.35")
+        // TW = Door Top Width = 44.5mm = 1.752"
+        // BW = Door Bottom Width = 44.5mm = 1.752" (or 25mm = 0.984")
+        // MW = Door Middle Double Width = 44.5mm = 1.752"
+        'Door': [
+            // Door Vertical Handle (Options: Tips Vertical, Door Vertical, Door Middle Single)
+            // Length = DoorHeight - 38.5mm - 1.5mm - 1.5mm = DoorHeight - 41.5mm
+            { component: 'Door Vertical', qty: '1', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Handle' },
+
+            // Door Vertical Hing (Uses Door Vertical profile)
+            { component: 'Door Vertical', qty: '1', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Hing' },
+
+            // Door Top
+            // Length = DoorWidth - (Frame deduction if selected) - HandleWidth - HingWidth
+            // = DW - (F*3.15) - 1.87 - 1.87 = W - (F*3.15) - 3.74
+            { component: 'Door Top', qty: '1', length: 'W - (F*3.15) - 3.74', desc: 'Top Rail' },
+
+            // Door Bottom (Same formula as Door Top)
+            { component: 'Door Bottom', qty: '1', length: 'W - (F*3.15) - 3.74', desc: 'Bottom Rail' },
+
+            // Door Middle Double
+            { component: 'Door Middle Double', qty: '1', length: 'W - (F*3.15) - 3.74', desc: 'Middle Rail' },
+
+            // Frame - Leg Partition (Only if F=1)
+            { component: 'Door Leg Partition', qty: '1*F', length: 'W', desc: 'Frame Top' },
+            { component: 'Door Leg Partition', qty: '1*F', length: 'H', desc: 'Frame Left' },
+            { component: 'Door Leg Partition', qty: '1*F', length: 'H', desc: 'Frame Right' },
+
+            // Door Glazing Clip - Vertical (Qty: 8 = 4 per glass pane × 2 panes)
+            // Length = (DoorHeight - FrameDeduct - DoorTopWidth - DoorBottomWidth - DoorMiddleDoubleWidth) / 2
+            // = (H - F*1.575 - 1.752 - 1.752 - 1.752) / 2
+            { component: 'Door Glazing Clip', qty: '8', length: '(H - (F*1.575) - 5.256) / 2', desc: 'Glazing Clip Vertical' },
+
+            // Door Glazing Clip - Horizontal (Qty: 8)
+            // Length = DoorWidth - FrameDeduct - HandleWidth - HingWidth
+            // = W - (F*1.634) - 1.87 - 1.87 = W - (F*1.634) - 3.74
+            { component: 'Door Glazing Clip', qty: '8', length: 'W - (F*1.634) - 3.74', desc: 'Glazing Clip Horizontal' }
         ]
     },
 
@@ -293,6 +404,16 @@ window.registerSupplier("JK ALU EXTRUSION", {
             { material: 'DOMAL SHUTTER (27MM)', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
             { material: 'DOMAL CLIP (27MM)', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
             { material: 'DOMAL C-CHANNEL', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 }
+        ],
+        'Door': [
+            { material: 'Door Top', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
+            { material: 'Door Vertical', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
+            { material: 'Door Middle Double', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
+            { material: 'Door Middle Single', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
+            { material: 'Door Bottom', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
+            { material: 'Door Glazing Clip', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
+            { material: 'Door Leg Partition', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
+            { material: 'Door Tips Vertical', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 }
         ]
     }
 });
