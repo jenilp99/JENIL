@@ -112,6 +112,67 @@ window.registerSupplier("Windalco Aluminium", {
             "1\" 4 Track Top/Bottom": [ // Speculative based on Image 2 Bottom Right
                 { sectionNo: "20082", t: 1.50, weight: 7.450, desc: "Heavy/4 Track?" }
             ]
+        },
+        "Door": {
+            // Leg Partition (2.5"x1.50") - Frame profile
+            "Door Leg Partition": [
+                { sectionNo: "20178", t: 1.10, weight: 3.000, w: 63.5, h: 49.5 },
+                { sectionNo: "20179", t: 1.40, weight: 3.400, w: 63.5, h: 49.5 },
+                { sectionNo: "20180", t: 1.50, weight: 3.800, w: 63.5, h: 49.5 },
+                { sectionNo: "20181", t: 2.65, weight: 6.000, w: 63.5, h: 49.5 },
+                { sectionNo: "20182", t: 3.00, weight: 7.100, w: 63.5, h: 49.5 }
+            ],
+            // Door Top & Door Bottom (combined widths: 47mm, 85mm, 114.30mm)
+            "Door Top": [
+                { sectionNo: "20183", t: 1.10, weight: 2.600, w: 47.0, h: 44.45 },
+                { sectionNo: "20184", t: 2.00, weight: 3.000, w: 47.0, h: 44.45 },
+                { sectionNo: "20185", t: 3.00, weight: 5.200, w: 47.0, h: 44.45 },
+                { sectionNo: "20186", t: 1.50, weight: 3.800, w: 85.0, h: 44.45 },
+                { sectionNo: "20187", t: 2.00, weight: 4.100, w: 85.0, h: 44.45 },
+                { sectionNo: "20188", t: 3.00, weight: 7.500, w: 85.0, h: 44.45 }
+            ],
+            "Door Bottom": [
+                { sectionNo: "20189", t: 1.17, weight: 4.800, w: 114.30, h: 44.45 },
+                { sectionNo: "20190", t: 3.00, weight: 11.500, w: 114.30, h: 44.45 }
+            ],
+            // Door Vertical (47mm and 85mm widths)
+            "Door Vertical": [
+                { sectionNo: "20191", t: 1.15, weight: 2.500, w: 47.0, h: 44.45 },
+                { sectionNo: "20192", t: 1.50, weight: 2.950, w: 47.0, h: 44.45 },
+                { sectionNo: "20193", t: 3.00, weight: 5.200, w: 47.0, h: 44.45 },
+                { sectionNo: "20194", t: 1.40, weight: 3.800, w: 85.0, h: 44.45 },
+                { sectionNo: "20195", t: 2.00, weight: 5.500, w: 85.0, h: 44.45 },
+                { sectionNo: "20196", t: 3.00, weight: 7.400, w: 85.0, h: 44.45 }
+            ],
+            // Door Middle (47mm and 85mm widths)
+            "Door Middle Double": [
+                { sectionNo: "20197", t: 1.00, weight: 2.000, w: 47.0, h: 44.45 },
+                { sectionNo: "20198", t: 1.15, weight: 2.400, w: 47.0, h: 44.45 },
+                { sectionNo: "20199", t: 1.35, weight: 3.700, w: 83.5, h: 44.45 },
+                { sectionNo: "20200", t: 1.50, weight: 3.200, w: 47.0, h: 44.45 },
+                { sectionNo: "20201", t: 3.00, weight: 5.300, w: 47.0, h: 44.75 },
+                { sectionNo: "20202", t: 3.00, weight: 10.200, w: 83.5, h: 44.45 }
+            ],
+            // Door Center Single (47mm and 85mm widths)
+            "Door Middle Single": [
+                { sectionNo: "20203", t: 1.35, weight: 3.500, w: 83.05, h: 44.45 },
+                { sectionNo: "20204", t: 1.30, weight: 2.500, w: 47.0, h: 44.45 },
+                { sectionNo: "20205", t: 1.10, weight: 2.000, w: 47.0, h: 44.45 }
+            ],
+            // Tips Vertical
+            "Door Tips Vertical": [
+                { sectionNo: "20177", t: 1.20, weight: 3.350, w: 47.5, h: 44.45 }
+            ],
+            // Corner Section
+            "Door Corner Section": [
+                { sectionNo: "20206", t: 1.00, weight: 3.800 }
+            ],
+            // Glazing Clip (from catalog page 17)
+            "Door Glazing Clip": [
+                { sectionNo: "20157", t: 0.40, weight: 0.200 },
+                { sectionNo: "20158", t: 0.72, weight: 0.320 },
+                { sectionNo: "20159", t: 0.90, weight: 0.420 }
+            ]
         }
     },
 
@@ -159,6 +220,27 @@ window.registerSupplier("Windalco Aluminium", {
             { component: '1" Handle', qty: '1*MS', length: 'H-1.125', desc: 'MS Handle' },
             { component: '1" Interlock', qty: '1*MS', length: 'H-1.125', desc: 'MS Interlock' },
             { component: '1" Bearing Bottom', qty: '2*MS', length: '(W-5-2*(S-1))/S', desc: 'MS Bearing Bottom' }
+        ],
+        // Door Formulas (same as JK ALU for universal compatibility)
+        'Door': [
+            // Door Vertical Handle
+            { component: 'Door Vertical', qty: '1', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Handle' },
+            // Door Vertical Hing
+            { component: 'Door Vertical', qty: '1', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Hing' },
+            // Door Top
+            { component: 'Door Top', qty: '1', length: 'W - (F*3.15) - 2*VW', desc: 'Top Rail' },
+            // Door Bottom
+            { component: 'Door Bottom', qty: '1', length: 'W - (F*3.15) - 2*VW', desc: 'Bottom Rail' },
+            // Door Middle Double
+            { component: 'Door Middle Double', qty: '1', length: 'W - (F*3.15) - 2*VW', desc: 'Middle Rail' },
+            // Frame - Leg Partition (Only if F=1)
+            { component: 'Door Leg Partition', qty: '1*F', length: 'W', desc: 'Frame Top' },
+            { component: 'Door Leg Partition', qty: '1*F', length: 'H', desc: 'Frame Left' },
+            { component: 'Door Leg Partition', qty: '1*F', length: 'H', desc: 'Frame Right' },
+            // Door Glazing Clip - Vertical
+            { component: 'Door Glazing Clip', qty: '8', length: '(H - (F*1.575) - TW - BW - MW) / 2', desc: 'Glazing Clip Vertical' },
+            // Door Glazing Clip - Horizontal
+            { component: 'Door Glazing Clip', qty: '8', length: 'W - (F*3.15) - 2*VW', desc: 'Glazing Clip Horizontal' }
         ]
     },
 
@@ -197,6 +279,17 @@ window.registerSupplier("Windalco Aluminium", {
             { material: '27mm Domal Shutter', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
             { material: '27mm Domal Clip', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
             { material: '27mm Domal C-channel', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
+        ],
+        'Door': [
+            { material: 'Door Leg Partition', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: 'Door Top', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: 'Door Bottom', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: 'Door Vertical', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: 'Door Middle Double', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: 'Door Middle Single', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: 'Door Tips Vertical', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: 'Door Corner Section', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 },
+            { material: 'Door Glazing Clip', stock1: 141, stock1Cost: 100, stock2: 177, stock2Cost: 125 }
         ]
     }
 });
