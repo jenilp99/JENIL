@@ -1056,13 +1056,16 @@ function generateMaterialPurchaseHTML(projectWindows, selectedProject) {
     for (const [key, data] of Object.entries(optimizationResults.results)) {
         const section = optimizationResults.componentSections ? optimizationResults.componentSections[key] : null;
         const totalWeight = data.reduce((sum, plan) => sum + (section ? section.weight : 0), 0);
-        const stickLength = data[0] ? data[0].stockLength : 144;
+
+        // Collect unique stock lengths
+        const lengths = [...new Set(data.map(plan => parseFloat(plan.stock)))];
+        const lengthStr = lengths.map(l => formatInchesToFeet(l)).join(', ');
 
         html += `<tr style="border-bottom: 1px solid #eee;">
             <td style="padding: 10px;">${section ? section.sectionNo : '-'}</td>
             <td style="padding: 10px;">${key}</td>
             <td style="padding: 10px; text-align: center;">${data.length}</td>
-            <td style="padding: 10px; text-align: center;">${formatInchesToFeet(stickLength)}</td>
+            <td style="padding: 10px; text-align: center;">${lengthStr}</td>
             <td style="padding: 10px; text-align: right;">${totalWeight.toFixed(2)}</td>
         </tr>`;
     }
@@ -1102,7 +1105,7 @@ function generateCutListHTML(projectWindows, selectedProject) {
 
         plans.forEach((plan, idx) => {
             html += `<div style="margin: 10px 0; padding: 5px; border-left: 3px solid #f39c12;">
-                <strong>Stick #${idx + 1} (${plan.stockLength}"):</strong>
+                <strong>Stick #${idx + 1} (${parseFloat(plan.stock)}"):</strong>
                 <div style="display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap;">`;
             plan.pieces.forEach(p => {
                 html += `<span style="background: #ecf3f9; padding: 2px 8px; border: 1px solid #bdc3c7; border-radius: 3px;">
