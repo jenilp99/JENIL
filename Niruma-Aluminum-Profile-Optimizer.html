@@ -144,6 +144,19 @@
 
                     <!-- STEP 1: Dimensions & Series -->
                     <div class="wizard-step" id="step1">
+                        <!-- Category Toggle -->
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 1;">
+                                <label>Category</label>
+                                <div class="category-toggle">
+                                    <button type="button" class="category-btn active" id="categoryWindow"
+                                        onclick="selectCategory('Window')">🪟 Window</button>
+                                    <button type="button" class="category-btn" id="categoryDoor"
+                                        onclick="selectCategory('Door')">🚪 Door</button>
+                                </div>
+                                <input type="hidden" id="category" value="Window">
+                            </div>
+                        </div>
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Config ID</label>
@@ -288,10 +301,39 @@
                                 </select>
                             </div>
                         </div>
+                        <!-- Door Configuration Row (Shown when Door category selected) -->
+                        <div id="doorConfigRow"
+                            style="display: none; background: #fff5e6; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #e67e22;">
+                            <h4 style="margin-top: 0; color: #e67e22;">🚪 Door Configuration</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Frame (Leg Partition)</label>
+                                    <select id="doorFrame" onchange="toggleDoorFrame()">
+                                        <option value="1" selected>YES - 3 Side Frame (Top, Left, Right)</option>
+                                        <option value="0">NO - No Frame</option>
+                                    </select>
+                                    <input type="hidden" id="frameValue" value="1">
+                                </div>
+                                <div class="form-group">
+                                    <label>Glass Type</label>
+                                    <select id="doorGlassType">
+                                        <option value="SGU" selected>SGU (Single Glass)</option>
+                                        <option value="DGU">DGU (Double Glass)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-row" id="doorFrameInfo" style="margin-top: 10px;">
+                                <div class="alert alert-warning" style="flex: 1; padding: 10px; margin: 0;">
+                                    <strong>Frame Deductions:</strong> Width: 80mm (40mm each side) | Height: 40mm (top
+                                    only)<br>
+                                    <strong>Joint:</strong> 45° with corner connector
+                                </div>
+                            </div>
+                        </div>
                         <div class="wizard-actions">
                             <button type="button" class="btn btn-secondary" onclick="prevStep(2)">⬅️ Back</button>
                             <button type="button" class="btn btn-danger" onclick="clearForm()">🔄 Clear</button>
-                            <button type="submit" class="btn btn-success">✅ Add Window</button>
+                            <button type="submit" class="btn btn-success" id="submitBtn">✅ Add Window</button>
                         </div>
                     </div>
                 </form>

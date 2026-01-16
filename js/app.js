@@ -428,6 +428,93 @@ function prevStep(targetStep) {
     showStep(targetStep);
 }
 
+// Category Selection (Window/Door)
+function selectCategory(category) {
+    const categoryInput = document.getElementById('category');
+    const windowBtn = document.getElementById('categoryWindow');
+    const doorBtn = document.getElementById('categoryDoor');
+    const configIdInput = document.getElementById('configId');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Update buttons
+    windowBtn.classList.remove('active', 'door-active');
+    doorBtn.classList.remove('active', 'door-active');
+
+    if (category === 'Window') {
+        windowBtn.classList.add('active');
+        categoryInput.value = 'Window';
+        if (configIdInput.value.startsWith('D')) {
+            configIdInput.value = 'W' + configIdInput.value.substring(1);
+        }
+        if (submitBtn) submitBtn.textContent = '✅ Add Window';
+
+        // Show window-specific fields, hide door fields
+        toggleWindowDoorFields('Window');
+    } else {
+        doorBtn.classList.add('active', 'door-active');
+        categoryInput.value = 'Door';
+        if (configIdInput.value.startsWith('W')) {
+            configIdInput.value = 'D' + configIdInput.value.substring(1);
+        }
+        if (submitBtn) submitBtn.textContent = '✅ Add Door';
+
+        // Show door-specific fields, hide window fields
+        toggleWindowDoorFields('Door');
+
+        // Auto-select Door series
+        const seriesSelect = document.getElementById('series');
+        if (seriesSelect) {
+            for (let i = 0; i < seriesSelect.options.length; i++) {
+                if (seriesSelect.options[i].value === 'Door') {
+                    seriesSelect.selectedIndex = i;
+                    onSeriesChanged();
+                    break;
+                }
+            }
+        }
+    }
+}
+
+function toggleWindowDoorFields(category) {
+    // Window-specific rows
+    const windowRows = [
+        document.getElementById('tracks')?.closest('.form-row'),
+        document.getElementById('shutters')?.closest('.form-row'),
+        document.getElementById('mosquitoShutters')?.closest('.form-row'),
+        document.getElementById('mosquitoConfigRow')
+    ];
+
+    // Door-specific rows
+    const doorConfigRow = document.getElementById('doorConfigRow');
+
+    if (category === 'Window') {
+        // Show window fields
+        windowRows.forEach(row => { if (row) row.style.display = 'flex'; });
+        // Hide door fields
+        if (doorConfigRow) doorConfigRow.style.display = 'none';
+    } else {
+        // Hide window fields (except glass which applies to both)
+        windowRows.forEach(row => { if (row) row.style.display = 'none'; });
+        // Show door fields
+        if (doorConfigRow) doorConfigRow.style.display = 'block';
+    }
+}
+
+function toggleDoorFrame() {
+    const frameSelect = document.getElementById('doorFrame');
+    const frameValue = document.getElementById('frameValue');
+    const frameInfo = document.getElementById('doorFrameInfo');
+
+    if (frameSelect && frameValue) {
+        frameValue.value = frameSelect.value;
+    }
+
+    // Show/hide frame info based on selection
+    if (frameInfo) {
+        frameInfo.style.display = frameSelect.value === '1' ? 'flex' : 'none';
+    }
+}
+
 function getAllUniqueSeries() {
     const seriesSet = new Set();
     Object.values(supplierMaster).forEach(seriesObj => {
@@ -557,48 +644,70 @@ function toggleUnit() {
 function addWindow(event) {
     event.preventDefault();
 
+    // Get category
+    const category = document.getElementById('category')?.value || 'Window';
+
     // Get values
     const widthRaw = parseFloat(document.getElementById('width').value);
     const heightRaw = parseFloat(document.getElementById('height').value);
-    const tracks = parseInt(document.getElementById('tracks').value, 10);
-    const shutters = parseInt(document.getElementById('shutters').value, 10);
+    const tracks = parseInt(document.getElementById('tracks')?.value || '0', 10);
+    const shutters = parseInt(document.getElementById('shutters')?.value || '1', 10);
 
     // Validation
     if (widthRaw <= 0 || heightRaw <= 0) {
         showAlert('❌ Error: Width and Height must be greater than zero.', 'error');
         return;
     }
-    if (shutters <= 0) {
+
+    // Validation for windows only
+    if (category === 'Window' && shutters <= 0) {
         showAlert('❌ Error: Number of shutters must be at least 1.', 'error');
         return;
     }
 
-    const window = {
+    const windowData = {
         configId: document.getElementById('configId').value,
         projectName: document.getElementById('projectName').value,
+        category: category,
         vendor: document.getElementById('windowVendor').value,
         width: convertToInches(widthRaw),
         height: convertToInches(heightRaw),
-        tracks: tracks,
-        shutters: shutters,
-        mosquitoShutters: parseInt(document.getElementById('mosquitoShutters').value),
         series: document.getElementById('series').value,
         description: document.getElementById('description').value,
-        glassUnit: document.getElementById('glassUnit').value,
-        glassThickness: document.getElementById('glassThickness').value,
-        cornerJoint: document.getElementById('cornerJoint').value,
-        interlockType: document.getElementById('interlockType').value,
-        mosquitoType: document.getElementById('mosquitoType').value,
-        mosquitoInterlock: document.getElementById('mosquitoInterlock').value
+        glassUnit: document.getElementById('glassUnit')?.value || 'SGU',
+        glassThickness: document.getElementById('glassThickness')?.value || '5',
+        cornerJoint: document.getElementById('cornerJoint')?.value || '90'
     };
 
-    windows.push(window);
+    // Window-specific properties
+    if (category === 'Window') {
+        windowData.tracks = tracks;
+        windowData.shutters = shutters;
+        windowData.mosquitoShutters = parseInt(document.getElementById('mosquitoShutters')?.value || '0');
+        windowData.interlockType = document.getElementById('interlockType')?.value || 'slim';
+        windowData.mosquitoType = document.getElementById('mosquitoType')?.value || 'V-2513';
+        windowData.mosquitoInterlock = document.getElementById('mosquitoInterlock')?.value || 'V-2516';
+    }
+
+    // Door-specific properties
+    if (category === 'Door') {
+        windowData.frame = parseInt(document.getElementById('doorFrame')?.value || '1');
+        windowData.doorGlassType = document.getElementById('doorGlassType')?.value || 'SGU';
+        // For Door formulas: S=1 (single door), T=0 (no tracks), MS=0
+        windowData.shutters = 1;
+        windowData.tracks = 0;
+        windowData.mosquitoShutters = 0;
+    }
+
+    windows.push(windowData);
     autoSaveWindows();
 
-    const lastNum = parseInt(window.configId.substring(1));
-    document.getElementById('configId').value = 'W' + String(lastNum + 1).padStart(2, '0');
+    // Update config ID prefix based on category
+    const prefix = category === 'Door' ? 'D' : 'W';
+    const lastNum = parseInt(windowData.configId.substring(1));
+    document.getElementById('configId').value = prefix + String(lastNum + 1).padStart(2, '0');
 
-    showAlert('✅ Window ' + window.configId + ' added successfully!');
+    showAlert(`✅ ${category} ${windowData.configId} added successfully!`);
     refreshProjectSelector();
     displayWindows(); // Refresh the list
 }

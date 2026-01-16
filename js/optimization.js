@@ -148,10 +148,10 @@ function runOptimization() {
 function safeEval(formula, context, defaultValue = 0) {
     try {
         // Create variables from context
-        const { W, H, S, MS, T, P, CJ, IT, GT, MT, MIT } = context;
+        const { W, H, S, MS, T, P, CJ, IT, GT, MT, MIT, F } = context;
         // Use a function constructor for slightly better safety than eval()
-        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', 'CJ', 'IT', 'GT', 'MT', 'MIT', `return ${formula}`);
-        return fn(W, H, S, MS, T, P, CJ, IT, GT, MT, MIT);
+        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', 'CJ', 'IT', 'GT', 'MT', 'MIT', 'F', `return ${formula}`);
+        return fn(W, H, S, MS, T, P, CJ, IT, GT, MT, MIT, F);
     } catch (e) {
         console.error('SafeEval Error:', e, 'Formula:', formula);
         return defaultValue;
@@ -175,6 +175,7 @@ function calculatePieces(selectedProject, preferredSupplier) {
         const S = win.shutters;
         const MS = win.mosquitoShutters || 0;
         const T = win.tracks;
+        const F = win.frame || 0; // Frame for doors (1=YES, 0=NO)
         const id = win.configId;
 
         // Use preferred supplier if specified, otherwise fall back to window's vendor
@@ -232,6 +233,7 @@ function calculatePieces(selectedProject, preferredSupplier) {
             S: win.shutters,
             MS: MS,
             T: win.tracks,
+            F: win.frame || 0, // Frame for doors (1=YES, 0=NO)
             P: (win.width * 2 + win.height * 2),
             CJ: win.cornerJoint || 90,
             IT: win.interlockType || 'slim',
