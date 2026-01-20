@@ -416,5 +416,41 @@ window.registerSupplier("JK ALU EXTRUSION", {
             { material: 'Door Leg Partition', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 },
             { material: 'Door Tips Vertical', stock1: 141, stock1Cost: 0, stock2: 177, stock2Cost: 0 }
         ]
+    },
+
+    // 4. HARDWARE DEFAULTS
+    hardware: {
+        '3/4"': [
+            { hardware: 'Bearing (3/4")', qty: 4, unit: 'Nos', formula: '2 * S', rate: 45 }, // 2 per shutter
+            { hardware: 'Window Lock (Touch)', qty: 2, unit: 'Nos', formula: '2 + (MS > 0 ? 1 : 0)', rate: 65 },
+            { hardware: 'Wool Pile', qty: 10, unit: 'R.Ft', formula: '(GL("3/4\\" Interlock") + 4 * T * (W + H)) / 12', rate: 4 },
+            { hardware: 'Silicon Sealant', qty: 1, unit: 'R.Ft', formula: '(W + H) * 2 / 12', rate: 10 },
+            { hardware: 'Corner Joint (PVC)', qty: 4, unit: 'Nos', formula: '4 * F', rate: 5 }, // If Frames used
+            { hardware: 'Acrylic Stopper', qty: 4, unit: 'Nos', formula: '4', rate: 2 }
+        ],
+        '1"': [
+            { hardware: 'Bearing (1")', qty: 4, unit: 'Nos', formula: '2 * S', rate: 65 },
+            { hardware: 'Window Lock (Touch)', qty: 2, unit: 'Nos', formula: '2 + (MS > 0 ? 1 : 0)', rate: 65 },
+            { hardware: 'Wool Pile', qty: 10, unit: 'R.Ft', formula: '(GL("1\\" Interlock") + 4 * T * (W + H)) / 12', rate: 4 },
+            { hardware: 'Silicon Sealant', qty: 1, unit: 'R.Ft', formula: '(W + H) * 2 / 12', rate: 10 },
+            { hardware: 'Acrylic Stopper', qty: 4, unit: 'Nos', formula: '4', rate: 2 }
+        ],
+        '27mm Domal': [
+            { hardware: 'Domal Bearing', qty: 4, unit: 'Nos', formula: '2 * S', rate: 120 },
+            { hardware: 'Concealed Lock', qty: 2, unit: 'Nos', formula: '1 * S', rate: 350 }, // 1 per shutter usually for Domal? User said "Window Lock: 2 per window". Sticking to user.
+            { hardware: 'Touch Lock (Domal)', qty: 2, unit: 'Nos', formula: '2 + (MS > 0 ? 1 : 0)', rate: 150 },
+            { hardware: 'Wool Pile (Domal)', qty: 10, unit: 'R.Ft', formula: '(GL("DOMAL CLIP (27MM)") + 2 * S * H) / 12', rate: 6 },
+            { hardware: 'Silicon Sealant', qty: 1, unit: 'R.Ft', formula: '(W + H) * 2 / 12', rate: 10 },
+            { hardware: 'Anti-Lift Plug', qty: 2, unit: 'Nos', formula: '2 * S', rate: 15 },
+            { hardware: 'Domal Stopper', qty: 4, unit: 'Nos', formula: '4', rate: 25 }
+        ],
+        'Door': [
+            { hardware: 'Door Hinge', qty: 3, unit: 'Nos', formula: '3', rate: 150 },
+            { hardware: 'Door Handle', qty: 2, unit: 'Nos', formula: '2', rate: 450 },
+            { hardware: 'Door Closer', qty: 1, unit: 'Nos', formula: '1', rate: 1800 },
+            { hardware: 'Lock Body', qty: 1, unit: 'Nos', formula: '1', rate: 850 },
+            { hardware: 'Cylinder', qty: 1, unit: 'Nos', formula: '1', rate: 450 },
+            { hardware: 'Silicon Sealant', qty: 1, unit: 'R.Ft', formula: '(W + H) * 2 / 12', rate: 10 }
+        ]
     }
 });

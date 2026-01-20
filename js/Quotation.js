@@ -74,25 +74,89 @@ function showQuotationInputDialog(projectWindows, selectedProject) {
 function generateMaterialPurchaseListPDF(projectWindows, selectedProject) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
+
+    // Get Supplier Name (Try optimizationResults, or global registry, or DOM)
+    let supplierName = "Generic";
+    if (optimizationResults && optimizationResults.supplier) {
+        supplierName = optimizationResults.supplier;
+    } else {
+        const supElem = document.getElementById('supplierSelector');
+        if (supElem) supplierName = supElem.value || "Generic";
+    }
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
     doc.text(`Material Purchase List: ${selectedProject}`, 14, 20);
 
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Supplier: ${supplierName}`, 14, 28);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 34);
+
+    doc.setTextColor(0, 0, 0);
+
     const body = [];
+
+    // Group by Material AND Length
     for (const [key, data] of Object.entries(optimizationResults.results)) {
         const section = optimizationResults.componentSections ? optimizationResults.componentSections[key] : null;
-        body.push([
-            section ? section.sectionNo : '-',
-            key,
-            data.length,
-            formatInchesToFeet(data[0].stockLength),
-            (data.reduce((sum, p) => sum + (section ? section.weight : 0), 0)).toFixed(2)
-        ]);
+
+        // Group sticks by length for this material
+        const sticksByLength = {};
+        data.forEach(stick => {
+            const len = stick.stockLength;
+            if (!sticksByLength[len]) {
+                sticksByLength[len] = { qty: 0, weight: 0 };
+            }
+            sticksByLength[len].qty++;
+            // Calculate weight for this stick
+            // Weight is usually kg/12ft or kg/meter. 
+            // section.weight is "Weight per Sticker (12')" usually? 
+            // Let's assume section.weight is weight per piece of 'stockLength' if it's dynamic, 
+            // OR section.weight is standard 12' weight. 
+            // In optimization.js, weight is often calculated.
+            // Let's assume section.weight is for standard length?
+            // Actually, best to use weight per meter * length?
+            // Existing code used: section.weight (fixed)
+            // Let's stick to section.weight logic from before but scale logic if needed.
+            // If section.weight is "Wt/Length", we need to know what Length.
+            // Assuming section.weight from 'findStockInfo' is for that specific length.
+            // But 'componentSections' map might only have one metadata entry.
+            // Let's recalculate if possible, or use section.weight normalized.
+            // Wait, existing code: section.weight was used directly.
+            // Optimization usually stores "weight" in the result? No.
+            // Let's try to find correct weight.
+            const w = section ? parseFloat(section.weight || 0) : 0;
+            // If the stock length is different, does weight change? 
+            // Usually stock list has different weights for different lengths.
+            // We will assume 'section.weight' is correct for the PRIMARY stock. 
+            // NOTE: If user has 12' and 15' stock, their weights differ. 
+            // We should findStockInfo again to be safe.
+            const specificStock = findStockInfo(key, len); // Need to helper function
+            const specificWeight = specificStock ? specificStock.weight : w;
+
+            sticksByLength[len].weight += specificWeight;
+        });
+
+        // Add rows for each length
+        Object.entries(sticksByLength).forEach(([len, info]) => {
+            body.push([
+                section ? section.sectionNo : '-',
+                key,
+                info.qty,
+                formatInchesToFeet(parseFloat(len)),
+                info.weight.toFixed(2)
+            ]);
+        });
     }
 
     doc.autoTable({
-        startY: 30,
-        head: [['Section No', 'Description', 'Qty', 'Length', 'Weight (Kg)']],
+        startY: 40,
+        head: [['Section No', 'Description', 'Qty', 'Length', 'Total Weight (Kg)']],
         body: body,
-        theme: 'grid'
+        theme: 'grid',
+        headStyles: { fillColor: [41, 128, 185] }
     });
     doc.save(`Material_Purchase_${selectedProject}.pdf`);
 }
@@ -121,31 +185,115 @@ function generateOptimizedCutListPDF(projectWindows, selectedProject) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     let currentY = 20;
+
+    // Header
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
     doc.text(`Workshop Cut List: ${selectedProject}`, 14, currentY);
-    currentY += 10;
+    currentY += 8;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, currentY);
+    currentY += 15;
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 14;
+    const contentWidth = pageWidth - (margin * 2);
 
     for (const [key, plans] of Object.entries(optimizationResults.results)) {
-        if (currentY > 260) { doc.addPage(); currentY = 20; }
+        // Material Header
+        if (currentY > 250) { doc.addPage(); currentY = 20; }
+
         doc.setFontSize(12);
-        doc.text(`Material: ${key}`, 14, currentY);
-        currentY += 7;
+        doc.setFont('helvetica', 'bold');
+        doc.setFillColor(240, 240, 240);
+        doc.rect(margin, currentY, contentWidth, 8, 'F');
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Material: ${key}`, margin + 2, currentY + 5.5);
+        currentY += 15;
 
-        const body = plans.map((p, idx) => [
-            idx + 1,
-            p.stockLength + '"',
-            p.pieces.map(pc => pc.length + '" (' + pc.label + ')').join(', '),
-            p.waste.toFixed(2) + '"'
-        ]);
+        // Iterate Sticks
+        plans.forEach((plan, idx) => {
+            const stickHeight = 15;
+            const gap = 10;
 
-        doc.autoTable({
-            startY: currentY,
-            head: [['Stick', 'Stock', 'Cut Sequence', 'Waste']],
-            body: body,
-            theme: 'striped',
-            styles: { fontSize: 8 }
+            // Check page break
+            if (currentY + stickHeight + gap > 280) {
+                doc.addPage();
+                currentY = 20;
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.text(`Material: ${key} (Continued)`, margin, currentY);
+                currentY += 15;
+            }
+
+            const totalLength = plan.stockLength;
+            const scale = contentWidth / totalLength;
+
+            // Draw Stock bar (Empty/Background)
+            doc.setDrawColor(100, 100, 100);
+            doc.setFillColor(255, 255, 255);
+            doc.rect(margin, currentY, contentWidth, stickHeight, 'S'); // Outline
+
+            // Stick Info
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`#${idx + 1} - ${plan.stockLength}" Stock`, margin, currentY - 2);
+
+            let currentX = margin;
+
+            // Draw Cuts
+            plan.pieces.forEach(piece => {
+                const pieceWidth = piece.length * scale;
+
+                doc.setFillColor(230, 240, 255); // Light Blue for parts
+                doc.rect(currentX, currentY, pieceWidth, stickHeight, 'FD'); // Fill & Draw
+
+                // Label
+                if (pieceWidth > 15) { // Only label if space permits
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'bold');
+                    const text = `${piece.length}"`;
+                    const textWidth = doc.getTextWidth(text);
+                    doc.text(text, currentX + (pieceWidth - textWidth) / 2, currentY + 6);
+
+                    doc.setFontSize(7);
+                    doc.setFont('helvetica', 'normal');
+                    const label = piece.label || '';
+                    const labelWidth = doc.getTextWidth(label);
+                    // crop label if too long
+                    if (labelWidth < pieceWidth - 2) {
+                        doc.text(label, currentX + (pieceWidth - labelWidth) / 2, currentY + 11);
+                    }
+                }
+
+                currentX += pieceWidth;
+            });
+
+            // Waste
+            const wasteLen = plan.stockLength - plan.used;
+            if (wasteLen > 0) {
+                const wasteWidth = contentWidth - (currentX - margin); // Remaining width
+                // Ensure we don't draw negative if float math is off
+                if (wasteWidth > 0) {
+                    doc.setFillColor(255, 230, 230); // Light Red for waste
+                    doc.rect(currentX, currentY, wasteWidth, stickHeight, 'FD');
+
+                    if (wasteWidth > 10) {
+                        doc.setFontSize(7);
+                        doc.setTextColor(200, 0, 0);
+                        doc.text(`Waste: ${wasteLen.toFixed(1)}"`, currentX + 2, currentY + 9);
+                        doc.setTextColor(0, 0, 0);
+                    }
+                }
+            }
+
+            currentY += (stickHeight + gap);
         });
-        currentY = doc.lastAutoTable.finalY + 10;
+
+        currentY += 10; // Spacing between materials
     }
+
     doc.save(`CutList_${selectedProject}.pdf`);
 }
 
@@ -644,6 +792,11 @@ function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requesti
 function generateWindowDiagram(config) {
     // config = { tracks: 2, shutters: 2, mosquitoShutters: 1, width: 1143, height: 1121, windowId: "W1" }
 
+    // Check for Door
+    if (config.series && config.series.includes('Door')) {
+        return generateDoorDiagram(config);
+    }
+
     const svgWidth = 200;
     const svgHeight = 140;
     const frameThickness = 8;
@@ -799,9 +952,71 @@ function generateWindowDiagram(config) {
     }
 
     svg += '</svg>';
-
     return svg;
 }
+
+function generateDoorDiagram(config) {
+    const svgWidth = 200;
+    const svgHeight = 140;
+
+    // Aspect Ratio
+    const aspectRatio = config.width / config.height;
+    let doorH = 130;
+    let doorW = doorH * aspectRatio;
+
+    if (doorW > 180) {
+        doorW = 180;
+        doorH = doorW / aspectRatio;
+    }
+
+    const startX = (svgWidth - doorW) / 2;
+    const startY = (svgHeight - doorH) / 2 + 10;
+
+    let svg = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">`;
+
+    // Title
+    svg += `<text x="${svgWidth / 2}" y="12" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold" fill="#2c3e50">${config.windowId} - Door (${config.width}x${config.height})</text>`;
+
+    // Draw Outer Frame (if present) - Assuming Doors might have frames or be frameless. 
+    // "Door Leg Partition" suggests a frame.
+    const frameThick = 4;
+    svg += `<rect x="${startX}" y="${startY}" width="${doorW}" height="${doorH}" fill="none" stroke="#2c3e50" stroke-width="${frameThick}"/>`;
+
+    // Draw Leaf (Inset)
+    const leafX = startX + frameThick;
+    const leafY = startY + frameThick;
+    const leafW = doorW - (frameThick * 2);
+    const leafH = doorH - (frameThick * 2);
+
+    svg += `<rect x="${leafX}" y="${leafY}" width="${leafW}" height="${leafH}" fill="#f4f6f7" stroke="#3498db" stroke-width="2"/>`;
+
+    // Top Rail
+    const topRailH = leafH * 0.1;
+    svg += `<rect x="${leafX}" y="${leafY}" width="${leafW}" height="${topRailH}" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1"/>`;
+
+    // Bottom Rail
+    const bottomRailH = leafH * 0.15;
+    svg += `<rect x="${leafX}" y="${leafY + leafH - bottomRailH}" width="${leafW}" height="${bottomRailH}" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1"/>`;
+
+    // Middle Rail? (Assume yes for visual)
+    const midRailY = leafY + (leafH * 0.6);
+    const midRailH = leafH * 0.08;
+    svg += `<rect x="${leafX}" y="${midRailY}" width="${leafW}" height="${midRailH}" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1"/>`;
+
+    // Handle (Right side)
+    const handleY = leafY + (leafH * 0.5);
+    const handleX = leafX + leafW - 10;
+    svg += `<circle cx="${handleX}" cy="${handleY}" r="3" fill="#34495e"/>`;
+    svg += `<rect x="${handleX - 1.5}" y="${handleY + 3}" width="3" height="15" fill="#34495e" rx="1"/>`;
+
+    // Arc for opening (optional, dashed line)
+    // Top-Left to Bottom-Left via Handle (Right)
+    svg += `<path d="M ${leafX},${leafY} L ${leafX + leafW},${leafY + leafH / 2} L ${leafX},${leafY + leafH}" stroke="#95a5a6" stroke-width="1" stroke-dasharray="4,4" fill="none" opacity="0.6"/>`;
+
+    svg += '</svg>';
+    return svg;
+}
+
 
 // ============================================================================
 // HARDWARE CALCULATIONS

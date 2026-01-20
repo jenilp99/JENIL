@@ -293,8 +293,12 @@ function scrollToSection(sectionId) {
             section.classList.remove('collapsed-section');
         }
 
-        // Smooth scroll with native behavior
-        section.scrollIntoView({ behavior: 'smooth' });
+        // Smooth scroll with custom offset - Delayed to allow expansion animation to start/layout to update
+        setTimeout(() => {
+            const yOffset = -80; // Offset for sticky navbar
+            const y = section.getBoundingClientRect().top + window.pageYOffset + yOffset;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+        }, 150);
     }
 }
 
