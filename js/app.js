@@ -1017,6 +1017,14 @@ function escapeHtml(str) {
 // Helper function to render a window/door card
 function renderWindowCard(w, idx) {
     const isDoor = w.category === 'Door';
+
+    // Check thickness configuration status
+    const hasThickness = w.componentThicknesses && Object.keys(w.componentThicknesses).length > 0;
+    const thicknessStatus = hasThickness ? '✅' : '⚠️';
+    const thicknessLabel = hasThickness
+        ? `${Object.values(w.componentThicknesses)[0].t}mm`
+        : 'Not Set';
+
     return `<div class="window-card ${isDoor ? 'door-card' : ''}">
         <div>
             <h3>${w.configId} - ${w.description}</h3>
@@ -1029,10 +1037,12 @@ function renderWindowCard(w, idx) {
                 <div><strong>Shutters:</strong> ${w.shutters}</div>
                 <div><strong>Mosquito:</strong> ${w.mosquitoShutters}</div>`}
                 <div><strong>Series:</strong> ${w.series}</div>
+                <div><strong>Thickness:</strong> <span style="color: ${hasThickness ? '#2e7d32' : '#e67e22'};">${thicknessStatus} ${thicknessLabel}</span></div>
             </div>
             <div class="window-actions">
                 <button class="btn btn-warning btn-sm" onclick="editWindow(${idx})">✏️ Edit</button>
                 <button class="btn btn-danger btn-sm" onclick="deleteWindow(${idx})">🗑️ Delete</button>
+                <button class="btn btn-info btn-sm" onclick="openComponentThicknessModal(${idx})">🔗 Thickness</button>
             </div>
         </div>
     </div>`;
@@ -2469,4 +2479,568 @@ function formatInchesToFeet(totalInches) {
     const inches = Math.round(totalInches % 12);
     if (inches === 0) return `${feet}'`;
     return `${feet}' - ${inches}"`;
+}
+
+// ============================================================================
+// PROJECT THICKNESS SELECTION FUNCTIONS
+// ============================================================================
+
+/**
+ * Get recommended thickness based on window dimensions
+ * Engineering logic: larger windows need thicker profiles for structural integrity
+ */
+function getRecommendedThickness(height, width) {
+    const maxDimension = Math.max(height, width);
+
+    if (maxDimension < 48) {
+        return { t: 0.79, reason: 'Small window - lightweight profile sufficient' };
+    } else if (maxDimension < 72) {
+        return { t: 0.89, reason: 'Medium window - standard thickness' };
+    } else if (maxDimension < 96) {
+        return { t: 1.0, reason: 'Large window - reinforced profile recommended' };
+    } else {
+        return { t: 1.1, reason: 'Very large window - heavy-duty profile required' };
+    }
+}
+
+/**
+ * Get available thickness options for a supplier and series
+ */
+function getThicknessOptionsForVendor(vendor, series) {
+    const options = [];
+
+    if (window.SUPPLIER_REGISTRY && window.SUPPLIER_REGISTRY[vendor]) {
+        const supplierData = window.SUPPLIER_REGISTRY[vendor];
+        if (supplierData.sections && supplierData.sections[series]) {
+            const sectionGroup = supplierData.sections[series];
+            // Collect unique thickness values
+            const thicknessSet = new Map();
+
+            Object.entries(sectionGroup).forEach(([componentName, variants]) => {
+                if (Array.isArray(variants)) {
+                    variants.forEach(v => {
+                        const key = `${v.t}`;
+                        if (!thicknessSet.has(key)) {
+                            thicknessSet.set(key, {
+                                t: v.t,
+                                supplier: vendor,
+                                sampleSectionNo: v.sectionNo,
+                                weight: v.weight
+                            });
+                        }
+                    });
+                }
+            });
+
+            // Convert to array and sort by thickness
+            thicknessSet.forEach(val => options.push(val));
+            options.sort((a, b) => a.t - b.t);
+        }
+    }
+
+    // Fallback to supplierMaster if no registry options
+    if (options.length === 0 && supplierMaster[series]) {
+        const thicknessSet = new Map();
+        supplierMaster[series].forEach(item => {
+            if (item.supplier === vendor || !vendor) {
+                const key = `${item.thickness || 0.89}`;
+                if (!thicknessSet.has(key)) {
+                    thicknessSet.set(key, {
+                        t: item.thickness || 0.89,
+                        supplier: item.supplier || vendor,
+                        sampleSectionNo: item.sectionNo || 'N/A',
+                        weight: item.weight || 0
+                    });
+                }
+            }
+        });
+        thicknessSet.forEach(val => options.push(val));
+        options.sort((a, b) => a.t - b.t);
+    }
+
+    // If still no options, provide defaults
+    if (options.length === 0) {
+        options.push(
+            { t: 0.79, supplier: vendor || 'Generic', sampleSectionNo: 'Default', weight: 1.0 },
+            { t: 0.89, supplier: vendor || 'Generic', sampleSectionNo: 'Default', weight: 1.1 },
+            { t: 1.0, supplier: vendor || 'Generic', sampleSectionNo: 'Default', weight: 1.2 },
+            { t: 1.1, supplier: vendor || 'Generic', sampleSectionNo: 'Default', weight: 1.3 }
+        );
+    }
+
+    return options;
+}
+
+/**
+ * Get available thickness options for a SPECIFIC component
+ * This ensures each component only shows its own thickness variants
+ * @param {string} vendor - Supplier name
+ * @param {string} series - Series name (e.g., "Door")
+ * @param {string} componentName - Component name (e.g., "Door Vertical")
+ * @param {number} profileWidth - Optional width to filter by (e.g., 47 or 85mm)
+ */
+function getComponentThicknessOptions(vendor, series, componentName, profileWidth = null) {
+    const options = [];
+
+    if (window.SUPPLIER_REGISTRY && window.SUPPLIER_REGISTRY[vendor]) {
+        const supplierData = window.SUPPLIER_REGISTRY[vendor];
+        if (supplierData.sections && supplierData.sections[series]) {
+            const sectionGroup = supplierData.sections[series];
+
+            // Look for the specific component
+            if (sectionGroup[componentName] && Array.isArray(sectionGroup[componentName])) {
+                sectionGroup[componentName].forEach(v => {
+                    // Filter by profile width if specified
+                    if (profileWidth !== null && v.w) {
+                        // Allow some tolerance for width matching (±0.5mm)
+                        if (Math.abs(v.w - profileWidth) > 0.5) {
+                            return; // Skip this option if width doesn't match
+                        }
+                    }
+
+                    options.push({
+                        t: v.t,
+                        supplier: vendor,
+                        sectionNo: v.sectionNo,
+                        weight: v.weight,
+                        w: v.w,
+                        h: v.h
+                    });
+                });
+            }
+        }
+    }
+
+    // Sort by thickness
+    options.sort((a, b) => a.t - b.t);
+
+    // Fallback: if no component-specific options, use series defaults
+    if (options.length === 0) {
+        console.log(`⚠️ No specific options for component "${componentName}"${profileWidth ? ` with width ${profileWidth}mm` : ''}, using series defaults`);
+        return getThicknessOptionsForVendor(vendor, series);
+    }
+
+    console.log(`📋 Component "${componentName}"${profileWidth ? ` (${profileWidth}mm)` : ''} has ${options.length} thickness options:`, options.map(o => o.t + 'mm'));
+    return options;
+}
+
+/**
+ * Open the Project Thickness Configuration Modal
+ */
+function openProjectThicknessModal() {
+    const projectSelector = document.getElementById('projectSelector');
+    const selectedProject = projectSelector?.value;
+
+    if (!selectedProject) {
+        showAlert('⚠️ Please select a project first!', 'warning');
+        return;
+    }
+
+    const projectWindows = windows.filter(w => w.projectName === selectedProject);
+    if (projectWindows.length === 0) {
+        showAlert('⚠️ No windows or doors found for this project!', 'warning');
+        return;
+    }
+
+    // Populate bulk apply dropdowns
+    populateBulkThicknessDropdowns(projectWindows);
+
+    // Populate individual items list
+    renderProjectThicknessItems(projectWindows);
+
+    // Show modal
+    const modal = document.getElementById('projectThicknessModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+/**
+ * Populate the bulk thickness selection dropdowns
+ */
+function populateBulkThicknessDropdowns(projectWindows) {
+    const windowSelect = document.getElementById('bulkWindowThickness');
+    const doorSelect = document.getElementById('bulkDoorThickness');
+
+    // Get all unique vendors from project windows
+    const windowVendors = new Set();
+    const doorVendors = new Set();
+
+    projectWindows.forEach(w => {
+        if (w.category === 'Door') {
+            doorVendors.add(w.vendor);
+        } else {
+            windowVendors.add(w.vendor);
+        }
+    });
+
+    // Collect all thickness options across vendors
+    const allWindowThicknesses = new Map();
+    const allDoorThicknesses = new Map();
+
+    windowVendors.forEach(vendor => {
+        projectWindows.filter(w => w.vendor === vendor && w.category !== 'Door').forEach(w => {
+            const options = getThicknessOptionsForVendor(vendor, w.series);
+            options.forEach(opt => {
+                const key = `${opt.t}`;
+                if (!allWindowThicknesses.has(key)) {
+                    allWindowThicknesses.set(key, opt);
+                }
+            });
+        });
+    });
+
+    doorVendors.forEach(vendor => {
+        projectWindows.filter(w => w.vendor === vendor && w.category === 'Door').forEach(w => {
+            const options = getThicknessOptionsForVendor(vendor, w.series);
+            options.forEach(opt => {
+                const key = `${opt.t}`;
+                if (!allDoorThicknesses.has(key)) {
+                    allDoorThicknesses.set(key, opt);
+                }
+            });
+        });
+    });
+
+    // Populate window thickness dropdown
+    if (windowSelect) {
+        windowSelect.innerHTML = '<option value="">-- Select Thickness --</option>';
+        Array.from(allWindowThicknesses.values()).sort((a, b) => a.t - b.t).forEach(opt => {
+            windowSelect.innerHTML += `<option value="${opt.t}">${opt.t}mm (${opt.supplier})</option>`;
+        });
+    }
+
+    // Populate door thickness dropdown
+    if (doorSelect) {
+        doorSelect.innerHTML = '<option value="">-- Select Thickness --</option>';
+        Array.from(allDoorThicknesses.values()).sort((a, b) => a.t - b.t).forEach(opt => {
+            doorSelect.innerHTML += `<option value="${opt.t}">${opt.t}mm (${opt.supplier})</option>`;
+        });
+    }
+}
+
+/**
+ * Render the individual thickness configuration list
+ */
+function renderProjectThicknessItems(projectWindows) {
+    const container = document.getElementById('projectThicknessItemsList');
+    if (!container) return;
+
+    let html = '';
+
+    projectWindows.forEach((w, idx) => {
+        const globalIdx = windows.indexOf(w);
+        const isDoor = w.category === 'Door';
+        const icon = isDoor ? '🚪' : '🪟';
+        const recommended = getRecommendedThickness(w.height, w.width);
+
+        // Check current selection status
+        const hasThickness = w.componentThicknesses && Object.keys(w.componentThicknesses).length > 0;
+        const statusIcon = hasThickness ? '✅' : '⚠️';
+        const statusColor = hasThickness ? '#2e7d32' : '#f57c00';
+
+        // Get current thickness display
+        let currentThicknessDisplay = 'Not Set';
+        if (hasThickness) {
+            const firstComp = Object.values(w.componentThicknesses)[0];
+            currentThicknessDisplay = `${firstComp.t}mm`;
+        }
+
+        html += `
+        <div style="padding: 12px 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; ${hasThickness ? '' : 'background: #fff8e1;'}">
+            <div style="flex: 2;">
+                <div style="font-weight: bold;">${icon} ${w.configId} - ${w.description}</div>
+                <div style="font-size: 0.85em; color: #666;">
+                    ${w.width}" × ${w.height}" | ${w.vendor} | ${w.series}
+                </div>
+                <div style="font-size: 0.8em; color: #3498db; margin-top: 3px;">
+                    💡 Suggested: <strong>${recommended.t}mm</strong> (${recommended.reason})
+                </div>
+            </div>
+            <div style="flex: 1; text-align: center;">
+                <span style="color: ${statusColor}; font-weight: bold;">${statusIcon} ${currentThicknessDisplay}</span>
+            </div>
+            <div style="flex: 1; text-align: right;">
+                <button class="btn btn-warning btn-sm" onclick="openComponentThicknessModal(${globalIdx})">
+                    ✏️ Edit
+                </button>
+            </div>
+        </div>`;
+    });
+
+    container.innerHTML = html || '<p style="padding: 20px; text-align: center; color: #666;">No items found.</p>';
+}
+
+/**
+ * Apply bulk thickness to all windows or doors
+ */
+function applyBulkThickness(type) {
+    const projectSelector = document.getElementById('projectSelector');
+    const selectedProject = projectSelector?.value;
+
+    if (!selectedProject) {
+        showAlert('⚠️ Please select a project first!', 'warning');
+        return;
+    }
+
+    const selectId = type === 'Door' ? 'bulkDoorThickness' : 'bulkWindowThickness';
+    const thicknessSelect = document.getElementById(selectId);
+    const selectedThickness = parseFloat(thicknessSelect?.value);
+
+    if (isNaN(selectedThickness)) {
+        showAlert('⚠️ Please select a thickness first!', 'warning');
+        return;
+    }
+
+    const projectWindows = windows.filter(w =>
+        w.projectName === selectedProject &&
+        (type === 'Door' ? w.category === 'Door' : w.category !== 'Door')
+    );
+
+    if (projectWindows.length === 0) {
+        showAlert(`⚠️ No ${type.toLowerCase()}s found in this project!`, 'warning');
+        return;
+    }
+
+    let updatedCount = 0;
+
+    projectWindows.forEach(w => {
+        const options = getThicknessOptionsForVendor(w.vendor, w.series);
+        const matchingOption = options.find(opt => opt.t === selectedThickness);
+
+        if (matchingOption) {
+            // Apply thickness to all components of this window
+            if (!w.componentThicknesses) w.componentThicknesses = {};
+
+            // Get components from formulas
+            const formulas = seriesFormulas[w.series] || [];
+            formulas.forEach(f => {
+                w.componentThicknesses[f.component] = {
+                    t: selectedThickness,
+                    supplier: w.vendor,
+                    sectionNo: matchingOption.sampleSectionNo,
+                    weight: matchingOption.weight
+                };
+            });
+
+            updatedCount++;
+        }
+    });
+
+    // Refresh the display
+    renderProjectThicknessItems(windows.filter(w => w.projectName === selectedProject));
+
+    autoSaveWindows();
+
+    showAlert(`✅ Applied ${selectedThickness}mm thickness to ${updatedCount} ${type.toLowerCase()}(s)!`);
+}
+
+/**
+ * Close the project thickness modal
+ */
+function closeProjectThicknessModal() {
+    const modal = document.getElementById('projectThicknessModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+/**
+ * Save all thickness selections and close modal
+ */
+function saveAllThicknessSelections() {
+    autoSaveWindows();
+    closeProjectThicknessModal();
+    showAlert('✅ All thickness selections saved!');
+}
+
+/**
+ * Open modal for individual component thickness editing
+ */
+function openComponentThicknessModal(windowIdx) {
+    const w = windows[windowIdx];
+    if (!w) {
+        showAlert('⚠️ Window not found!', 'error');
+        return;
+    }
+
+    document.getElementById('editComponentWindowIdx').value = windowIdx;
+    document.getElementById('editComponentWindowName').textContent = `${w.configId} - ${w.description}`;
+
+    const container = document.getElementById('componentThicknessList');
+    if (!container) return;
+
+    // Get components from formulas
+    const formulas = seriesFormulas[w.series] || [];
+    const recommended = getRecommendedThickness(w.height, w.width);
+
+    let html = `
+    <div class="alert alert-success" style="margin-bottom: 15px; padding: 10px;">
+        💡 <strong>Recommended:</strong> ${recommended.t}mm - ${recommended.reason}
+    </div>`;
+
+    if (formulas.length === 0) {
+        html += '<p style="color: #e67e22;">⚠️ No component formulas found for this series. Please configure series formulas first.</p>';
+    } else {
+        formulas.forEach((f, idx) => {
+            const currentSelection = w.componentThicknesses?.[f.component];
+            const currentValue = currentSelection?.t || '';
+            const currentWidth = currentSelection?.profileWidth || null;
+
+            // Get all options for this component (without width filter) to find unique widths
+            const allOptions = getComponentThicknessOptions(w.vendor, w.series, f.component, null);
+
+            // Extract unique widths
+            const uniqueWidths = [...new Set(allOptions.filter(o => o.w).map(o => o.w))].sort((a, b) => a - b);
+            const hasMultipleWidths = uniqueWidths.length > 1;
+
+            // Get filtered options based on selected width or show all
+            const componentOptions = hasMultipleWidths && currentWidth
+                ? getComponentThicknessOptions(w.vendor, w.series, f.component, currentWidth)
+                : allOptions;
+
+            html += `
+            <div style="padding: 10px; border-bottom: 1px solid #eee;">
+                <div style="display: flex; align-items: center; gap: 15px; margin-bottom: ${hasMultipleWidths ? '8px' : '0'};">
+                    <div style="flex: 1; font-weight: bold;">${f.component}</div>
+                    <div style="flex: 1; color: #666; font-size: 0.9em;">${f.desc}</div>
+                    ${hasMultipleWidths ? `
+                    <div style="flex: 0.7;">
+                        <select id="compWidth_${idx}" class="component-width-select" data-component="${f.component}" data-idx="${idx}" 
+                                style="width: 100%; padding: 6px; background: #fff3cd; border: 1px solid #ffc107;"
+                                onchange="updateThicknessForWidth(${windowIdx}, '${f.component}', ${idx})">
+                            <option value="">📐 Profile Width</option>
+                            ${uniqueWidths.map(w =>
+                `<option value="${w}" ${w === currentWidth ? 'selected' : ''}>${w}mm</option>`
+            ).join('')}
+                        </select>
+                    </div>` : ''}
+                    <div style="flex: 1;">
+                        <select id="compThickness_${idx}" class="component-thickness-select" data-component="${f.component}" style="width: 100%; padding: 6px;">
+                            <option value="">-- Select --</option>
+                            ${componentOptions.map(opt =>
+                `<option value="${opt.t}" data-sectionno="${opt.sectionNo}" data-weight="${opt.weight}" data-width="${opt.w || ''}" ${opt.t === currentValue ? 'selected' : ''} 
+                             ${opt.t === recommended.t ? 'style="font-weight: bold; color: #2e7d32;"' : ''}>
+                                ${opt.t}mm ${opt.t === recommended.t ? '★' : ''} (${opt.sectionNo})
+                            </option>`
+            ).join('')}
+                        </select>
+                    </div>
+                </div>
+            </div>`;
+        });
+    }
+
+    container.innerHTML = html;
+
+    // Show modal
+    const modal = document.getElementById('componentThicknessModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+/**
+ * Update thickness dropdown when profile width is selected
+ */
+function updateThicknessForWidth(windowIdx, componentName, idx) {
+    const w = windows[windowIdx];
+    if (!w) return;
+
+    const widthSelect = document.getElementById(`compWidth_${idx}`);
+    const thicknessSelect = document.getElementById(`compThickness_${idx}`);
+    if (!widthSelect || !thicknessSelect) return;
+
+    const selectedWidth = parseFloat(widthSelect.value) || null;
+
+    // Get filtered thickness options
+    const componentOptions = getComponentThicknessOptions(w.vendor, w.series, componentName, selectedWidth);
+    const recommended = getRecommendedThickness(w.height, w.width);
+
+    // Rebuild thickness dropdown
+    let optionsHtml = '<option value="">-- Select --</option>';
+    componentOptions.forEach(opt => {
+        const isRecommended = opt.t === recommended.t;
+        optionsHtml += `<option value="${opt.t}" data-sectionno="${opt.sectionNo}" data-weight="${opt.weight}" data-width="${opt.w || ''}"
+            ${isRecommended ? 'style="font-weight: bold; color: #2e7d32;"' : ''}>
+            ${opt.t}mm ${isRecommended ? '★' : ''} (${opt.sectionNo})
+        </option>`;
+    });
+
+    thicknessSelect.innerHTML = optionsHtml;
+
+    console.log(`🔄 Updated thickness options for "${componentName}" with width ${selectedWidth}mm: ${componentOptions.length} options`);
+}
+
+/**
+ * Close component thickness modal
+ */
+function closeComponentThicknessModal() {
+    const modal = document.getElementById('componentThicknessModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+/**
+ * Save component thickness edits
+ */
+function saveComponentThicknessEdits() {
+    const windowIdx = parseInt(document.getElementById('editComponentWindowIdx').value);
+    const w = windows[windowIdx];
+
+    if (!w) {
+        showAlert('⚠️ Window not found!', 'error');
+        return;
+    }
+
+    if (!w.componentThicknesses) w.componentThicknesses = {};
+
+    const selects = document.querySelectorAll('.component-thickness-select');
+
+    selects.forEach((select, selectIdx) => {
+        const component = select.dataset.component;
+        const thickness = parseFloat(select.value);
+        const selectedOption = select.options[select.selectedIndex];
+
+        // Get width from width dropdown if it exists
+        const widthSelect = document.querySelector(`.component-width-select[data-component="${component}"]`);
+        const profileWidth = widthSelect ? parseFloat(widthSelect.value) || null : null;
+
+        // Also try to get width from data attribute on thickness option
+        const optionWidth = parseFloat(selectedOption?.dataset?.width) || profileWidth;
+
+        if (!isNaN(thickness) && selectedOption) {
+            // Get values from data attributes on the selected option
+            const sectionNo = selectedOption.dataset?.sectionno || 'N/A';
+            const weight = parseFloat(selectedOption.dataset?.weight) || 0;
+
+            w.componentThicknesses[component] = {
+                t: thickness,
+                supplier: w.vendor,
+                sectionNo: sectionNo,
+                weight: weight,
+                profileWidth: optionWidth
+            };
+        } else {
+            // Clear selection if empty
+            delete w.componentThicknesses[component];
+        }
+    });
+
+    autoSaveWindows();
+    closeComponentThicknessModal();
+
+    // Refresh project thickness list if open
+    const projectSelector = document.getElementById('projectSelector');
+    if (projectSelector?.value) {
+        const projectWindows = windows.filter(w => w.projectName === projectSelector.value);
+        renderProjectThicknessItems(projectWindows);
+    }
+
+    showAlert('✅ Component thickness settings saved!');
 }

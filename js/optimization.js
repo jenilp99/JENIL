@@ -6,20 +6,34 @@
 
 function runOptimization() {
     const selectedProject = document.getElementById('projectSelector').value;
-    const preferredSupplier = document.getElementById('optimizationSupplier')?.value || '';
 
     if (!selectedProject) {
         showAlert('❌ Please select a project first!');
         return;
     }
 
-    console.log(`%c🏭 Optimization started with Preferred Supplier: "${preferredSupplier || 'NONE'}"`, 'background: #007bff; color: white; padding: 2px 6px;');
+    console.log(`%c🏭 Optimization started for project: "${selectedProject}"`, 'background: #007bff; color: white; padding: 2px 6px;');
 
-    const piecesByMaterial = calculatePieces(selectedProject, preferredSupplier);
+    // Collect pre-selected thickness from window configurations
+    const projectWindows = windows.filter(w => w.projectName === selectedProject);
+    const preSelectedThicknesses = {};
+
+    projectWindows.forEach(w => {
+        if (w.componentThicknesses) {
+            Object.entries(w.componentThicknesses).forEach(([component, thicknessData]) => {
+                const key = `${w.series} | ${component}`;
+                if (!preSelectedThicknesses[key]) {
+                    preSelectedThicknesses[key] = thicknessData;
+                }
+            });
+        }
+    });
+
+    console.log('📋 Pre-selected thicknesses from window configs:', preSelectedThicknesses);
+
+    const piecesByMaterial = calculatePieces(selectedProject, '');
 
     if (Object.keys(piecesByMaterial).length === 0) {
-        const projectWindows = windows.filter(w => w.projectName === selectedProject);
-
         if (projectWindows.length === 0) {
             showAlert('❌ No windows found for this project!\n\nPlease add windows to the project first.');
             return;
@@ -71,6 +85,9 @@ function runOptimization() {
     let totalWaste = 0;
     let totalCost = 0;
 
+    // Pre-populate componentSections from pre-selected thicknesses
+    const componentSections = { ...preSelectedThicknesses };
+
     for (const [compoundKey, pieces] of Object.entries(piecesByMaterial)) {
         const [materialSeries, materialName] = compoundKey.split(' | ');
 
@@ -94,11 +111,17 @@ function runOptimization() {
             continue;
         }
 
-        // --- NEW: WEIGHT-BASED COST CALCULATION ---
-        // Derived from aluminumRate and sectional weight if available
+        // --- WEIGHT-BASED COST CALCULATION ---
+        // Priority: pre-selected thickness > selected section in results > stock item weight
         let weight = stockInfo.weight;
-        // Priority: selected section in results > stock item weight
-        if (optimizationResults && optimizationResults.componentSections && optimizationResults.componentSections[compoundKey]) {
+
+        // Check pre-selected thickness first (from window configurations)
+        if (preSelectedThicknesses[compoundKey]) {
+            weight = preSelectedThicknesses[compoundKey].weight;
+            console.log(`✅ Using pre-selected thickness for ${compoundKey}: ${preSelectedThicknesses[compoundKey].t}mm`);
+        }
+        // Fallback to existing results if any
+        else if (optimizationResults && optimizationResults.componentSections && optimizationResults.componentSections[compoundKey]) {
             weight = optimizationResults.componentSections[compoundKey].weight;
         }
 
@@ -135,6 +158,7 @@ function runOptimization() {
     optimizationResults = {
         project: selectedProject,
         results: results,
+        componentSections: componentSections, // Include pre-selected thicknesses
         stats: {
             totalSticks: totalSticks,
             totalUsed: totalUsed.toFixed(2),
