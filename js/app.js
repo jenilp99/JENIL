@@ -1998,6 +1998,12 @@ function openSectionSelectModal(materialKey) {
         componentName = materialKey;
     }
 
+    // Set the material name display
+    const materialNameSpan = document.getElementById('selectMaterialName');
+    if (materialNameSpan) {
+        materialNameSpan.textContent = `${seriesName} - ${componentName}`;
+    }
+
     // Attempt to find relevant sections from Stock Master or Supplier Registry
     // We want to show ALL available options for this type of component
 
@@ -2053,40 +2059,41 @@ function openSectionSelectModal(materialKey) {
         });
     }
 
-    // Populate Modal
-    const listContainer = document.getElementById('sectionSelectionList');
-    if (!listContainer) {
-        console.error('Section selection modal container not found!');
+    // Store options globally for selection callback
+    window.currentSectionOptions = options;
+
+    // Populate the thicknessSelect dropdown
+    const thicknessSelect = document.getElementById('thicknessSelect');
+    if (!thicknessSelect) {
+        console.error('Thickness select dropdown not found!');
         return;
     }
 
-    listContainer.innerHTML = '';
+    thicknessSelect.innerHTML = '<option value="">-- Select Thickness --</option>';
 
     if (options.length === 0) {
-        listContainer.innerHTML = '<p>No specific sections found for this component. Please add them in Supplier Master or Stock.</p>';
+        thicknessSelect.innerHTML += '<option value="" disabled>No options available</option>';
     } else {
-        options.forEach(opt => {
-            const el = document.createElement('div');
-            el.className = 'section-option-card';
-            el.style.border = '1px solid #ddd';
-            el.style.padding = '10px';
-            el.style.marginBottom = '10px';
-            el.style.cursor = 'pointer';
-            el.style.borderRadius = '5px';
-            el.style.display = 'flex';
-            el.style.justifyContent = 'space-between';
-            el.style.alignItems = 'center';
-            el.onclick = () => selectSectionForResult(opt);
-
-            el.innerHTML = `
-                <div>
-                    <strong>${opt.sectionNo}</strong> <span style="color:#666">(${opt.desc})</span><br>
-                    <small>Weight: ${opt.weight} kg | Thickness: ${opt.t} mm</small>
-                </div>
-                <button class="btn btn-sm btn-primary">Select</button>
-            `;
-            listContainer.appendChild(el);
+        options.forEach((opt, idx) => {
+            thicknessSelect.innerHTML += `<option value="${idx}">${opt.supplier} - ${opt.sectionNo} (T: ${opt.t}mm, Wt: ${opt.weight}kg)</option>`;
         });
+    }
+
+    // Clear previous selection details
+    const detailsDiv = document.getElementById('selectedSectionDetails');
+    if (detailsDiv) detailsDiv.style.display = 'none';
+
+    // Populate catalogue list
+    const catalogueList = document.getElementById('catalogueList');
+    if (catalogueList) {
+        let catalogueHtml = '';
+        options.forEach(opt => {
+            catalogueHtml += `<div style="padding: 8px; border-bottom: 1px solid #eee;">
+                <strong>${opt.supplier}</strong> - ${opt.sectionNo}<br>
+                <small>Thickness: ${opt.t}mm | Weight: ${opt.weight}kg</small>
+            </div>`;
+        });
+        catalogueList.innerHTML = catalogueHtml || '<p>No sections in catalogue.</p>';
     }
 
     // Show Modal
@@ -2104,6 +2111,52 @@ function closeSectionSelectModal() {
         document.body.style.overflow = '';
     }
 }
+
+function showSelectedSectionDetails() {
+    const select = document.getElementById('thicknessSelect');
+    const detailsDiv = document.getElementById('selectedSectionDetails');
+    const contentDiv = document.getElementById('sectionDetailsContent');
+
+    if (!select || !detailsDiv || !contentDiv) return;
+
+    const idx = select.value;
+    if (idx === '' || !window.currentSectionOptions) {
+        detailsDiv.style.display = 'none';
+        return;
+    }
+
+    const opt = window.currentSectionOptions[parseInt(idx)];
+    if (!opt) {
+        detailsDiv.style.display = 'none';
+        return;
+    }
+
+    contentDiv.innerHTML = `
+        <p><strong>Supplier:</strong> ${opt.supplier}</p>
+        <p><strong>Section No:</strong> ${opt.sectionNo}</p>
+        <p><strong>Thickness:</strong> ${opt.t} mm</p>
+        <p><strong>Weight:</strong> ${opt.weight} kg/12ft</p>
+    `;
+    detailsDiv.style.display = 'block';
+}
+
+function confirmSectionSelection() {
+    const select = document.getElementById('thicknessSelect');
+    if (!select || select.value === '') {
+        showAlert('⚠️ Please select a thickness option first.', 'warning');
+        return;
+    }
+
+    const idx = parseInt(select.value);
+    if (!window.currentSectionOptions || !window.currentSectionOptions[idx]) {
+        showAlert('⚠️ Invalid selection. Please try again.', 'error');
+        return;
+    }
+
+    const opt = window.currentSectionOptions[idx];
+    selectSectionForResult(opt);
+}
+
 
 function selectSectionForResult(sectionData) {
     if (!currentSelectionTarget || !optimizationResults) return;
