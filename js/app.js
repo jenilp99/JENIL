@@ -2073,10 +2073,13 @@ function openSectionSelectModal(materialKey) {
 
     if (options.length === 0) {
         thicknessSelect.innerHTML += '<option value="" disabled>No options available</option>';
+        console.log('%c⚠️ No thickness options available for this component', 'color: orange;');
     } else {
         options.forEach((opt, idx) => {
             thicknessSelect.innerHTML += `<option value="${idx}">${opt.supplier} - ${opt.sectionNo} (T: ${opt.t}mm, Wt: ${opt.weight}kg)</option>`;
         });
+        console.log(`%c✅ Populated ${options.length} thickness options in dropdown`, 'color: green;');
+        console.log('Dropdown options count:', thicknessSelect.options.length);
     }
 
     // Clear previous selection details
