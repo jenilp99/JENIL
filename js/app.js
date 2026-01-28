@@ -2267,3 +2267,15 @@ function syncStockWithRegistry(showDebug) {
         alert(debugReport);
     }
 }
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+function formatInchesToFeet(totalInches) {
+    if (!totalInches || totalInches <= 0) return '0\'';
+    const feet = Math.floor(totalInches / 12);
+    const inches = Math.round(totalInches % 12);
+    if (inches === 0) return `${feet}'`;
+    return `${feet}' - ${inches}"`;
+}
