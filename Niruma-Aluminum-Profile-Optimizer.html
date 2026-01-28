@@ -1045,6 +1045,31 @@
         </div>
     </div>
 
+    <!-- Rename Project Modal -->
+    <div id="renameProjectModal" class="modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>✏️ Rename Project</h3>
+                <button class="close-btn" onclick="closeRenameProjectModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px;">
+                    Renaming project: <strong id="renameProjectOldName"></strong>
+                </p>
+                <div class="form-group">
+                    <label for="renameProjectNewName">New Project Name:</label>
+                    <input type="text" id="renameProjectNewName" class="form-control"
+                        style="width: 100%; padding: 10px; font-size: 14px; border: 2px solid #3498db; border-radius: 5px;"
+                        placeholder="Enter new project name">
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button class="btn btn-secondary" onclick="closeRenameProjectModal()">Cancel</button>
+                <button class="btn btn-success" onclick="confirmRenameProject()">✓ Rename</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Window Modal -->
     <div id="editWindowModal" class="modal">
         <div class="modal-content">

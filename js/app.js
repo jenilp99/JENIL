@@ -928,47 +928,90 @@ function displayWindows() {
         return;
     }
 
-    // Separate Windows and Doors
-    const windowItems = windows.filter(w => w.category !== 'Door');
-    const doorItems = windows.filter(w => w.category === 'Door');
-
+    // Get unique projects and group items
+    const projects = getUniqueProjects();
     let html = '';
 
-    // Windows Section
-    if (windowItems.length > 0) {
-        html += `<details class="list-group-section" open>
-            <summary class="list-group-header">
-                <span>🪟 Windows (${windowItems.length})</span>
-                <span class="toggle-icon">▼</span>
-            </summary>
-            <div class="list-group-content">`;
+    projects.forEach(projectName => {
+        const projectItems = windows.filter(w => (w.projectName || 'Unassigned') === projectName);
+        const windowItems = projectItems.filter(w => w.category !== 'Door');
+        const doorItems = projectItems.filter(w => w.category === 'Door');
 
-        windowItems.forEach((w, _) => {
-            const idx = windows.indexOf(w);
-            html += renderWindowCard(w, idx);
-        });
+        html += `<details class="project-group-section">
+            <summary class="project-group-header">
+                <div class="project-header-content">
+                    <span class="project-icon">📁</span>
+                    <span class="project-name">${projectName}</span>
+                    <span class="project-count">(${projectItems.length} items)</span>
+                </div>
+                <div class="project-actions">
+                    <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); openRenameProjectModal('${escapeHtml(projectName)}')" title="Rename Project">✏️</button>
+                    <button class="btn btn-sm btn-outline btn-danger-outline" onclick="event.stopPropagation(); deleteProject('${escapeHtml(projectName)}')" title="Delete Project">🗑️</button>
+                    <span class="toggle-icon">▼</span>
+                </div>
+            </summary>
+            <div class="project-group-content">`;
+
+        // Windows within this project
+        if (windowItems.length > 0) {
+            html += `<details class="list-group-section" open>
+                <summary class="list-group-header">
+                    <span>🪟 Windows (${windowItems.length})</span>
+                    <span class="toggle-icon">▼</span>
+                </summary>
+                <div class="list-group-content">`;
+
+            windowItems.forEach(w => {
+                const idx = windows.indexOf(w);
+                html += renderWindowCard(w, idx);
+            });
+
+            html += `</div></details>`;
+        }
+
+        // Doors within this project
+        if (doorItems.length > 0) {
+            html += `<details class="list-group-section" open>
+                <summary class="list-group-header">
+                    <span>🚪 Doors (${doorItems.length})</span>
+                    <span class="toggle-icon">▼</span>
+                </summary>
+                <div class="list-group-content">`;
+
+            doorItems.forEach(w => {
+                const idx = windows.indexOf(w);
+                html += renderWindowCard(w, idx);
+            });
+
+            html += `</div></details>`;
+        }
 
         html += `</div></details>`;
-    }
-
-    // Doors Section
-    if (doorItems.length > 0) {
-        html += `<details class="list-group-section" open>
-            <summary class="list-group-header">
-                <span>🚪 Doors (${doorItems.length})</span>
-                <span class="toggle-icon">▼</span>
-            </summary>
-            <div class="list-group-content">`;
-
-        doorItems.forEach((w, _) => {
-            const idx = windows.indexOf(w);
-            html += renderWindowCard(w, idx);
-        });
-
-        html += `</div></details>`;
-    }
+    });
 
     container.innerHTML = html;
+}
+
+// Helper function to get unique project names
+function getUniqueProjects() {
+    const projectSet = new Set();
+    windows.forEach(w => {
+        projectSet.add(w.projectName || 'Unassigned');
+    });
+    // Sort with 'Unassigned' always at the end
+    const projects = Array.from(projectSet).sort((a, b) => {
+        if (a === 'Unassigned') return 1;
+        if (b === 'Unassigned') return -1;
+        return a.localeCompare(b);
+    });
+    return projects;
+}
+
+// Helper to escape HTML for safe insertion
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML.replace(/'/g, "\\'");
 }
 
 // Helper function to render a window/door card
@@ -993,6 +1036,98 @@ function renderWindowCard(w, idx) {
             </div>
         </div>
     </div>`;
+}
+
+// ============================================================================
+// PROJECT MANAGEMENT FUNCTIONS
+// ============================================================================
+
+let currentProjectToRename = null;
+
+function openRenameProjectModal(projectName) {
+    currentProjectToRename = projectName;
+    document.getElementById('renameProjectOldName').textContent = projectName;
+    document.getElementById('renameProjectNewName').value = projectName;
+    const modal = document.getElementById('renameProjectModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        document.getElementById('renameProjectNewName').focus();
+        document.getElementById('renameProjectNewName').select();
+    }
+}
+
+function closeRenameProjectModal() {
+    const modal = document.getElementById('renameProjectModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    currentProjectToRename = null;
+}
+
+function confirmRenameProject() {
+    const newName = document.getElementById('renameProjectNewName').value.trim();
+
+    if (!newName) {
+        showAlert('⚠️ Please enter a valid project name.', 'warning');
+        return;
+    }
+
+    if (newName === currentProjectToRename) {
+        closeRenameProjectModal();
+        return;
+    }
+
+    // Check if new name already exists
+    const existingProjects = getUniqueProjects();
+    if (existingProjects.includes(newName)) {
+        showAlert('⚠️ A project with this name already exists. Please choose a different name.', 'warning');
+        return;
+    }
+
+    // Update all windows with this project name
+    let count = 0;
+    windows.forEach(w => {
+        if ((w.projectName || 'Unassigned') === currentProjectToRename) {
+            w.projectName = newName;
+            count++;
+        }
+    });
+
+    autoSaveWindows();
+    closeRenameProjectModal();
+    displayWindows();
+    refreshProjectSelector();
+
+    showAlert(`✅ Project renamed! Updated ${count} item(s) from "${currentProjectToRename}" to "${newName}".`);
+}
+
+function deleteProject(projectName) {
+    if (projectName === 'Unassigned') {
+        showAlert('⚠️ Cannot delete the "Unassigned" project.', 'warning');
+        return;
+    }
+
+    const projectItems = windows.filter(w => (w.projectName || 'Unassigned') === projectName);
+
+    showConfirm(
+        `🗑️ Delete Project "${projectName}"?\n\nThis will move ${projectItems.length} item(s) to "Unassigned".`,
+        () => {
+            // Move all items to Unassigned
+            windows.forEach(w => {
+                if ((w.projectName || 'Unassigned') === projectName) {
+                    w.projectName = 'Unassigned';
+                }
+            });
+
+            autoSaveWindows();
+            displayWindows();
+            refreshProjectSelector();
+
+            showAlert(`✅ Project "${projectName}" deleted. ${projectItems.length} item(s) moved to "Unassigned".`);
+        }
+    );
 }
 
 function editWindow(idx) {

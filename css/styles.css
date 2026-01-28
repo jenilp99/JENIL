@@ -1312,3 +1312,91 @@ table tr:hover {
     border-color: #e67e22;
     color: #e67e22;
 }
+
+/* Project Group Sections */
+.project-group-section {
+    margin-bottom: 12px;
+    border: 1px solid #3498db;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+}
+
+.project-group-header {
+    padding: 10px 15px;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: white;
+    list-style: none;
+}
+
+.project-group-header::-webkit-details-marker {
+    display: none;
+}
+
+.project-header-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.project-icon {
+    font-size: 16px;
+}
+
+.project-name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.project-count {
+    font-size: 12px;
+    opacity: 0.85;
+    font-weight: 400;
+}
+
+.project-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.project-actions .btn-outline {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: white;
+    padding: 4px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.project-actions .btn-outline:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: white;
+}
+
+.project-actions .btn-danger-outline:hover {
+    background: rgba(231, 76, 60, 0.8);
+    border-color: #e74c3c;
+}
+
+.project-group-section[open]>.project-group-header .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.project-group-content {
+    padding: 10px;
+    background: #f8f9fa;
+}
+
+/* Nested list groups within projects */
+.project-group-content .list-group-section {
+    margin-bottom: 8px;
+    border: 1px solid #e0e0e0;
+}
