@@ -216,8 +216,10 @@ function importProject() {
                 unitMode = projectData.unitMode || 'inch';
                 
                 document.getElementById('kerfGlobal').value = kerf;
-                document.getElementById('unitToggle').checked = (unitMode === 'mm');
-                
+                const allUnitToggles = document.querySelectorAll('input[id*="unitToggle"]');
+                allUnitToggles.forEach(toggle => {
+                    if (toggle) toggle.checked = (unitMode === 'mm');
+                });                
                 // Save to local storage
                 autoSaveWindows();
                 autoSaveFormulas();
