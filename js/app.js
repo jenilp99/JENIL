@@ -588,8 +588,8 @@ function switchAddMode(mode) {
 function addDoor(event) {
     event.preventDefault();
 
-    const widthRaw = parseFloat(document.getElementById('doorWidth').value);
-    const heightRaw = parseFloat(document.getElementById('doorHeight').value);
+    const widthRaw = parseDimension(document.getElementById('doorWidth').value);
+    const heightRaw = parseDimension(document.getElementById('doorHeight').value);
     const bottomProfile = document.getElementById('doorBottomProfileNew').value;
 
     // Calculate bottom width based on profile
@@ -795,6 +795,28 @@ function updateUnitLabels() {
 // UNIT CONVERSION
 // ============================================================================
 
+function parseDimension(input) {
+    if (!input) return 0;
+    if (typeof input === 'number') return input;
+    let str = input.toString().trim().replace(',', '.');
+    if (str.includes('/')) {
+        let whole = 0;
+        let fractionStr = str;
+        let parts = str.split(/[\s\-_]+/);
+        if (parts.length > 1) {
+            whole = parseFloat(parts[0]) || 0;
+            fractionStr = parts[1];
+        }
+        let fracParts = fractionStr.split('/');
+        if (fracParts.length === 2) {
+            let num = parseFloat(fracParts[0]) || 0;
+            let den = parseFloat(fracParts[1]) || 1;
+            if (den !== 0) return (whole + (num / den));
+        }
+    }
+    return parseFloat(str) || 0;
+}
+
 function convertToInches(value) {
     return unitMode === 'mm' ? value * MM_TO_INCH : value;
 }
@@ -832,8 +854,8 @@ function addWindow(event) {
     const category = document.getElementById('category')?.value || 'Window';
 
     // Get values
-    const widthRaw = parseFloat(document.getElementById('width').value);
-    const heightRaw = parseFloat(document.getElementById('height').value);
+    const widthRaw = parseDimension(document.getElementById('width').value);
+    const heightRaw = parseDimension(document.getElementById('height').value);
     const tracks = parseInt(document.getElementById('tracks')?.value || '0', 10);
     const shutters = parseInt(document.getElementById('shutters')?.value || '1', 10);
 
@@ -1259,8 +1281,8 @@ function saveWindowEdit(event) {
     event.preventDefault();
     const idx = parseInt(document.getElementById('editWindowIndex').value);
 
-    const widthRaw = parseFloat(document.getElementById('editWidth').value);
-    const heightRaw = parseFloat(document.getElementById('editHeight').value);
+    const widthRaw = parseDimension(document.getElementById('editWidth').value);
+    const heightRaw = parseDimension(document.getElementById('editHeight').value);
     const shutters = parseInt(document.getElementById('editShutters').value, 10);
 
     const isDoor = (document.getElementById('editSeries').value === 'Door');
