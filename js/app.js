@@ -51,7 +51,13 @@ let unitMode = 'inch';
 let ratesConfig = {
     glass: {
         'toughened_5mm': 85,
-        'non_toughened_5mm': 65
+        'non_toughened_5mm': 65,
+        'toughened_6mm': 110,
+        'non_toughened_6mm': 80,
+        'toughened_8mm': 145,
+        'non_toughened_8mm': 105,
+        'DGU_toughened_5mm': 220,
+        'DGU_non_toughened_5mm': 180
     },
     powderCoating: {
         '3/4" Handle': 27.66,
@@ -82,7 +88,16 @@ let ratesConfig = {
         'Single Track Top': 33.0,
         'Single Track Bottom': 36.0,
         'Vitco 19mm': 35.0,
-        'Vitco 25mm': 45.0
+        'Vitco 25mm': 45.0,
+        'C Channel 25mm': 28.0,
+        'C Channel 50mm': 42.0,
+        'Door Vertical': 55.0,
+        'Door Top': 50.0,
+        'Door Bottom': 50.0,
+        'Door Middle Single': 45.0,
+        'Door Middle Double': 50.0,
+        'Door Leg Partition': 60.0,
+        'Door Glazing Clip': 25.0
     },
     global: {
         'glassOffset': 1.5,
@@ -102,6 +117,18 @@ function initializeDefaults() {
     if (typeof initializeSupplierMaster === 'function') {
         initializeSupplierMaster();
     }
+
+    // 1a. Restore saved ratesConfig from localStorage (custom items, edited rates)
+    try {
+        const savedRates = localStorage.getItem('ratesConfig');
+        if (savedRates) {
+            const parsed = JSON.parse(savedRates);
+            // Merge: keep defaults for missing keys, override with saved
+            if (parsed.glass)         Object.assign(ratesConfig.glass, parsed.glass);
+            if (parsed.global)        Object.assign(ratesConfig.global, parsed.global);
+            if (parsed.powderCoating) Object.assign(ratesConfig.powderCoating, parsed.powderCoating);
+        }
+    } catch (e) { console.warn('Could not restore ratesConfig:', e); }
 
     // 1b. Load Config ID counters from localStorage
     const savedWindowCounter = localStorage.getItem('windowCounter');
@@ -195,27 +222,41 @@ function refreshRatesDisplay() {
     const pcContainer = document.getElementById('powderCoatingRatesList');
     if (!pcContainer) return;
 
-    // Grouping powder coating rates by series
+    // Custom user categories saved in localStorage
+    const customGroups = JSON.parse(localStorage.getItem('pcCustomGroups') || '[]');
+
     const groups = {
         '3/4" Series': [],
         '1" Series': [],
         'Domal Series': [],
+        'Door Series': [],
+        'C Channel & Misc': [],
         'Others': []
     };
+    customGroups.forEach(g => { if (!groups[g]) groups[g] = []; });
 
-    // Get all unique components across all series to show rate inputs
+    const classify = (comp) => {
+        if (comp.startsWith('3/4"')) return '3/4" Series';
+        if (comp.startsWith('1"')) return '1" Series';
+        if (comp.startsWith('Domal') || /Domal/i.test(comp)) return 'Domal Series';
+        if (/^Door\s/i.test(comp)) return 'Door Series';
+        if (/C\s*Channel|Misc/i.test(comp)) return 'C Channel & Misc';
+        for (const cg of customGroups) {
+            if (comp.startsWith(cg)) return cg;
+        }
+        return 'Others';
+    };
+
     Object.entries(ratesConfig.powderCoating).forEach(([comp, rate]) => {
-        if (comp.startsWith('3/4"')) groups['3/4" Series'].push({ comp, rate });
-        else if (comp.startsWith('1"')) groups['1" Series'].push({ comp, rate });
-        else if (comp.startsWith('Domal')) groups['Domal Series'].push({ comp, rate });
-        else groups['Others'].push({ comp, rate });
+        const g = classify(comp);
+        (groups[g] = groups[g] || []).push({ comp, rate });
     });
 
     let html = '';
     Object.entries(groups).forEach(([groupName, items]) => {
-        if (items.length === 0) return;
+        const safeId = 'pcg_' + groupName.replace(/[^a-z0-9]/gi, '_');
         html += `
-            <details class="rate-group" style="margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; background: white;">
+            <details class="rate-group" style="margin-bottom: 10px; border: 1px solid #ddd; border-radius: 8px; background: white;" ${items.length > 0 ? '' : ''}>
                 <summary style="padding: 12px 15px; cursor: pointer; font-weight: bold; background: #f8f9fa; border-radius: 8px; list-style: none; display: flex; justify-content: space-between; align-items: center;">
                     <span>✨ ${groupName}</span>
                     <span style="font-size: 0.8em; color: #666;">(${items.length} items)</span>
@@ -224,16 +265,35 @@ function refreshRatesDisplay() {
         `;
         items.forEach(item => {
             html += `
-                <div class="form-group" style="background: #fdfdfd; padding: 10px; border: 1px solid #f0f0f0; border-radius: 6px;">
-                    <label style="font-size: 0.85em; display: block; margin-bottom: 6px; color: #444; font-weight: 500;">${item.comp}</label>
+                <div class="form-group" style="background: #fdfdfd; padding: 10px; border: 1px solid #f0f0f0; border-radius: 6px; position:relative;">
+                    <button type="button" title="Remove" onclick="removePowderCoatingItem('${item.comp.replace(/'/g, "\\'")}')" style="position:absolute; top:4px; right:4px; background:transparent; border:none; color:#c00; font-size:14px; cursor:pointer;">✕</button>
+                    <label style="font-size: 0.85em; display: block; margin-bottom: 6px; color: #444; font-weight: 500; padding-right:16px;">${item.comp}</label>
                     <div style="position: relative;">
                         <span style="position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: #888; font-size: 0.9em;">₹</span>
                         <input type="number" step="0.01" class="pc-rate-input" data-component="${item.comp}" value="${item.rate}" style="width: 100%; padding: 6px 6px 6px 20px; border: 1px solid #ddd; border-radius: 4px;">
                     </div>
                 </div>`;
         });
+        // Add-item form for this group
+        html += `
+            <div style="grid-column: 1/-1; display:flex; gap:8px; padding-top:8px; border-top:1px dashed #eee; margin-top:6px;">
+                <input type="text" id="${safeId}_name" placeholder="New item name (e.g. C Channel 25mm)" style="flex:2; padding:6px 8px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                <input type="number" id="${safeId}_rate" placeholder="₹ / ft" step="0.01" style="flex:1; padding:6px 8px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                <button type="button" class="btn btn-primary" onclick="addPowderCoatingItem('${groupName.replace(/'/g, "\\'")}', '${safeId}')" style="padding:6px 12px; font-size:12px;">+ Add</button>
+            </div>`;
         html += `</div></details>`;
     });
+
+    // Add-category form
+    html += `
+        <div style="margin-top:14px; padding:12px; background:#fffbe6; border:1px dashed #d6c069; border-radius:8px;">
+            <strong style="font-size:13px;">➕ Add New Product Category</strong>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <input type="text" id="pcNewCategory" placeholder="e.g. Sliding Door, Curtain Wall" style="flex:1; padding:6px 8px; border:1px solid #ddd; border-radius:4px;">
+                <button type="button" class="btn btn-success" onclick="addPowderCoatingCategory()" style="padding:6px 14px; font-size:13px;">Create Category</button>
+            </div>
+            <small style="color:#806000;">Use the category name as the prefix when naming items so they auto-group (e.g. "Sliding Door Vertical").</small>
+        </div>`;
 
     pcContainer.innerHTML = html;
 
@@ -244,6 +304,62 @@ function refreshRatesDisplay() {
         document.getElementById('glassOffset').value = ratesConfig.global['glassOffset'];
         document.getElementById('rateRubber').value = ratesConfig.global['rubberRate'];
     }
+}
+
+function addPowderCoatingItem(groupName, safeId) {
+    const nameEl = document.getElementById(safeId + '_name');
+    const rateEl = document.getElementById(safeId + '_rate');
+    let name = (nameEl?.value || '').trim();
+    const rate = parseFloat(rateEl?.value);
+    if (!name) { showAlert('⚠️ Please enter an item name'); return; }
+    if (isNaN(rate) || rate < 0) { showAlert('⚠️ Please enter a valid rate'); return; }
+
+    // Auto-prefix with category if not already prefixed (so it groups correctly)
+    const prefixMap = {
+        '3/4" Series': '3/4" ',
+        '1" Series': '1" ',
+        'Domal Series': 'Domal ',
+        'Door Series': 'Door ',
+        'C Channel & Misc': '',
+        'Others': ''
+    };
+    const prefix = prefixMap[groupName];
+    if (prefix && !name.toLowerCase().startsWith(prefix.toLowerCase().trim())) {
+        name = prefix + name;
+    } else if (prefix === undefined) {
+        // Custom category — prefix with the category name
+        if (!name.toLowerCase().startsWith(groupName.toLowerCase())) {
+            name = `${groupName} ${name}`;
+        }
+    }
+
+    if (ratesConfig.powderCoating[name] != null) {
+        showAlert(`⚠️ "${name}" already exists`);
+        return;
+    }
+    ratesConfig.powderCoating[name] = rate;
+    autoSaveRates();
+    refreshRatesDisplay();
+    showAlert(`✅ Added "${name}" @ ₹${rate}/ft`);
+}
+
+function removePowderCoatingItem(comp) {
+    if (!confirm(`Remove "${comp}" from powder coating rates?`)) return;
+    delete ratesConfig.powderCoating[comp];
+    autoSaveRates();
+    refreshRatesDisplay();
+}
+
+function addPowderCoatingCategory() {
+    const el = document.getElementById('pcNewCategory');
+    const name = (el?.value || '').trim();
+    if (!name) { showAlert('⚠️ Enter a category name'); return; }
+    const customGroups = JSON.parse(localStorage.getItem('pcCustomGroups') || '[]');
+    if (customGroups.includes(name)) { showAlert('⚠️ Category already exists'); return; }
+    customGroups.push(name);
+    localStorage.setItem('pcCustomGroups', JSON.stringify(customGroups));
+    refreshRatesDisplay();
+    showAlert(`✅ Category "${name}" created. Add items using the form inside it.`);
 }
 
 function saveAllRates() {
@@ -882,6 +998,7 @@ function addWindow(event) {
         description: document.getElementById('description').value,
         glassUnit: document.getElementById('glassUnit')?.value || 'SGU',
         glassThickness: document.getElementById('glassThickness')?.value || '5',
+        glassToughened: document.getElementById('glassToughened')?.checked || false,
         cornerJoint: document.getElementById('cornerJoint')?.value || '90'
     };
 
@@ -1187,6 +1304,9 @@ function editWindow(idx) {
         updateEditGlassThicknessOptions();
         document.getElementById('editGlassThickness').value = win.glassThickness || '5';
     }
+    if (document.getElementById('editGlassToughened')) {
+        document.getElementById('editGlassToughened').checked = !!win.glassToughened;
+    }
     if (document.getElementById('editCornerJoint')) document.getElementById('editCornerJoint').value = win.cornerJoint || '90';
     if (document.getElementById('editInterlockType')) document.getElementById('editInterlockType').value = win.interlockType || 'slim';
 
@@ -1303,6 +1423,7 @@ function saveWindowEdit(event) {
         description: document.getElementById('editDescription').value,
         glassUnit: document.getElementById('editGlassUnit')?.value || 'SGU',
         glassThickness: document.getElementById('editGlassThickness')?.value || '5',
+        glassToughened: document.getElementById('editGlassToughened')?.checked || false,
         cornerJoint: document.getElementById('editCornerJoint')?.value || '90',
         interlockType: document.getElementById('editInterlockType')?.value || 'slim',
         mosquitoType: document.getElementById('editMosquitoType')?.value || 'V-2513',
