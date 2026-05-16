@@ -1,25 +1,8 @@
-// Initialize quotation counter in localStorage
-function initQuotationCounter() {
-    if (!localStorage.getItem('quotationCounter')) {
-        localStorage.setItem('quotationCounter', '0');
-    }
-}
-
-// Get next quotation number
 function getNextQuotationNumber() {
-    initQuotationCounter();
-    let counter = parseInt(localStorage.getItem('quotationCounter')) + 1;
-    localStorage.setItem('quotationCounter', counter.toString());
+    let lastNo = parseInt(localStorage.getItem('lastQuoteNo') || '1000') + 1;
+    localStorage.setItem('lastQuoteNo', lastNo.toString());
     const year = new Date().getFullYear();
-    return `TRM/QT/${year}/${String(counter).padStart(5, '0')}`;
-}
-
-// Helper to get next quotation number
-function getNextQuotationNumber() {
-    let lastNo = localStorage.getItem('lastQuoteNo') || 1000;
-    lastNo = parseInt(lastNo) + 1;
-    localStorage.setItem('lastQuoteNo', lastNo);
-    return `QT-${lastNo}`;
+    return `NRM/QT/${year}/${String(lastNo).padStart(4, '0')}`;
 }
 
 function generateQuotation() {
@@ -59,15 +42,39 @@ function generateQuotation() {
 }
 
 function showQuotationInputDialog(projectWindows, selectedProject) {
-    const { jsPDF } = window.jspdf;
+    document.getElementById('qtModalQuoteNo').value = getNextQuotationNumber();
+    document.getElementById('qtModalClientName').value =
+        (projectSettings && projectSettings.clientName) ? projectSettings.clientName : '';
+    document.getElementById('qtModalClientAddress').value = '';
+    document.getElementById('qtModalDeliveryAddress').value = '';
+    document.getElementById('qtModalGST').value = '18';
+    document.getElementById('qtModalLabor').value = '0';
+    document.getElementById('qtModalLeadTime').value = '21 Working Days';
+    document.getElementById('qtModalUnit').value = 'mm';
 
-    const userQuoteNo = prompt('Enter Quotation Number (leave blank for auto-generated):', '');
-    const quoteNo = (userQuoteNo && userQuoteNo.trim()) ? userQuoteNo.trim() : getNextQuotationNumber();
+    window._qtWindows = projectWindows;
+    window._qtProject = selectedProject;
 
-    const requestingDept = prompt('Enter Requesting Department:', 'Maintenance Department');
-    const dept = (requestingDept && requestingDept.trim()) ? requestingDept.trim() : 'Maintenance Department';
+    document.getElementById('quotationInputModal').classList.add('active');
+}
 
-    generateQuotationPDF(projectWindows, selectedProject, quoteNo, dept);
+function closeQuotationModal() {
+    document.getElementById('quotationInputModal').classList.remove('active');
+}
+
+function confirmGenerateQuotation() {
+    const formData = {
+        quoteNo:         document.getElementById('qtModalQuoteNo').value.trim() || getNextQuotationNumber(),
+        clientName:      document.getElementById('qtModalClientName').value.trim() || '',
+        clientAddress:   document.getElementById('qtModalClientAddress').value.trim(),
+        deliveryAddress: document.getElementById('qtModalDeliveryAddress').value.trim(),
+        gstPct:          parseFloat(document.getElementById('qtModalGST').value) || 18,
+        laborPerSqft:    parseFloat(document.getElementById('qtModalLabor').value) || 0,
+        leadTime:        document.getElementById('qtModalLeadTime').value.trim() || '21 Working Days',
+        displayUnit:     document.getElementById('qtModalUnit').value || 'mm',
+    };
+    closeQuotationModal();
+    generateQuotationPDF(window._qtWindows, window._qtProject, formData);
 }
 
 // PDF EXPORT FUNCTIONS (STUBS/IMPLEMENTATIONS)
@@ -322,7 +329,7 @@ function showReportPreview(type) {
 
     if (type === 'quotation') {
         html = generateQuotationHTML(projectWindows, selectedProject);
-        document.getElementById('downloadExportBtn').onclick = () => generateQuotationPDF(projectWindows, selectedProject, getNextQuotationNumber(), 'Maintenance');
+        document.getElementById('downloadExportBtn').onclick = () => showQuotationInputDialog(projectWindows, selectedProject);
     } else if (type === 'purchase_material') {
         html = generateMaterialPurchaseHTML(projectWindows, selectedProject);
         document.getElementById('downloadExportBtn').onclick = () => generateMaterialPurchaseListPDF(projectWindows, selectedProject);
@@ -516,272 +523,843 @@ function _continueGeneratePurchaseList(projectWindows, selectedProject) {
     showAlert(`✅ Purchase List generated successfully!\n\nProject: ${selectedProject}\nWindows: ${projectWindows.length}\nHardware Cost: Rs. ${hardwareTotalCost.toFixed(0)}`);
 }
 
-function generateQuotationPDF(projectWindows, selectedProject, quoteNo, requestingDept) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+// ============================================================================
+// SVG → PNG HELPER (module-level, reused by quotation & other exports)
+// ============================================================================
 
-    const quoteDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    const validUntil = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+function svgToPng(svgString, width, height) {
+    return new Promise((resolve, reject) => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const img = new Image();
+        img.onload = () => {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, width, height);
+            ctx.drawImage(img, 0, 0, width, height);
+            URL.revokeObjectURL(url);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+        img.src = url;
+    });
+}
 
-    let currentY = 20;
+// ============================================================================
+// COST HELPER — all cost components for one window, all in inches.
+// Wastage is proportionally included via shareRatio × stockLen logic.
+// ============================================================================
 
-    // ========== HEADER ==========
-    doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(41, 128, 185);
-    doc.text('NIRUMA', 14, currentY);
+function calculateWindowTotalCost(win, opts) {
+    opts = opts || {};
+    const laborPerSqft = parseFloat(opts.laborPerSqft) || 0;
 
-    currentY += 8;
-    doc.setFontSize(14);
-    doc.setTextColor(52, 73, 94);
-    doc.text('ALUMINUM SECTIONS', 14, currentY);
+    // Glass
+    const glass = calculateGlassDimensions(win);
+    const gi = resolveGlassInfo(win);
+    let glassRate = 0;
+    if (glass && gi.rateKey) {
+        glassRate = ratesConfig.glass[gi.rateKey];
+        if (glassRate == null) glassRate = ratesConfig.glass[gi.fallbackKey] || 0;
+    }
+    const glassCost = glass ? glass.area * glass.qty * glassRate : 0;
 
-    currentY += 5;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(127, 140, 141);
-    doc.text('Premium Aluminum Profiles & Fabrication', 14, currentY);
+    // Hardware
+    const hardware = calculateWindowHardware(win, optimizationResults);
+    const hardwareCost = hardware.reduce((s, h) => s + h.total, 0);
 
-    // Right side
-    doc.setFontSize(9);
-    doc.setTextColor(52, 73, 94);
-    doc.text('Aluminium Section', 200, 20, { align: 'right' });
-    doc.text('Adalaj, Gandhinagar, Gujarat', 200, 25, { align: 'right' });
-    doc.text('Phone: +91 90999 99887', 200, 30, { align: 'right' });
+    // Profile weight + powder coating from optimization results.
+    // purchased portion = ratio × stockLen (includes proportional wastage)
+    // actual piece portion = piece.length (no wastage)
+    let powderCoatingCost = 0;
+    let purchasedWeightKg = 0;   // includes wastage share
+    let pieceWeightKg = 0;       // net pieces only
 
-    currentY = 45;
-    doc.setDrawColor(52, 152, 219);
-    doc.setLineWidth(0.5);
-    doc.line(14, currentY, 196, currentY);
+    if (optimizationResults && optimizationResults.results) {
+        for (const [key, data] of Object.entries(optimizationResults.results)) {
+            let purchasedLen = 0;
+            const parts = key.split('|').map(s => s.trim());
+            const series = parts[0] || '';
+            const compName = parts[1] || key;
+            const pcRate = lookupPowderCoatingRate(series, compName);
+            const sec = optimizationResults.componentSections?.[key];
+            const wtPerInch = (sec && sec.weight) ? (sec.weight / 144) : 0; // weight per inch (kg)
 
-    // ========== QUOTATION HEADER ==========
-    currentY += 8;
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(41, 128, 185);
-    doc.text('INTERNAL QUOTATION', 14, currentY);
-
-    currentY += 10;
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(52, 73, 94);
-
-    doc.text(`Quotation No: ${quoteNo}`, 14, currentY);
-    doc.text(`Date: ${quoteDate}`, 14, currentY + 5);
-    doc.text(`Valid Until: ${validUntil}`, 14, currentY + 10);
-    doc.text(`Project: ${selectedProject}`, 14, currentY + 15);
-
-    doc.text('Requesting Department:', 120, currentY);
-    doc.text(requestingDept, 120, currentY + 5);
-    doc.text('Contact: [Department Head]', 120, currentY + 10);
-
-    currentY += 25;
-
-    // ========== WINDOW DETAILS WITH DIAGRAMS ==========
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(46, 125, 50);
-    doc.text('Window Configuration Details', 14, currentY);
-
-    currentY += 8;
-
-    // Convert SVG to PNG helper function
-    function svgToPng(svgString, width, height) {
-        return new Promise((resolve, reject) => {
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-
-            const img = new Image();
-            const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-            const url = URL.createObjectURL(svgBlob);
-
-            img.onload = function () {
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, width, height);
-                ctx.drawImage(img, 0, 0, width, height);
-                const pngData = canvas.toDataURL('image/png');
-                URL.revokeObjectURL(url);
-                resolve(pngData);
-            };
-
-            img.onerror = function (err) {
-                URL.revokeObjectURL(url);
-                reject(err);
-            };
-
-            img.src = url;
-        });
+            data.forEach(plan => {
+                const stockLen = parseFloat(plan.stockLength ?? plan.stock ?? 0);
+                const used = plan.used || 0;
+                if (used <= 0 || stockLen <= 0) return;
+                plan.pieces.forEach(p => {
+                    if (p.label && p.label.startsWith(win.configId)) {
+                        const ratio = p.length / used;
+                        purchasedLen += ratio * stockLen;
+                        purchasedWeightKg += ratio * stockLen * wtPerInch;
+                        pieceWeightKg    += p.length * wtPerInch;
+                    }
+                });
+            });
+            powderCoatingCost += (purchasedLen / 12) * pcRate;
+        }
     }
 
-    // Generate and convert all diagrams
-    const diagramPromises = projectWindows.map((window) => {
-        const svg = generateWindowDiagram({
-            tracks: window.tracks,
-            shutters: window.shutters,
-            mosquitoShutters: window.mosquitoShutters,
-            width: window.width,
-            height: window.height,
-            windowId: window.configId
-        });
-        return svgToPng(svg, 200, 140);
+    const rate = (aluminumRate || 280);
+    const profileCost = pieceWeightKg * rate;
+    const wastageWeightKg = Math.max(0, purchasedWeightKg - pieceWeightKg);
+    const wastageCost = wastageWeightKg * rate;
+
+    const windowAreaSqft = (win.width * win.height) / 144; // inches → sqft
+    const laborCost = windowAreaSqft * laborPerSqft;
+
+    const totalCost = profileCost + wastageCost + powderCoatingCost + glassCost + hardwareCost + laborCost;
+    const rateSqft = windowAreaSqft > 0 ? totalCost / windowAreaSqft : 0;
+
+    return {
+        profileCost, wastageCost, powderCoatingCost, glassCost, hardwareCost, laborCost,
+        totalCost,
+        pieceWeightKg, wastageWeightKg, weightKg: purchasedWeightKg,
+        windowAreaSqft, rateSqft,
+        glass, glassInfo: gi
+    };
+}
+
+// ============================================================================
+// QUOTATION PDF — client-facing, reference-style layout
+// ============================================================================
+
+function generateQuotationPDF(projectWindows, selectedProject, formData) {
+    const { jsPDF } = window.jspdf;
+    const {
+        quoteNo,
+        clientName      = '',
+        clientAddress   = '',
+        deliveryAddress = '',
+        gstPct          = 18,
+        laborPerSqft    = 0,
+        leadTime        = '21 Working Days',
+        displayUnit     = 'mm'
+    } = formData;
+
+    const quoteDate = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const validUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+    // Pre-calculate all window costs (labor included per window)
+    const costData = projectWindows.map(win => ({ win, c: calculateWindowTotalCost(win, { laborPerSqft }) }));
+
+    // Generate diagram PNGs
+    const diagPromises = projectWindows.map(win =>
+        svgToPng(generateWindowDiagram({
+            tracks: win.tracks, shutters: win.shutters,
+            mosquitoShutters: win.mosquitoShutters || 0,
+            width: win.width, height: win.height,
+            windowId: win.configId, series: win.series
+        }), 200, 140).catch(() => null)
+    );
+
+    // Try to load company logo
+    const logoPromise = new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+            try {
+                const c = document.createElement('canvas');
+                c.width = img.width; c.height = img.height;
+                c.getContext('2d').drawImage(img, 0, 0);
+                resolve(c.toDataURL('image/png'));
+            } catch { resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        img.src = 'logo.png';
     });
 
-    Promise.all(diagramPromises).then(pngImages => {
-        // Create table with images
-        const windowTableData = projectWindows.map((window, idx) => [
-            idx + 1,
-            '', // Placeholder for diagram
-            window.configId,
-            `${window.tracks}T${window.shutters}S${window.mosquitoShutters > 0 ? window.mosquitoShutters + 'MS' : ''}`,
-            window.description || '-',
-            `${window.width} × ${window.height}`,
-            window.series
+    Promise.all([Promise.all(diagPromises), logoPromise]).then(([diagPngs, logoPng]) => {
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const PW = doc.internal.pageSize.getWidth();
+        const PH = doc.internal.pageSize.getHeight();
+        const mg = 12;
+        const cW = PW - 2 * mg;
+
+        // ── Reusable: page header ──────────────────────────────────────────────
+        const drawHeader = () => {
+            if (logoPng) doc.addImage(logoPng, 'PNG', mg, mg, 18, 14);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(18);
+            doc.setTextColor(30, 60, 114);
+            doc.text('NIRUMA ALUMINUM SECTIONS', PW / 2, mg + 7, { align: 'center' });
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(60, 60, 60);
+            doc.text('M.: 90999 99887 | 90999 99888', PW / 2, mg + 13, { align: 'center' });
+            doc.text('GSTIN : 24AAKFT1234Z1ZA', PW / 2, mg + 18, { align: 'center' });
+            const lY = mg + 22;
+            doc.setDrawColor(30, 60, 114);
+            doc.setLineWidth(0.8);
+            doc.line(mg, lY, PW - mg, lY);
+            return lY + 1;
+        };
+
+        // ── Reusable: page footer ──────────────────────────────────────────────
+        const drawFooter = (pageNum) => {
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.3);
+            doc.line(mg, PH - 18, PW - mg, PH - 18);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.5);
+            doc.setTextColor(80, 80, 80);
+            doc.text('Niruma Aluminum Sections | Trimandir Trust, Fatepura, Nadiad - 387001, Gujarat', mg, PH - 13);
+            doc.text('Ph: 90999 99887', PW - mg, PH - 13, { align: 'right' });
+            doc.setFontSize(8);
+            doc.setTextColor(110, 110, 110);
+            doc.text(quoteDate, mg, PH - 8);
+            const curPage = doc.internal.getNumberOfPages();
+            doc.text(`Page No ${curPage}`, PW - mg, PH - 8, { align: 'right' });
+        };
+
+        // ══════════════════════════════════════════════════════════════════════
+        // PAGE 1
+        // ══════════════════════════════════════════════════════════════════════
+        let y = drawHeader();
+
+        // "Quotation" title bar
+        y += 2;
+        doc.setFillColor(235, 235, 235);
+        doc.rect(mg, y, cW, 7, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Quotation', PW / 2, y + 5, { align: 'center' });
+        y += 9;
+
+        // To / Deliver To boxes
+        const halfW = cW / 2;
+        const toH = 24;
+        doc.setDrawColor(180, 180, 180);
+        doc.setLineWidth(0.3);
+        doc.rect(mg, y, halfW, toH);
+        doc.rect(mg + halfW, y, halfW, toH);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text('To', mg + 2, y + 5);
+        doc.text('Deliver to', mg + halfW + 2, y + 5);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        const toLines = doc.splitTextToSize(
+            (clientName || '') + (clientAddress ? '\n' + clientAddress : ''), halfW - 4
+        );
+        doc.text(toLines.slice(0, 4), mg + 2, y + 10);
+        if (deliveryAddress) {
+            const dlvLines = doc.splitTextToSize(deliveryAddress, halfW - 4);
+            doc.text(dlvLines.slice(0, 4), mg + halfW + 2, y + 10);
+        }
+        y += toH + 1;
+
+        // Meta row: Quote No | Date | Customer Ref | Responsible
+        const mC = cW / 4;
+        doc.setDrawColor(180, 180, 180);
+        doc.setLineWidth(0.3);
+        doc.rect(mg, y, cW, 11);
+        [1, 2, 3].forEach(i => doc.line(mg + mC * i, y, mg + mC * i, y + 11));
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        ['Quote No.', 'Date', 'Project / Supplier', 'Responsible'].forEach((lbl, i) => {
+            doc.text(lbl, mg + mC * i + 2, y + 4);
+        });
+        doc.setFont('helvetica', 'normal');
+        doc.text(quoteNo, mg + 2, y + 9);
+        doc.text(quoteDate, mg + mC + 2, y + 9);
+        // Aggregate distinct suppliers in this project
+        const suppliersInUse = [...new Set(projectWindows.map(w => w.vendor).filter(Boolean))].join(', ') || '-';
+        const supplierText = `${selectedProject || ''}${suppliersInUse !== '-' ? ' / ' + suppliersInUse : ''}`;
+        doc.text(doc.splitTextToSize(supplierText, mC - 4).slice(0, 1), mg + mC * 2 + 2, y + 9);
+        doc.text('Mandir Maintenance Dept.', mg + mC * 3 + 2, y + 9);
+        y += 13;
+
+        // ── Main window table ─────────────────────────────────────────────────
+        const glassLabel = (win) => {
+            const gi = resolveGlassInfo(win);
+            return gi.label;
+        };
+        const sizeStr = (win) => displayUnit === 'mm'
+            ? `${Math.round(win.width * 25.4)} X ${Math.round(win.height * 25.4)}`
+            : `${win.width.toFixed(2)}" X ${win.height.toFixed(2)}"`;
+        const descStr = (win) => {
+            let d = `${win.tracks} Track ${win.shutters} Shutter`;
+            if ((win.mosquitoShutters || 0) > 0) d += `\n+ ${win.mosquitoShutters} Mosquito`;
+            if (win.series) d += `\nSeries: ${win.series}`;
+            if (win.vendor) d += `\nSupplier: ${win.vendor}`;
+            return d + '\nPowder Coating';
+        };
+
+        const tableRows = costData.map(({ win, c }) => {
+            const qty = win.qty || 1;
+            return [
+                win.configId,
+                '',                            // image — drawn in didDrawCell
+                win.location || '',
+                descStr(win),
+                sizeStr(win),
+                qty,
+                glassLabel(win),
+                (c.windowAreaSqft * qty).toFixed(3),
+                c.rateSqft.toFixed(2),
+                (c.totalCost * qty).toFixed(2)
+            ];
+        });
+
+        const totalQty  = costData.reduce((s, { win }) => s + (win.qty || 1), 0);
+        const totalArea = costData.reduce((s, { win, c }) => s + c.windowAreaSqft * (win.qty || 1), 0);
+        const subtotal  = costData.reduce((s, { win, c }) => s + c.totalCost * (win.qty || 1), 0);
+
+        // Totals footer row with colSpan
+        tableRows.push([
+            { content: 'Total :', colSpan: 5, styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
+            { content: String(totalQty), styles: { fontStyle: 'bold', halign: 'center', fillColor: [245, 245, 245] } },
+            { content: '', styles: { fillColor: [245, 245, 245] } },
+            { content: totalArea.toFixed(3), styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
+            { content: '', styles: { fillColor: [245, 245, 245] } },
+            { content: subtotal.toFixed(2), styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } }
         ]);
 
-        // Calculate required cell height for diagrams
-        // SVG Source: 200px width × 140px height = aspect ratio 1.4286:1
-        // PDF rendering width: 40pt
-        // Calculate height maintaining aspect ratio: height = width / (svgWidth / svgHeight)
-        const svgSourceWidth = 200;
-        const svgSourceHeight = 140;
-        const pdfDiagramWidth = 40;
-        const aspectRatio = svgSourceWidth / svgSourceHeight;
-        const diagramWidth = pdfDiagramWidth;
-        const diagramHeight = Math.round(pdfDiagramWidth / aspectRatio); // 40 / 1.4286 ≈ 28pt
-
-        // Cell height = diagram height + padding (top 15 + bottom 15) + border buffer (6)
-        const cellPaddingVertical = 30;
-        const borderBuffer = 6;
-        const requiredCellHeight = diagramHeight + cellPaddingVertical + borderBuffer;
+        const pImgW = 22;
+        const pImgH = Math.round(pImgW * 140 / 200); // ≈ 15 mm
+        const minCellH = pImgH + 8;
 
         doc.autoTable({
-            startY: currentY,
-            head: [['#', 'Diagram', 'ID', 'Type', 'Description', 'Size (mm)', 'Series']],
-            body: windowTableData,
+            startY: y,
+            margin: { left: mg, right: mg },
+            head: [[
+                'Type', 'Image', 'Location', 'Description',
+                `Size (${displayUnit === 'mm' ? 'MM' : '"'})\nW X H`,
+                'Qty', 'Glass',
+                'Area\n(Sq.Ft.)', 'Rate/\n(Sq.Ft.)', 'Amount\n(Rs.)'
+            ]],
+            body: tableRows,
             theme: 'grid',
             headStyles: {
-                fillColor: [52, 152, 219],
-                fontSize: 9,
-                fontStyle: 'bold',
-                halign: 'center'
+                fillColor: [30, 60, 114], textColor: [255, 255, 255],
+                fontSize: 7.5, fontStyle: 'bold', halign: 'center', valign: 'middle', minCellHeight: 10
             },
-            bodyStyles: {
-                fontSize: 8
-            },
+            bodyStyles: { fontSize: 7.5, valign: 'middle', minCellHeight: minCellH },
             columnStyles: {
                 0: { cellWidth: 10, halign: 'center' },
-                1: { cellWidth: 45, halign: 'center', valign: 'middle' },
-                2: { cellWidth: 15, halign: 'center' },
-                3: { cellWidth: 30, halign: 'center' },
-                4: { cellWidth: 40 },
-                5: { cellWidth: 25, halign: 'center' },
-                6: { cellWidth: 20, halign: 'center' }
+                1: { cellWidth: 24, halign: 'center' },
+                2: { cellWidth: 12, halign: 'center' },
+                3: { cellWidth: 36, halign: 'left'   },
+                4: { cellWidth: 22, halign: 'center' },
+                5: { cellWidth:  8, halign: 'center' },
+                6: { cellWidth: 21, halign: 'center' },
+                7: { cellWidth: 14, halign: 'right'  },
+                8: { cellWidth: 15, halign: 'right'  },
+                9: { cellWidth: 17, halign: 'right'  }
             },
-            didDrawCell: function (data) {
-                if (data.column.index === 1 && data.cell.section === 'body') {
-                    const rowIndex = data.row.index;
-                    if (pngImages[rowIndex]) {
-                        const cellX = data.cell.x + 2;
-                        const cellY = data.cell.y + (data.cell.height - diagramHeight) / 2;
-                        doc.addImage(pngImages[rowIndex], 'PNG', cellX, cellY, diagramWidth, diagramHeight);
+            didDrawCell: (data) => {
+                if (data.column.index === 1 && data.cell.section === 'body' && data.row.index < diagPngs.length) {
+                    const png = diagPngs[data.row.index];
+                    if (png) {
+                        const ix = data.cell.x + (data.cell.width  - pImgW) / 2;
+                        const iy = data.cell.y + (data.cell.height - pImgH) / 2;
+                        doc.addImage(png, 'PNG', ix, iy, pImgW, pImgH);
                     }
                 }
-            },
-            minCellHeight: requiredCellHeight
-        });
-
-        currentY = doc.lastAutoTable.finalY + 15;
-
-        // ========== COST BIFURCATION TABLE ==========
-        doc.setFontSize(12);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(41, 128, 185);
-        doc.text('Project Cost Bifurcation', 14, currentY);
-        currentY += 6;
-
-        let grandTotal = 0;
-        const summaryRows = [];
-
-        projectWindows.forEach(win => {
-            const glass = calculateGlassDimensions(win);
-            const glassRate = glass ? (ratesConfig.glass[win.glassType] || 0) : 0;
-            const glassCost = glass ? glass.area * glass.qty * glassRate : 0;
-            const hardware = calculateWindowHardware(win, optimizationResults);
-            const hardwareCost = hardware.reduce((sum, h) => sum + h.total, 0);
-
-            let pcCost = 0;
-            let wt = 0;
-            if (optimizationResults && optimizationResults.results) {
-                for (const [key, data] of Object.entries(optimizationResults.results)) {
-                    let purchasedLenForWindow = 0;
-                    let weightForWindow = 0;
-                    let compName = key.includes('|') ? key.split('|')[1].trim() : key;
-                    const pcRate = ratesConfig.powderCoating[compName] || 1;
-
-                    data.forEach(plan => {
-                        const stockLen = parseFloat(plan.stock);
-                        const totalUsedInStick = plan.used;
-                        if (totalUsedInStick <= 0) return;
-
-                        plan.pieces.forEach(p => {
-                            if (p.label && p.label.startsWith(win.configId)) {
-                                const shareRatio = p.length / totalUsedInStick;
-                                purchasedLenForWindow += shareRatio * stockLen;
-
-                                const sec = optimizationResults.componentSections ? optimizationResults.componentSections[key] : null;
-                                if (sec && sec.weight) {
-                                    // Weight is per 12ft (144"), but we purchased stockLen
-                                    const stickWeight = (stockLen / 144) * sec.weight;
-                                    weightForWindow += shareRatio * stickWeight;
-                                }
-                            }
-                        });
-                    });
-
-                    pcCost += (purchasedLenForWindow / 12) * pcRate;
-                    wt += weightForWindow;
-                }
             }
-            const profCost = wt * (typeof aluminumRate !== 'undefined' ? aluminumRate : 280);
-            const sub = profCost + pcCost + glassCost + hardwareCost;
-            grandTotal += sub;
-
-            summaryRows.push([
-                win.configId,
-                wt.toFixed(2),
-                profCost.toFixed(0),
-                pcCost.toFixed(0),
-                glassCost.toFixed(0),
-                hardwareCost.toFixed(0),
-                sub.toFixed(0)
-            ]);
         });
+
+        y = doc.lastAutoTable.finalY + 5;
+
+        // ── DETAILED COST BREAKUP per window (full transparency – seva work, no privacy) ──
+        if (y > PH - 60) { doc.addPage(); y = drawHeader() + 6; }
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9);
+        doc.setTextColor(30, 60, 114);
+        doc.text('Detailed Cost Breakup (Per Window)', mg, y);
+        y += 2;
+
+        const breakupBody = costData.map(({ win, c }) => {
+            const q = win.qty || 1;
+            return [
+                win.configId,
+                q,
+                c.pieceWeightKg.toFixed(2),
+                c.wastageWeightKg.toFixed(2),
+                (c.profileCost * q).toFixed(2),
+                (c.wastageCost * q).toFixed(2),
+                (c.powderCoatingCost * q).toFixed(2),
+                (c.glassCost * q).toFixed(2),
+                (c.hardwareCost * q).toFixed(2),
+                (c.laborCost * q).toFixed(2),
+                (c.totalCost * q).toFixed(2)
+            ];
+        });
+
+        const tot = costData.reduce((acc, { win, c }) => {
+            const q = win.qty || 1;
+            acc.piece    += c.pieceWeightKg * q;
+            acc.waste    += c.wastageWeightKg * q;
+            acc.profile  += c.profileCost * q;
+            acc.wasteC   += c.wastageCost * q;
+            acc.pc       += c.powderCoatingCost * q;
+            acc.glass    += c.glassCost * q;
+            acc.hardware += c.hardwareCost * q;
+            acc.labor    += c.laborCost * q;
+            acc.total    += c.totalCost * q;
+            return acc;
+        }, { piece: 0, waste: 0, profile: 0, wasteC: 0, pc: 0, glass: 0, hardware: 0, labor: 0, total: 0 });
+
+        breakupBody.push([
+            { content: 'Total', colSpan: 2, styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
+            { content: tot.piece.toFixed(2),    styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
+            { content: tot.waste.toFixed(2),    styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
+            { content: tot.profile.toFixed(2),  styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
+            { content: tot.wasteC.toFixed(2),   styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
+            { content: tot.pc.toFixed(2),       styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
+            { content: tot.glass.toFixed(2),    styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
+            { content: tot.hardware.toFixed(2), styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
+            { content: tot.labor.toFixed(2),    styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
+            { content: tot.total.toFixed(2),    styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } }
+        ]);
 
         doc.autoTable({
-            startY: currentY,
-            head: [['ID', 'Wt(Kg)', 'Profile', 'Coating', 'Glass', 'Hard.', 'Total']],
-            body: summaryRows,
+            startY: y + 2,
+            margin: { left: mg, right: mg },
+            head: [[
+                'Type', 'Qty',
+                'Net Wt\n(kg)', 'Waste Wt\n(kg)',
+                'Profile\n(Rs.)', 'Wastage\n(Rs.)',
+                'Powder\nCoat (Rs.)', 'Glass\n(Rs.)',
+                'Hardware\n(Rs.)', 'Labor\n(Rs.)',
+                'Sub-Total\n(Rs.)'
+            ]],
+            body: breakupBody,
             theme: 'grid',
-            headStyles: { fillColor: [41, 128, 185] },
-            styles: { fontSize: 8, halign: 'right' },
-            columnStyles: { 0: { halign: 'left' } }
+            headStyles: { fillColor: [30, 60, 114], textColor: [255, 255, 255], fontSize: 7, fontStyle: 'bold', halign: 'center', valign: 'middle' },
+            bodyStyles: { fontSize: 7, halign: 'right', valign: 'middle' },
+            columnStyles: { 0: { halign: 'center' }, 1: { halign: 'center' } }
         });
 
-        currentY = doc.lastAutoTable.finalY + 15;
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(255, 255, 255);
-        doc.setFillColor(44, 62, 80);
-        doc.rect(140, currentY, 56, 12, 'F');
-        doc.text(`Total: Rs. ${grandTotal.toFixed(0)}`, 142, currentY + 8);
+        y = doc.lastAutoTable.finalY + 5;
 
+        // ── Additional Charges ────────────────────────────
+        if (y > PH - 60) { doc.addPage(); y = drawHeader() + 8; }
+
+        // subtotal already includes labor (cost calc includes it per-window)
+        const gstBase    = subtotal;
+        const gstAmt     = gstBase * (gstPct / 100);
+        const grandTotal = gstBase + gstAmt;
+
+        const chargesBody = [
+            [
+                { content: 'Sub-Total (incl. Labor)', styles: { fontStyle: 'bold' } },
+                { content: subtotal.toFixed(2), styles: { fontStyle: 'bold', halign: 'right' } }
+            ],
+            [
+                `GST (${gstPct}%)`,
+                { content: gstAmt.toFixed(2), styles: { halign: 'right' } }
+            ],
+            [
+                { content: 'Grand Total:', styles: { fontStyle: 'bold', halign: 'right', fillColor: [235, 235, 235] } },
+                { content: grandTotal.toFixed(2), styles: { fontStyle: 'bold', halign: 'right', fillColor: [235, 235, 235] } }
+            ]
+        ];
+
+        doc.autoTable({
+            startY: y,
+            margin: { left: PW / 2 + 5, right: mg },
+            head: [[{
+                content: 'Additional Charges', colSpan: 2,
+                styles: { halign: 'center', fillColor: [235, 235, 235], textColor: [0, 0, 0], fontStyle: 'bold', fontSize: 8.5 }
+            }]],
+            body: chargesBody,
+            theme: 'grid',
+            headStyles: { minCellHeight: 8 },
+            bodyStyles: { fontSize: 8.5 },
+            columnStyles: {
+                0: { cellWidth: 63 },
+                1: { cellWidth: 25, halign: 'right' }
+            }
+        });
+
+        y = doc.lastAutoTable.finalY + 5;
+
+        // Amount in words
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`( ${numberToWords(Math.round(grandTotal))} Only )`, PW / 2, y, { align: 'center' });
+        y += 5;
+
+        // Average rate / sqft
+        const avgRate = totalArea > 0 ? subtotal / totalArea : 0;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text(`Average Rate / Sq.Ft. : ${avgRate.toFixed(2)}`, PW - mg, y, { align: 'right' });
+        y += 5;
+
+        // Notes
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(7.5);
+        doc.setTextColor(100, 100, 100);
+        doc.text('* Transportation charges will be extra on actual basis.', mg, y);
+        y += 4;
+        doc.text(`* Lead Time: ${leadTime} from order confirmation & advance payment.`, mg, y);
+
+        drawFooter(1);
+
+        // Helper: round inches up to nearest stock-foot (e.g. 141→12', 177→15', 189→16')
+        const formatStockFeet = (inches) => {
+            if (!inches || inches <= 0) return "0'";
+            return Math.ceil(parseFloat(inches) / 12) + "'";
+        };
+
+        // ══════════════════════════════════════════════════════════════════════
+        // PAGE 2 — Hardware Detail (Per Window + Aggregated)
+        // ══════════════════════════════════════════════════════════════════════
+        doc.addPage();
+        y = drawHeader();
+        y += 4;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(30, 60, 114);
+        doc.text('Hardware Detail (Per Window)', PW / 2, y, { align: 'center' });
+        y += 6;
+
+        let hwGrandTotal = 0;
+        projectWindows.forEach((win, idx) => {
+            if (y > PH - 40) { doc.addPage(); y = drawHeader() + 4; }
+            const hw = calculateWindowHardware(win, optimizationResults);
+            const q = win.qty || 1;
+            const winLabel = `${win.configId} (Qty ${q})  —  ${win.tracks}T ${win.shutters}S${(win.mosquitoShutters||0)>0 ? ' + '+win.mosquitoShutters+'MS':''}`;
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(9);
+            doc.setTextColor(30, 60, 114);
+            doc.text(winLabel, mg, y);
+            y += 1;
+
+            const rows = hw.map(h => {
+                const lineTotal = h.qty * q * h.rate;
+                hwGrandTotal += lineTotal;
+                return [
+                    h.hardware,
+                    (h.hardware.toLowerCase().includes('wool pile') ? (h.qty * q).toFixed(2) : Math.ceil(h.qty * q).toString()),
+                    h.unit,
+                    `Rs. ${h.rate.toFixed(2)}`,
+                    `Rs. ${lineTotal.toFixed(2)}`
+                ];
+            });
+
+            const winSubTotal = hw.reduce((s, h) => s + h.qty * q * h.rate, 0);
+            rows.push([
+                { content: 'Window Sub-Total', colSpan: 4, styles: { fontStyle: 'bold', halign: 'right', fillColor: [245,245,245] } },
+                { content: `Rs. ${winSubTotal.toFixed(2)}`, styles: { fontStyle: 'bold', halign: 'right', fillColor: [245,245,245] } }
+            ]);
+
+            doc.autoTable({
+                startY: y + 2,
+                margin: { left: mg, right: mg },
+                head: [['Hardware Item', 'Qty', 'Unit', 'Rate', 'Cost']],
+                body: rows,
+                theme: 'grid',
+                headStyles: { fillColor: [30,60,114], textColor: [255,255,255], fontSize: 8, halign: 'center' },
+                bodyStyles: { fontSize: 8 },
+                columnStyles: { 0: { cellWidth: 80 }, 1: { halign: 'right' }, 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' } }
+            });
+            y = doc.lastAutoTable.finalY + 4;
+        });
+
+        // Aggregated total
+        if (y > PH - 60) { doc.addPage(); y = drawHeader() + 4; }
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(30, 60, 114);
+        doc.text('Project Hardware Total (Aggregated)', PW / 2, y, { align: 'center' });
+        y += 3;
+
+        const aggHw = {};
+        projectWindows.forEach(win => {
+            const q = win.qty || 1;
+            calculateWindowHardware(win, optimizationResults).forEach(h => {
+                if (!aggHw[h.hardware]) aggHw[h.hardware] = { qty: 0, unit: h.unit, rate: h.rate };
+                aggHw[h.hardware].qty += h.qty * q;
+            });
+        });
+        const aggRows = Object.entries(aggHw).map(([name, d]) => {
+            const qtyShown = name.toLowerCase().includes('wool pile') ? d.qty.toFixed(2) : Math.ceil(d.qty).toString();
+            const cost = (name.toLowerCase().includes('wool pile') ? d.qty : Math.ceil(d.qty)) * d.rate;
+            return [name, qtyShown, d.unit, `Rs. ${d.rate.toFixed(2)}`, `Rs. ${cost.toFixed(2)}`];
+        }).sort((a,b) => a[0].localeCompare(b[0]));
+
+        const aggTotal = Object.entries(aggHw).reduce((s, [n, d]) => s + (n.toLowerCase().includes('wool pile') ? d.qty : Math.ceil(d.qty)) * d.rate, 0);
+        aggRows.push([
+            { content: 'Grand Total', colSpan: 4, styles: { fontStyle: 'bold', halign: 'right', fillColor: [235,235,235] } },
+            { content: `Rs. ${aggTotal.toFixed(2)}`, styles: { fontStyle: 'bold', halign: 'right', fillColor: [235,235,235] } }
+        ]);
+
+        doc.autoTable({
+            startY: y + 2,
+            margin: { left: mg, right: mg },
+            head: [['Hardware Item', 'Total Qty', 'Unit', 'Rate', 'Cost']],
+            body: aggRows,
+            theme: 'grid',
+            headStyles: { fillColor: [30,60,114], textColor: [255,255,255], fontSize: 8, halign: 'center' },
+            bodyStyles: { fontSize: 8 },
+            columnStyles: { 0: { cellWidth: 80 }, 1: { halign: 'right' }, 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' } }
+        });
+
+        drawFooter(2);
+
+        // ══════════════════════════════════════════════════════════════════════
+        // PAGE 3 — Profile / Section Purchase List (grouped by series)
+        // ══════════════════════════════════════════════════════════════════════
+        doc.addPage();
+        y = drawHeader();
+        y += 4;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(30, 60, 114);
+        doc.text('Profile / Section Purchase List', PW / 2, y, { align: 'center' });
+        y += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(100,100,100);
+        doc.text('(Stock lengths shown as standard procurement length — 3" cutting buffer included)', PW/2, y, { align: 'center' });
+        y += 4;
+
+        // Group results by series
+        const seriesGroups = {};
+        if (optimizationResults && optimizationResults.results) {
+            for (const [key, plans] of Object.entries(optimizationResults.results)) {
+                const [series, material] = key.split(' | ').map(s => s.trim());
+                const seriesName = series || 'General';
+                if (!seriesGroups[seriesName]) seriesGroups[seriesName] = [];
+
+                // Group sticks by length for this material
+                const byLen = {};
+                plans.forEach(plan => {
+                    const len = plan.stockLength;
+                    if (!byLen[len]) byLen[len] = { qty: 0, weight: 0 };
+                    byLen[len].qty += 1;
+                    const stockInfo = findStockInfo(key, len);
+                    const wt = stockInfo ? (stockInfo.weight || 0) : 0;
+                    byLen[len].weight += wt;
+                });
+
+                Object.entries(byLen).forEach(([len, info]) => {
+                    const stockInfo = findStockInfo(key, parseFloat(len));
+                    const sectionNo = stockInfo ? (stockInfo.sectionNo || '-') : '-';
+                    const wtPerStick = info.qty > 0 ? info.weight / info.qty : 0;
+                    const cost = info.weight * (aluminumRate || 280);
+                    seriesGroups[seriesName].push({
+                        sectionNo,
+                        material: material || key,
+                        stockLen: parseFloat(len),
+                        qty: info.qty,
+                        wtPerStick,
+                        totalWt: info.weight,
+                        cost
+                    });
+                });
+            }
+        }
+
+        let profileGrandTotalCost = 0;
+        let profileGrandTotalWt = 0;
+
+        Object.entries(seriesGroups).forEach(([seriesName, items]) => {
+            if (y > PH - 40) { doc.addPage(); y = drawHeader() + 4; }
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.setTextColor(30, 60, 114);
+            doc.text(`Series: ${seriesName}`, mg, y);
+            y += 1;
+
+            let subWt = 0, subCost = 0, subSticks = 0;
+            const rows = items.map(it => {
+                subWt += it.totalWt;
+                subCost += it.cost;
+                subSticks += it.qty;
+                return [
+                    it.sectionNo,
+                    it.material,
+                    formatStockFeet(it.stockLen),
+                    it.qty,
+                    it.wtPerStick.toFixed(2),
+                    it.totalWt.toFixed(2),
+                    `Rs. ${it.cost.toFixed(2)}`
+                ];
+            });
+            rows.push([
+                { content: `Subtotal — ${seriesName}`, colSpan: 3, styles: { fontStyle: 'bold', halign: 'right', fillColor: [245,245,245] } },
+                { content: subSticks,            styles: { fontStyle: 'bold', halign: 'right', fillColor: [245,245,245] } },
+                { content: '',                   styles: { fillColor: [245,245,245] } },
+                { content: subWt.toFixed(2),     styles: { fontStyle: 'bold', halign: 'right', fillColor: [245,245,245] } },
+                { content: `Rs. ${subCost.toFixed(2)}`, styles: { fontStyle: 'bold', halign: 'right', fillColor: [245,245,245] } }
+            ]);
+
+            doc.autoTable({
+                startY: y + 2,
+                margin: { left: mg, right: mg },
+                head: [['Sec No', 'Material', 'Stock Len', 'Qty', 'Wt/Stick (kg)', 'Total Wt (kg)', 'Cost']],
+                body: rows,
+                theme: 'grid',
+                headStyles: { fillColor: [30,60,114], textColor: [255,255,255], fontSize: 8, halign: 'center' },
+                bodyStyles: { fontSize: 8 },
+                columnStyles: { 0: { halign: 'center', cellWidth: 18 }, 1: { cellWidth: 60 }, 2: { halign: 'center' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'right' } }
+            });
+            y = doc.lastAutoTable.finalY + 4;
+            profileGrandTotalCost += subCost;
+            profileGrandTotalWt   += subWt;
+        });
+
+        // Grand total
+        if (y > PH - 25) { doc.addPage(); y = drawHeader() + 4; }
+        doc.autoTable({
+            startY: y,
+            margin: { left: mg, right: mg },
+            body: [[
+                { content: 'PROFILE GRAND TOTAL', styles: { fontStyle: 'bold', halign: 'right', fillColor: [30,60,114], textColor:[255,255,255] } },
+                { content: `${profileGrandTotalWt.toFixed(2)} kg`, styles: { fontStyle: 'bold', halign: 'right', fillColor: [30,60,114], textColor:[255,255,255] } },
+                { content: `Rs. ${profileGrandTotalCost.toFixed(2)}`, styles: { fontStyle: 'bold', halign: 'right', fillColor: [30,60,114], textColor:[255,255,255] } }
+            ]],
+            theme: 'grid',
+            bodyStyles: { fontSize: 9 }
+        });
+
+        drawFooter(3);
+
+        // ══════════════════════════════════════════════════════════════════════
+        // PAGE 4 — Powder Coating Breakdown
+        // ══════════════════════════════════════════════════════════════════════
+        doc.addPage();
+        y = drawHeader();
+        y += 4;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(30, 60, 114);
+        doc.text('Powder Coating Calculation', PW / 2, y, { align: 'center' });
+        y += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(100,100,100);
+        doc.text('(Based on purchased stock length — full stick gets coated, including wastage)', PW/2, y, { align: 'center' });
+        y += 4;
+
+        const pcRows = [];
+        let pcGrandLen = 0, pcGrandCost = 0;
+        if (optimizationResults && optimizationResults.results) {
+            for (const [key, plans] of Object.entries(optimizationResults.results)) {
+                const [series, material] = key.split(' | ').map(s => s.trim());
+                const totalInches = plans.reduce((s, p) => s + (parseFloat(p.stockLength) || 0), 0);
+                const totalFt = totalInches / 12;
+                const rate = lookupPowderCoatingRate(series, material);
+                const cost = totalFt * rate;
+                pcGrandLen += totalFt;
+                pcGrandCost += cost;
+                pcRows.push([
+                    series || '-',
+                    material || key,
+                    plans.length,
+                    totalFt.toFixed(2),
+                    `Rs. ${rate.toFixed(2)}`,
+                    `Rs. ${cost.toFixed(2)}`
+                ]);
+            }
+        }
+        pcRows.sort((a,b) => (a[0]+a[1]).localeCompare(b[0]+b[1]));
+        pcRows.push([
+            { content: 'GRAND TOTAL', colSpan: 3, styles: { fontStyle: 'bold', halign: 'right', fillColor: [30,60,114], textColor:[255,255,255] } },
+            { content: `${pcGrandLen.toFixed(2)} ft`, styles: { fontStyle: 'bold', halign: 'right', fillColor: [30,60,114], textColor:[255,255,255] } },
+            { content: '', styles: { fillColor: [30,60,114] } },
+            { content: `Rs. ${pcGrandCost.toFixed(2)}`, styles: { fontStyle: 'bold', halign: 'right', fillColor: [30,60,114], textColor:[255,255,255] } }
+        ]);
+
+        doc.autoTable({
+            startY: y + 2,
+            margin: { left: mg, right: mg },
+            head: [['Series', 'Component', 'Sticks', 'Total Length (ft)', 'Rate (Rs/ft)', 'Cost']],
+            body: pcRows,
+            theme: 'grid',
+            headStyles: { fillColor: [30,60,114], textColor: [255,255,255], fontSize: 8, halign: 'center' },
+            bodyStyles: { fontSize: 8 },
+            columnStyles: { 0: { cellWidth: 25 }, 1: { cellWidth: 60 }, 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } }
+        });
+
+        drawFooter(4);
+
+        // ══════════════════════════════════════════════════════════════════════
+        // PAGE 5 — Terms & Conditions
+        // ══════════════════════════════════════════════════════════════════════
+        doc.addPage();
+        y = drawHeader();
+        y += 10;
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.text('Terms & Conditions :', mg, y);
+        y += 7;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        [
+            '1. GST Extra on Applicable charges.',
+            '2. Transportation Charges will be Extra on actual basis.',
+            '3. Goods rates will be subject to market fluctuation & government policies.',
+            '4. Facilities to be provided to our contractor at site free of cost:',
+            '      a) Scaffolding, electricity & water',
+            '      b) Safe storage for material',
+            `5. Validity: This offer is valid for 30 Days from the date of this offer.`,
+            `6. Lead Time: ${leadTime} from date of order confirmation & advance payment.`
+        ].forEach(t => { doc.text(t, mg, y); y += 5.5; });
+
+        y += 5;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('Payment Terms :', mg, y);
+        y += 7;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        [
+            '1. 25% Payment Advance.',
+            '2. 50% After Delivery of Material.',
+            '3. 25% After Completion of Work.'
+        ].forEach(t => { doc.text(t, mg, y); y += 5.5; });
+
+        y += 10;
+        doc.text('Your Faithfully,', mg, y); y += 5;
+        doc.text('Mandir Maintenance Dept.', mg, y); y += 5;
+        doc.text('Niruma Aluminum Sections', mg, y);
+
+        drawFooter(5);
+
+        // Re-apply footer to every page (in case intra-section page breaks were inserted)
+        const totalPages = doc.internal.getNumberOfPages();
+        for (let p = 1; p <= totalPages; p++) {
+            doc.setPage(p);
+            // Only draw if no footer already present at this y? Simplest: overwrite a clear strip then redraw.
+            doc.setFillColor(255, 255, 255);
+            doc.rect(0, PH - 19, PW, 19, 'F');
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.3);
+            doc.line(mg, PH - 18, PW - mg, PH - 18);
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(7.5);
+            doc.setTextColor(80, 80, 80);
+            doc.text('Niruma Aluminum Sections | Trimandir Trust, Fatepura, Nadiad - 387001, Gujarat', mg, PH - 13);
+            doc.text('Ph: 90999 99887', PW - mg, PH - 13, { align: 'right' });
+            doc.setFontSize(8);
+            doc.setTextColor(110, 110, 110);
+            doc.text(quoteDate, mg, PH - 8);
+            doc.text(`Page ${p} of ${totalPages}`, PW - mg, PH - 8, { align: 'right' });
+        }
+
+        // Save
         doc.save(`Quotation_${selectedProject}_${quoteNo}.pdf`);
-        showAlert(`✅ Quotation generated successfully!\nNo: ${quoteNo}`);
+        showAlert(`✅ Quotation PDF generated!\nQuote No: ${quoteNo}\nProject: ${selectedProject}`);
+
     }).catch(err => {
-        console.error(err);
-        showAlert('Error generating PDF');
+        console.error('Quotation PDF error:', err);
+        showAlert('❌ Error generating quotation. Please try again.');
     });
 }
 
@@ -1135,9 +1713,83 @@ function calculateWindowHardware(window, optimizationResults = null) {
     return results;
 }
 
+// Helper: find best-match powder-coating rate for a (series, component) pair.
+// Handles case mismatch and prefix variations like:
+//   - rates use "3/4\" 2 track top"     vs  component "3/4\" 2 Track Top"
+//   - rates use "Domal Shutter"          vs  component "27mm Domal Shutter"
+//   - rates use "Domal 3 Track"          vs  series="Domal" + component="3 Track"
+function lookupPowderCoatingRate(series, compName) {
+    const pc = (typeof ratesConfig !== 'undefined') ? (ratesConfig.powderCoating || {}) : {};
+    const norm = s => (s || '').toString().toLowerCase().replace(/\s+/g, ' ').trim();
+
+    const seriesPrefix = (series || '').replace(/\s*Series\s*$/i, '').trim();
+    const candidates = [
+        compName,
+        `${seriesPrefix} ${compName}`,
+        `${series} ${compName}`
+    ].map(norm).filter(Boolean);
+
+    // 1) exact (case-insensitive) match
+    for (const [k, v] of Object.entries(pc)) {
+        const nk = norm(k);
+        if (candidates.includes(nk)) return v;
+    }
+
+    // 2) fuzzy: rate key is a suffix/substring of candidate (e.g., "domal shutter" inside "27mm domal shutter")
+    //    Prefer the LONGEST matching rate key to avoid over-matching.
+    let bestRate = 0, bestLen = 0;
+    for (const [k, v] of Object.entries(pc)) {
+        const nk = norm(k);
+        if (!nk) continue;
+        for (const cand of candidates) {
+            if (cand.endsWith(nk) || cand.includes(' ' + nk) || cand === nk) {
+                if (nk.length > bestLen) { bestLen = nk.length; bestRate = v; }
+            }
+        }
+    }
+    if (bestLen > 0) return bestRate;
+
+    // 3) fallback: candidate is a suffix of rate key (e.g., comp "Shutter" matches "Domal Shutter")
+    bestRate = 0; bestLen = 0;
+    for (const [k, v] of Object.entries(pc)) {
+        const nk = norm(k);
+        for (const cand of candidates) {
+            if (cand && (nk.endsWith(cand) || nk.includes(' ' + cand))) {
+                if (cand.length > bestLen) { bestLen = cand.length; bestRate = v; }
+            }
+        }
+    }
+    return bestRate;
+}
+
+// Helper: resolve glass info from window (supports new glassUnit/glassThickness and legacy glassType)
+function resolveGlassInfo(win) {
+    if (win.glassUnit && win.glassUnit !== 'none') {
+        const thk = win.glassThickness || '5';
+        const toughened = !!win.glassToughened;
+        // Build rate key like "toughened_5mm" / "non_toughened_6mm" / "DGU_toughened_8mm"
+        const prefix = (win.glassUnit === 'DGU') ? 'DGU_' : '';
+        const rateKey = `${prefix}${toughened ? 'toughened' : 'non_toughened'}_${thk}mm`;
+        const fallbackKey = `${toughened ? 'toughened' : 'non_toughened'}_5mm`; // fallback to base rate
+        const unitLabel = (win.glassUnit === 'DGU') ? 'DGU Double Glass' : 'SGU Single Glass';
+        const tLabel = toughened ? 'Toughened' : 'Non-Toughened';
+        return {
+            hasGlass: true, rateKey, fallbackKey,
+            label: `${thk} MM ${tLabel}\n${unitLabel}`,
+            thickness: thk, unit: win.glassUnit, toughened
+        };
+    }
+    if (win.glassType && win.glassType !== 'none') {
+        const label = win.glassType === 'toughened_5mm' ? '5 MM Toughened\nGlass' : '5 MM Non-Toughened\nGlass';
+        return { hasGlass: true, rateKey: win.glassType, fallbackKey: win.glassType, label, thickness: '5', unit: 'SGU', toughened: win.glassType === 'toughened_5mm' };
+    }
+    return { hasGlass: false, rateKey: null, fallbackKey: null, label: 'No Glass', thickness: '0', unit: 'none', toughened: false };
+}
+
 // Helper to calculate glass dimensions for a window
 function calculateGlassDimensions(window) {
-    if (!window.glassType || window.glassType === 'none') return null;
+    const gi = resolveGlassInfo(window);
+    if (!gi.hasGlass) return null;
 
     const offset = ratesConfig.global.glassOffset || 1.5;
     let shutterW = 0;
@@ -1188,7 +1840,8 @@ function generateQuotationHTML(projectWindows, selectedProject) {
 
     projectWindows.forEach(win => {
         const glass = calculateGlassDimensions(win);
-        const glassRate = glass ? (ratesConfig.glass[win.glassType] || 0) : 0;
+        const _gi = resolveGlassInfo(win);
+        const glassRate = (glass && _gi.rateKey) ? (ratesConfig.glass[_gi.rateKey] || 0) : 0;
         const glassCost = glass ? glass.area * glass.qty * glassRate : 0;
         const rubberFeet = glass ? glass.perimeter * glass.qty * 1.05 : 0;
         const rubberCost = rubberFeet * (ratesConfig.global.rubberRate || 5);
