@@ -263,6 +263,13 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
+                                    <label>Toughened</label>
+                                    <label style="display:flex; align-items:center; gap:8px; padding:8px; border:1px solid #ddd; border-radius:6px; background:#fafafa; cursor:pointer;">
+                                        <input type="checkbox" id="glassToughened" style="transform:scale(1.2);">
+                                        <span style="font-size:13px;">Toughened Glass</span>
+                                    </label>
+                                </div>
+                                <div class="form-group">
                                     <label>Corner Joint</label>
                                     <select id="cornerJoint" required>
                                         <option value="90" selected>90° (Reduce handles)</option>
@@ -1215,6 +1222,13 @@
                             <select id="editGlassThickness"></select>
                         </div>
                         <div class="form-group">
+                            <label>Toughened</label>
+                            <label style="display:flex; align-items:center; gap:8px; padding:8px; border:1px solid #ddd; border-radius:6px; background:#fafafa; cursor:pointer;">
+                                <input type="checkbox" id="editGlassToughened" style="transform:scale(1.2);">
+                                <span style="font-size:13px;">Toughened Glass</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
                             <label>Corner Joint</label>
                             <select id="editCornerJoint">
                                 <option value="90">90°</option>
@@ -1414,6 +1428,65 @@
         </div>
     </div>
 
+
+    <!-- Quotation Input Modal -->
+    <div id="quotationInputModal" class="modal">
+        <div class="modal-content" style="max-width: 640px; width: 92%;">
+            <div class="modal-header">
+                <h3>📜 Generate Client Quotation</h3>
+                <button class="close-btn" onclick="closeQuotationModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 20px; box-sizing: border-box;">
+                <div style="display:flex; flex-direction:column; min-width:0;">
+                    <label style="font-weight:600; font-size:13px; margin-bottom:4px;">Quote Number</label>
+                    <input type="text" id="qtModalQuoteNo" style="padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:100%; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; flex-direction:column; min-width:0;">
+                    <label style="font-weight:600; font-size:13px; margin-bottom:4px;">Lead Time</label>
+                    <input type="text" id="qtModalLeadTime" placeholder="e.g. 21 Working Days" style="padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:100%; box-sizing:border-box;">
+                </div>
+
+                <div style="display:flex; flex-direction:column; min-width:0;">
+                    <label style="font-weight:600; font-size:13px; margin-bottom:4px;">Client Name</label>
+                    <input type="text" id="qtModalClientName" placeholder="Trust / Dept name" style="padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:100%; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; flex-direction:column; min-width:0;">
+                    <label style="font-weight:600; font-size:13px; margin-bottom:4px;">Client Address</label>
+                    <textarea id="qtModalClientAddress" rows="2" placeholder="Billing address" style="padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>
+                </div>
+
+                <div style="display:flex; flex-direction:column; grid-column: 1 / -1; min-width:0;">
+                    <label style="font-weight:600; font-size:13px; margin-bottom:4px;">Delivery / Site Address</label>
+                    <textarea id="qtModalDeliveryAddress" rows="2" placeholder="Site address" style="padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:100%; box-sizing:border-box; resize:vertical;"></textarea>
+                </div>
+
+                <div style="display:flex; flex-direction:column; min-width:0;">
+                    <label style="font-weight:600; font-size:13px; margin-bottom:4px;">GST (%)</label>
+                    <input type="number" id="qtModalGST" value="18" min="0" max="100" step="0.1" style="padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:100%; box-sizing:border-box;">
+                </div>
+                <div style="display:flex; flex-direction:column; min-width:0;">
+                    <label style="font-weight:600; font-size:13px; margin-bottom:4px;">Labor Rate (₹/sqft)</label>
+                    <input type="number" id="qtModalLabor" value="0" min="0" step="1" style="padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:100%; box-sizing:border-box;">
+                </div>
+
+                <div style="display:flex; flex-direction:column; grid-column: 1 / -1; min-width:0;">
+                    <label style="font-weight:600; font-size:13px; margin-bottom:4px;">Size Display Unit</label>
+                    <select id="qtModalUnit" style="padding:8px; border:1px solid #ddd; border-radius:6px; font-size:13px; width:100%; box-sizing:border-box;">
+                        <option value="mm">Millimeter (MM)</option>
+                        <option value="inch">Inches (")</option>
+                    </select>
+                </div>
+
+                <div style="grid-column: 1 / -1; background:#f0f7ff; border:1px solid #cce0ff; border-radius:8px; padding:10px; font-size:12px; color:#1e3c72; line-height:1.5;">
+                    <strong>Transparency Mode:</strong> Full cost breakup (profile, powder coating, glass, hardware, wastage, labor) will be shown in the PDF. Transportation charges as per actual.
+                </div>
+            </div>
+            <div class="modal-footer" style="display:flex; justify-content:space-between; padding:15px 20px; border-top:1px solid #eee;">
+                <button class="btn btn-secondary" onclick="closeQuotationModal()">Cancel</button>
+                <button class="btn btn-primary" style="background:linear-gradient(135deg,#1e3c72,#2a5298); border:none; padding:10px 24px; font-size:14px;" onclick="confirmGenerateQuotation()">📥 Generate PDF</button>
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript Files - Load in Order -->
     <script src="js/storage.js"></script>
