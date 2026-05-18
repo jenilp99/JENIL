@@ -557,15 +557,22 @@ function calculateWindowTotalCost(win, opts) {
     opts = opts || {};
     const laborPerSqft = parseFloat(opts.laborPerSqft) || 0;
 
-    // Glass
-    const glass = calculateGlassDimensions(win);
-    const gi = resolveGlassInfo(win);
-    let glassRate = 0;
-    if (glass && gi.rateKey) {
-        glassRate = ratesConfig.glass[gi.rateKey];
-        if (glassRate == null) glassRate = ratesConfig.glass[gi.fallbackKey] || 0;
+    // Glass — doors use per-partition glass; windows use single pane
+    let glassCost = 0;
+    let glass = null;
+    let gi    = null;
+    if (win.category === 'Door') {
+        glassCost = calculateDoorGlassCost(win);
+    } else {
+        glass = calculateGlassDimensions(win);
+        gi    = resolveGlassInfo(win);
+        let glassRate = 0;
+        if (glass && gi && gi.rateKey) {
+            glassRate = ratesConfig.glass[gi.rateKey];
+            if (glassRate == null) glassRate = ratesConfig.glass[gi.fallbackKey] || 0;
+        }
+        glassCost = glass ? glass.totalArea * glassRate : 0;
     }
-    const glassCost = glass ? glass.area * glass.qty * glassRate : 0;
 
     // Hardware
     const hardware = calculateWindowHardware(win, optimizationResults);
@@ -577,6 +584,8 @@ function calculateWindowTotalCost(win, opts) {
     let powderCoatingCost = 0;
     let purchasedWeightKg = 0;   // includes wastage share
     let pieceWeightKg = 0;       // net pieces only
+    let totalPurchasedLenIn = 0; // inches purchased (for efficiency)
+    let totalPieceLenIn = 0;     // inches of actual pieces (for efficiency)
 
     if (optimizationResults && optimizationResults.results) {
         for (const [key, data] of Object.entries(optimizationResults.results)) {
@@ -584,7 +593,8 @@ function calculateWindowTotalCost(win, opts) {
             const parts = key.split('|').map(s => s.trim());
             const series = parts[0] || '';
             const compName = parts[1] || key;
-            const pcRate = lookupPowderCoatingRate(series, compName);
+            const effectiveComp = (series === 'Door') ? doorCompWithSize(compName, win) : compName;
+            const pcRate = lookupPowderCoatingRate(series, effectiveComp);
             const sec = optimizationResults.componentSections?.[key];
             const wtPerInch = (sec && sec.weight) ? (sec.weight / 144) : 0; // weight per inch (kg)
 
@@ -598,6 +608,8 @@ function calculateWindowTotalCost(win, opts) {
                         purchasedLen += ratio * stockLen;
                         purchasedWeightKg += ratio * stockLen * wtPerInch;
                         pieceWeightKg    += p.length * wtPerInch;
+                        totalPurchasedLenIn += ratio * stockLen;
+                        totalPieceLenIn     += p.length;
                     }
                 });
             });
@@ -605,7 +617,9 @@ function calculateWindowTotalCost(win, opts) {
         }
     }
 
-    const rate = (aluminumRate || 280);
+    const efficiency = totalPurchasedLenIn > 0 ? (totalPieceLenIn / totalPurchasedLenIn * 100) : 0;
+
+    const rate = (stockRates && stockRates[win.series]) ? stockRates[win.series] : (aluminumRate || 280);
     const profileCost = pieceWeightKg * rate;
     const wastageWeightKg = Math.max(0, purchasedWeightKg - pieceWeightKg);
     const wastageCost = wastageWeightKg * rate;
@@ -620,7 +634,7 @@ function calculateWindowTotalCost(win, opts) {
         profileCost, wastageCost, powderCoatingCost, glassCost, hardwareCost, laborCost,
         totalCost,
         pieceWeightKg, wastageWeightKg, weightKg: purchasedWeightKg,
-        windowAreaSqft, rateSqft,
+        windowAreaSqft, rateSqft, efficiency,
         glass, glassInfo: gi
     };
 }
@@ -654,8 +668,14 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
             tracks: win.tracks, shutters: win.shutters,
             mosquitoShutters: win.mosquitoShutters || 0,
             width: win.width, height: win.height,
-            windowId: win.configId, series: win.series
-        }), 200, 140).catch(() => null)
+            windowId: win.configId, series: win.series,
+            // Door-specific fields
+            frame: win.frame, leaves: win.leaves || 1,
+            closingMechanism: win.closingMechanism || 'Hinge',
+            topWidth: win.topWidth, bottomWidth: win.bottomWidth, middleWidth: win.middleWidth,
+            middleRailPositionMM: win.middleRailPositionMM,
+            upperPartition: win.upperPartition, lowerPartition: win.lowerPartition
+        }), 200, 150).catch(() => null)
     );
 
     // Try to load company logo
@@ -686,13 +706,12 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(18);
             doc.setTextColor(30, 60, 114);
-            doc.text('NIRUMA ALUMINUM SECTIONS', PW / 2, mg + 7, { align: 'center' });
+            doc.text('OUR WINDOW FACTORY', PW / 2, mg + 7, { align: 'center' });
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9);
+            doc.setFontSize(10);
             doc.setTextColor(60, 60, 60);
-            doc.text('M.: 90999 99887 | 90999 99888', PW / 2, mg + 13, { align: 'center' });
-            doc.text('GSTIN : 24AAKFT1234Z1ZA', PW / 2, mg + 18, { align: 'center' });
-            const lY = mg + 22;
+            doc.text('Mandir Maintenance Dept.', PW / 2, mg + 14, { align: 'center' });
+            const lY = mg + 19;
             doc.setDrawColor(30, 60, 114);
             doc.setLineWidth(0.8);
             doc.line(mg, lY, PW - mg, lY);
@@ -707,8 +726,7 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7.5);
             doc.setTextColor(80, 80, 80);
-            doc.text('Niruma Aluminum Sections | Trimandir Trust, Fatepura, Nadiad - 387001, Gujarat', mg, PH - 13);
-            doc.text('Ph: 90999 99887', PW - mg, PH - 13, { align: 'right' });
+            doc.text('Our Window Factory | Mandir Maintenance Dept.', mg, PH - 13);
             doc.setFontSize(8);
             doc.setTextColor(110, 110, 110);
             doc.text(quoteDate, mg, PH - 8);
@@ -777,7 +795,22 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
         y += 13;
 
         // ── Main window table ─────────────────────────────────────────────────
+        const fmtPartitionLabel = (p, legacy) => {
+            if (!p || !p.material) return legacy || '-';
+            if (p.material === 'None') return 'None';
+            if (p.material === 'Glass') {
+                const t = p.glassToughened ? 'T' : 'NT';
+                return `${p.glassType || 'SGU'} ${p.thickness || ''}mm ${t}`;
+            }
+            return `${p.material}${p.thickness && p.thickness !== '0' ? ' ' + p.thickness + 'mm' : ''}`;
+        };
         const glassLabel = (win) => {
+            if (win.category === 'Door') {
+                const up = win.upperPartition;
+                const lo = win.lowerPartition;
+                const mid = win.middleRailPositionMM != null ? `${win.middleRailPositionMM}mm from floor` : 'Center';
+                return `TOP: ${fmtPartitionLabel(up, win.partitionMaterial)}\nBOT: ${fmtPartitionLabel(lo)}\nMid Rail: ${mid}`;
+            }
             const gi = resolveGlassInfo(win);
             return gi.label;
         };
@@ -785,6 +818,16 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
             ? `${Math.round(win.width * 25.4)} X ${Math.round(win.height * 25.4)}`
             : `${win.width.toFixed(2)}" X ${win.height.toFixed(2)}"`;
         const descStr = (win) => {
+            if (win.category === 'Door') {
+                const L  = win.leaves || 1;
+                const cm = win.closingMechanism || 'Hinge';
+                let d = L > 1 ? 'Double Door' : 'Single Door';
+                d += `\n${cm === 'FloorSpring' ? 'Floor Spring' : 'On Hinges'}`;
+                if (win.frame) d += '\n3-Side Frame';
+                if (win.handleProfile) d += `\n${win.handleProfile}`;
+                if (win.vendor) d += `\n${win.vendor}`;
+                return d + '\nPowder Coating';
+            }
             let d = `${win.tracks} Track ${win.shutters} Shutter`;
             if ((win.mosquitoShutters || 0) > 0) d += `\n+ ${win.mosquitoShutters} Mosquito`;
             if (win.series) d += `\nSeries: ${win.series}`;
@@ -890,7 +933,8 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
                 (c.glassCost * q).toFixed(2),
                 (c.hardwareCost * q).toFixed(2),
                 (c.laborCost * q).toFixed(2),
-                (c.totalCost * q).toFixed(2)
+                (c.totalCost * q).toFixed(2),
+                c.efficiency > 0 ? c.efficiency.toFixed(1) + '%' : '-'
             ];
         });
 
@@ -918,7 +962,8 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
             { content: tot.glass.toFixed(2),    styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
             { content: tot.hardware.toFixed(2), styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
             { content: tot.labor.toFixed(2),    styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
-            { content: tot.total.toFixed(2),    styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } }
+            { content: tot.total.toFixed(2),    styles: { fontStyle: 'bold', halign: 'right', fillColor: [245, 245, 245] } },
+            { content: '',                      styles: { fillColor: [245, 245, 245] } }
         ]);
 
         doc.autoTable({
@@ -930,13 +975,13 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
                 'Profile\n(Rs.)', 'Wastage\n(Rs.)',
                 'Powder\nCoat (Rs.)', 'Glass\n(Rs.)',
                 'Hardware\n(Rs.)', 'Labor\n(Rs.)',
-                'Sub-Total\n(Rs.)'
+                'Sub-Total\n(Rs.)', 'Effic.\n(%)'
             ]],
             body: breakupBody,
             theme: 'grid',
             headStyles: { fillColor: [30, 60, 114], textColor: [255, 255, 255], fontSize: 7, fontStyle: 'bold', halign: 'center', valign: 'middle' },
             bodyStyles: { fontSize: 7, halign: 'right', valign: 'middle' },
-            columnStyles: { 0: { halign: 'center' }, 1: { halign: 'center' } }
+            columnStyles: { 0: { halign: 'center' }, 1: { halign: 'center' }, 11: { halign: 'center' } }
         });
 
         y = doc.lastAutoTable.finalY + 5;
@@ -944,22 +989,12 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
         // ── Additional Charges ────────────────────────────
         if (y > PH - 60) { doc.addPage(); y = drawHeader() + 8; }
 
-        // subtotal already includes labor (cost calc includes it per-window)
-        const gstBase    = subtotal;
-        const gstAmt     = gstBase * (gstPct / 100);
-        const grandTotal = gstBase + gstAmt;
+        // All prices are inclusive of GST — no separate GST line
+        const grandTotal = subtotal;
 
         const chargesBody = [
             [
-                { content: 'Sub-Total (incl. Labor)', styles: { fontStyle: 'bold' } },
-                { content: subtotal.toFixed(2), styles: { fontStyle: 'bold', halign: 'right' } }
-            ],
-            [
-                `GST (${gstPct}%)`,
-                { content: gstAmt.toFixed(2), styles: { halign: 'right' } }
-            ],
-            [
-                { content: 'Grand Total:', styles: { fontStyle: 'bold', halign: 'right', fillColor: [235, 235, 235] } },
+                { content: 'Total Amount (Incl. GST)', styles: { fontStyle: 'bold' } },
                 { content: grandTotal.toFixed(2), styles: { fontStyle: 'bold', halign: 'right', fillColor: [235, 235, 235] } }
             ]
         ];
@@ -1137,7 +1172,7 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
                 // Group sticks by length for this material
                 const byLen = {};
                 plans.forEach(plan => {
-                    const len = plan.stockLength;
+                    const len = parseFloat(plan.stockLength ?? plan.stock ?? 0);
                     if (!byLen[len]) byLen[len] = { qty: 0, weight: 0 };
                     byLen[len].qty += 1;
                     const stockInfo = findStockInfo(key, len);
@@ -1149,7 +1184,8 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
                     const stockInfo = findStockInfo(key, parseFloat(len));
                     const sectionNo = stockInfo ? (stockInfo.sectionNo || '-') : '-';
                     const wtPerStick = info.qty > 0 ? info.weight / info.qty : 0;
-                    const cost = info.weight * (aluminumRate || 280);
+                    const seriesRate = (stockRates && stockRates[seriesName]) ? stockRates[seriesName] : (aluminumRate || 280);
+                    const cost = info.weight * seriesRate;
                     seriesGroups[seriesName].push({
                         sectionNo,
                         material: material || key,
@@ -1247,23 +1283,64 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
 
         const pcRows = [];
         let pcGrandLen = 0, pcGrandCost = 0;
+
+        // configId → window lookup (used to derive Door size variants)
+        const _winByConfig = {};
+        if (typeof windows !== 'undefined') {
+            windows.forEach(w => { _winByConfig[w.configId] = w; });
+        }
+
         if (optimizationResults && optimizationResults.results) {
             for (const [key, plans] of Object.entries(optimizationResults.results)) {
                 const [series, material] = key.split(' | ').map(s => s.trim());
-                const totalInches = plans.reduce((s, p) => s + (parseFloat(p.stockLength) || 0), 0);
-                const totalFt = totalInches / 12;
-                const rate = lookupPowderCoatingRate(series, material);
-                const cost = totalFt * rate;
-                pcGrandLen += totalFt;
-                pcGrandCost += cost;
-                pcRows.push([
-                    series || '-',
-                    material || key,
-                    plans.length,
-                    totalFt.toFixed(2),
-                    `Rs. ${rate.toFixed(2)}`,
-                    `Rs. ${cost.toFixed(2)}`
-                ]);
+
+                if (series === 'Door') {
+                    // Aggregate sticks per size variant — each stick's size is taken
+                    // from the window of the first piece on that stick (pieces on
+                    // a single stick always come from the same profile width).
+                    const buckets = {}; // sizedComp → { sticks, lengthIn, rate }
+                    plans.forEach(plan => {
+                        const stockLen = parseFloat(plan.stockLength ?? plan.stock ?? 0) || 0;
+                        if (stockLen <= 0 || !plan.pieces || !plan.pieces.length) return;
+                        const winId = (plan.pieces[0].label || '').split(' - ')[0];
+                        const win   = _winByConfig[winId];
+                        if (!win) return;
+                        const sizedComp = doorCompWithSize(material, win);
+                        const rate      = lookupPowderCoatingRate(series, sizedComp);
+                        if (!buckets[sizedComp]) buckets[sizedComp] = { sticks: 0, lengthIn: 0, rate };
+                        buckets[sizedComp].sticks   += 1;
+                        buckets[sizedComp].lengthIn += stockLen;
+                    });
+                    for (const [sizedComp, b] of Object.entries(buckets)) {
+                        const totalFt = b.lengthIn / 12;
+                        const cost    = totalFt * b.rate;
+                        pcGrandLen  += totalFt;
+                        pcGrandCost += cost;
+                        pcRows.push([
+                            series,
+                            sizedComp,
+                            b.sticks,
+                            totalFt.toFixed(2),
+                            `Rs. ${b.rate.toFixed(2)}`,
+                            `Rs. ${cost.toFixed(2)}`
+                        ]);
+                    }
+                } else {
+                    const totalInches = plans.reduce((s, p) => s + (parseFloat(p.stockLength ?? p.stock ?? 0) || 0), 0);
+                    const totalFt = totalInches / 12;
+                    const rate = lookupPowderCoatingRate(series, material);
+                    const cost = totalFt * rate;
+                    pcGrandLen += totalFt;
+                    pcGrandCost += cost;
+                    pcRows.push([
+                        series || '-',
+                        material || key,
+                        plans.length,
+                        totalFt.toFixed(2),
+                        `Rs. ${rate.toFixed(2)}`,
+                        `Rs. ${cost.toFixed(2)}`
+                    ]);
+                }
             }
         }
         pcRows.sort((a,b) => (a[0]+a[1]).localeCompare(b[0]+b[1]));
@@ -1345,8 +1422,7 @@ function generateQuotationPDF(projectWindows, selectedProject, formData) {
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7.5);
             doc.setTextColor(80, 80, 80);
-            doc.text('Niruma Aluminum Sections | Trimandir Trust, Fatepura, Nadiad - 387001, Gujarat', mg, PH - 13);
-            doc.text('Ph: 90999 99887', PW - mg, PH - 13, { align: 'right' });
+            doc.text('Our Window Factory | Mandir Maintenance Dept.', mg, PH - 13);
             doc.setFontSize(8);
             doc.setTextColor(110, 110, 110);
             doc.text(quoteDate, mg, PH - 8);
@@ -1534,62 +1610,145 @@ function generateWindowDiagram(config) {
 }
 
 function generateDoorDiagram(config) {
-    const svgWidth = 200;
-    const svgHeight = 140;
+    const svgWidth  = 200;
+    const svgHeight = 150;
 
-    // Aspect Ratio
     const aspectRatio = config.width / config.height;
-    let doorH = 130;
+    let doorH = 128;
     let doorW = doorH * aspectRatio;
-
-    if (doorW > 180) {
-        doorW = 180;
-        doorH = doorW / aspectRatio;
-    }
+    if (doorW > 176) { doorW = 176; doorH = doorW / aspectRatio; }
 
     const startX = (svgWidth - doorW) / 2;
-    const startY = (svgHeight - doorH) / 2 + 10;
+    const startY = 16;
+
+    const FT = config.frame ? 5 : 0; // frame thickness in SVG px
+    const leaves = config.leaves || 1;
+
+    // Partition fill colours
+    const PART_CLR = {
+        'Glass':          '#d6eaf8',
+        'ACP':            '#fdebd0',
+        'Bakelite':       '#f5e6d3',
+        'MosquitoNet':    '#eafaf1',
+        'SSMosquito':     '#e8f8f5',
+        'Louvers':        '#eaf0fb',
+        'ParticleBoard':  '#fdf2e9',
+        'PartitionSheet': '#f9f9f9',
+        'None':           '#ffffff'
+    };
+    const partClr = (p) => (p && PART_CLR[p.material]) || '#f4f6f7';
 
     let svg = `<svg width="${svgWidth}" height="${svgHeight}" xmlns="http://www.w3.org/2000/svg">`;
 
     // Title
-    svg += `<text x="${svgWidth / 2}" y="12" text-anchor="middle" font-family="Arial" font-size="10" font-weight="bold" fill="#2c3e50">${config.windowId} - Door (${config.width}x${config.height})</text>`;
+    const typeStr = leaves > 1 ? 'Double' : 'Single';
+    svg += `<text x="${svgWidth/2}" y="11" text-anchor="middle" font-family="Arial" font-size="9" font-weight="bold" fill="#2c3e50">${config.windowId} · ${typeStr} Door</text>`;
 
-    // Draw Outer Frame (if present) - Assuming Doors might have frames or be frameless. 
-    // "Door Leg Partition" suggests a frame.
-    const frameThick = 4;
-    svg += `<rect x="${startX}" y="${startY}" width="${doorW}" height="${doorH}" fill="none" stroke="#2c3e50" stroke-width="${frameThick}"/>`;
+    // Outer opening rectangle (background)
+    svg += `<rect x="${startX}" y="${startY}" width="${doorW}" height="${doorH}" fill="#f0f0f0" stroke="#95a5a6" stroke-width="1"/>`;
 
-    // Draw Leaf (Inset)
-    const leafX = startX + frameThick;
-    const leafY = startY + frameThick;
-    const leafW = doorW - (frameThick * 2);
-    const leafH = doorH - (frameThick * 2);
+    // 3-sided frame: top, left, right (NO bottom — floor)
+    if (config.frame) {
+        svg += `<rect x="${startX}" y="${startY}" width="${doorW}" height="${FT}" fill="#7f8c8d"/>`;           // top
+        svg += `<rect x="${startX}" y="${startY}" width="${FT}" height="${doorH}" fill="#7f8c8d"/>`;           // left
+        svg += `<rect x="${startX+doorW-FT}" y="${startY}" width="${FT}" height="${doorH}" fill="#7f8c8d"/>`;  // right
+    }
 
-    svg += `<rect x="${leafX}" y="${leafY}" width="${leafW}" height="${leafH}" fill="#f4f6f7" stroke="#3498db" stroke-width="2"/>`;
+    // Inner area (inside frame)
+    const innerX = startX + FT;
+    const innerY = startY + FT;
+    const innerW = doorW - FT * 2;
+    const innerH = doorH - FT;  // no bottom frame
 
-    // Top Rail
-    const topRailH = leafH * 0.1;
-    svg += `<rect x="${leafX}" y="${leafY}" width="${leafW}" height="${topRailH}" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1"/>`;
+    // Proportional rail heights
+    const TW = config.topWidth    || 47.5;  // mm
+    const BW = config.bottomWidth || 114.5;
+    const MW = config.middleWidth || 47.5;
+    const totalProfileMM = TW + BW + MW;
+    const TH = innerH * (TW / (totalProfileMM + config.height * 25.4 * 0.5));  // rough proportional
+    const topRailH    = Math.max(4, Math.min(14, innerH * 0.08));
+    const botRailH    = Math.max(6, Math.min(20, innerH * 0.14));
+    const midRailH    = Math.max(4, Math.min(10, innerH * 0.06));
 
-    // Bottom Rail
-    const bottomRailH = leafH * 0.15;
-    svg += `<rect x="${leafX}" y="${leafY + leafH - bottomRailH}" width="${leafW}" height="${bottomRailH}" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1"/>`;
+    // Middle rail Y position
+    let midRailY;
+    if (config.middleRailPositionMM != null) {
+        const midFrac = config.middleRailPositionMM / (config.height * 25.4);
+        midRailY = innerY + innerH * (1 - midFrac) - midRailH / 2;
+    } else {
+        midRailY = innerY + innerH * 0.5 - midRailH / 2;
+    }
+    midRailY = Math.max(innerY + topRailH + 2, Math.min(innerY + innerH - botRailH - midRailH - 2, midRailY));
 
-    // Middle Rail? (Assume yes for visual)
-    const midRailY = leafY + (leafH * 0.6);
-    const midRailH = leafH * 0.08;
-    svg += `<rect x="${leafX}" y="${midRailY}" width="${leafW}" height="${midRailH}" fill="#ecf0f1" stroke="#bdc3c7" stroke-width="1"/>`;
+    // Zone heights
+    const upperZoneY = innerY + topRailH;
+    const upperZoneH = midRailY - upperZoneY;
+    const lowerZoneY = midRailY + midRailH;
+    const lowerZoneH = innerY + innerH - botRailH - lowerZoneY;
 
-    // Handle (Right side)
-    const handleY = leafY + (leafH * 0.5);
-    const handleX = leafX + leafW - 10;
-    svg += `<circle cx="${handleX}" cy="${handleY}" r="3" fill="#34495e"/>`;
-    svg += `<rect x="${handleX - 1.5}" y="${handleY + 3}" width="3" height="15" fill="#34495e" rx="1"/>`;
+    // Leaf width
+    const singleLeafW = innerW / leaves;
 
-    // Arc for opening (optional, dashed line)
-    // Top-Left to Bottom-Left via Handle (Right)
-    svg += `<path d="M ${leafX},${leafY} L ${leafX + leafW},${leafY + leafH / 2} L ${leafX},${leafY + leafH}" stroke="#95a5a6" stroke-width="1" stroke-dasharray="4,4" fill="none" opacity="0.6"/>`;
+    for (let li = 0; li < leaves; li++) {
+        const lx = innerX + li * singleLeafW;
+        const vlw = Math.max(3, singleLeafW * 0.06); // vertical stile width
+
+        // Leaf background
+        svg += `<rect x="${lx}" y="${innerY}" width="${singleLeafW}" height="${innerH}" fill="#f4f6f7" stroke="#3498db" stroke-width="1.5"/>`;
+
+        // Upper zone fill (partition color)
+        const up = config.upperPartition;
+        svg += `<rect x="${lx+vlw}" y="${upperZoneY}" width="${singleLeafW-vlw*2}" height="${upperZoneH}" fill="${partClr(up)}" stroke="#aab" stroke-width="0.5" opacity="0.9"/>`;
+
+        // Lower zone fill
+        const lo = config.lowerPartition;
+        svg += `<rect x="${lx+vlw}" y="${lowerZoneY}" width="${singleLeafW-vlw*2}" height="${lowerZoneH}" fill="${partClr(lo)}" stroke="#aab" stroke-width="0.5" opacity="0.9"/>`;
+
+        // Top rail
+        svg += `<rect x="${lx}" y="${innerY}" width="${singleLeafW}" height="${topRailH}" fill="#d5d8dc" stroke="#aaa" stroke-width="0.5"/>`;
+        // Bottom rail
+        svg += `<rect x="${lx}" y="${innerY+innerH-botRailH}" width="${singleLeafW}" height="${botRailH}" fill="#d5d8dc" stroke="#aaa" stroke-width="0.5"/>`;
+        // Middle rail
+        svg += `<rect x="${lx}" y="${midRailY}" width="${singleLeafW}" height="${midRailH}" fill="#d5d8dc" stroke="#aaa" stroke-width="0.5"/>`;
+        // Left stile (hinge side) and right stile (handle side)
+        svg += `<rect x="${lx}" y="${innerY}" width="${vlw}" height="${innerH}" fill="#bdc3c7" stroke="#aaa" stroke-width="0.5"/>`;
+        svg += `<rect x="${lx+singleLeafW-vlw}" y="${innerY}" width="${vlw}" height="${innerH}" fill="#bdc3c7" stroke="#aaa" stroke-width="0.5"/>`;
+
+        // Handle on the right stile (non-hinge side)
+        const hx = lx + singleLeafW - vlw / 2;
+        const hy = innerY + innerH * 0.48;
+        svg += `<circle cx="${hx}" cy="${hy}" r="2" fill="#2c3e50"/>`;
+        svg += `<rect x="${hx-1}" y="${hy+2}" width="2" height="9" fill="#2c3e50" rx="0.5"/>`;
+
+        // Hinge marks on left stile
+        for (const hpct of [0.25, 0.75]) {
+            const hy2 = innerY + innerH * hpct;
+            svg += `<rect x="${lx}" y="${hy2-3}" width="${vlw}" height="4" fill="#7f8c8d" rx="1"/>`;
+        }
+
+        // Partition labels
+        const upLabel = (up && up.material !== 'None' && up.material) ? up.material : '';
+        const loLabel = (lo && lo.material !== 'None' && lo.material) ? lo.material : '';
+        if (upLabel && upperZoneH > 10) {
+            svg += `<text x="${lx + singleLeafW/2}" y="${upperZoneY + upperZoneH/2 + 3}" text-anchor="middle" font-family="Arial" font-size="7" fill="#2c3e50" font-weight="bold">${upLabel}</text>`;
+        }
+        if (loLabel && lowerZoneH > 10) {
+            svg += `<text x="${lx + singleLeafW/2}" y="${lowerZoneY + lowerZoneH/2 + 3}" text-anchor="middle" font-family="Arial" font-size="7" fill="#2c3e50" font-weight="bold">${loLabel}</text>`;
+        }
+    }
+
+    // Center divider line for double door
+    if (leaves > 1) {
+        svg += `<line x1="${innerX + singleLeafW}" y1="${innerY}" x2="${innerX + singleLeafW}" y2="${innerY + innerH}" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="3,2"/>`;
+    }
+
+    // Floor line (no bottom frame)
+    svg += `<line x1="${startX}" y1="${startY+doorH}" x2="${startX+doorW}" y2="${startY+doorH}" stroke="#bbb" stroke-width="1" stroke-dasharray="4,3"/>`;
+
+    // Closing mechanism badge
+    const cmLabel = config.closingMechanism === 'FloorSpring' ? 'FS' : 'HG';
+    svg += `<rect x="${startX+2}" y="${startY+doorH-13}" width="16" height="11" rx="2" fill="${config.closingMechanism === 'FloorSpring' ? '#8e44ad' : '#2980b9'}" opacity="0.85"/>`;
+    svg += `<text x="${startX+10}" y="${startY+doorH-5}" text-anchor="middle" font-family="Arial" font-size="7" font-weight="bold" fill="white">${cmLabel}</text>`;
 
     svg += '</svg>';
     return svg;
@@ -1603,15 +1762,41 @@ function generateDoorDiagram(config) {
 // Safe evaluation helper for hardware formulas
 function safeEval(formula, context, defaultValue = 0) {
     try {
-        const { W, H, S, MS, T, P, GL, F, VW, TW, MW, BW } = context;
+        const { W, H, S, MS, T, P, GL, F, VW, TW, MW, BW, L } = context;
         // Use Function constructor for isolation and safety
-        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', 'GL', 'F', 'VW', 'TW', 'MW', 'BW', `return ${formula}`);
-        const result = fn(W, H, S, MS, T, P, GL, F, VW, TW, MW, BW);
+        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', 'GL', 'F', 'VW', 'TW', 'MW', 'BW', 'L', `return ${formula}`);
+        const result = fn(W, H, S, MS, T, P, GL, F, VW, TW, MW, BW, L);
         return isNaN(result) ? defaultValue : result;
     } catch (e) {
         console.error('SafeEval Error (Hardware):', e, 'Formula:', formula);
         return defaultValue;
     }
+}
+
+function generateDoorHardware(win) {
+    const cm = win.closingMechanism || 'Hinge';
+    const items = [];
+
+    if (cm === 'Hinge') {
+        items.push({ hardware: 'Door Hinge',    unit: 'Nos',  formula: '4 * L',             rate: 52   });
+    } else {
+        items.push({ hardware: 'Floor Spring',  unit: 'Nos',  formula: '1 * L',             rate: 3500 });
+    }
+
+    items.push({ hardware: 'Door Handle',       unit: 'Nos',  formula: '2 * L',             rate: 450  });
+
+    if (cm === 'Hinge') {
+        items.push({ hardware: 'Door Closer',   unit: 'Nos',  formula: '1 * L',             rate: 1800 });
+    }
+
+    items.push(
+        { hardware: 'Lock Body',                unit: 'Nos',  formula: '1 * L',             rate: 850  },
+        { hardware: 'Cylinder',                 unit: 'Nos',  formula: '1 * L',             rate: 450  },
+        { hardware: 'Silicon Sealant',          unit: 'R.Ft', formula: '(W + H) * 2 / 12', rate: 10   },
+        { hardware: 'Door Road 12mm',           unit: 'Nos',  formula: '2 * L',             rate: 60   }
+    );
+
+    return items;
 }
 
 function calculateWindowHardware(window, optimizationResults = null) {
@@ -1650,7 +1835,11 @@ function calculateWindowHardware(window, optimizationResults = null) {
     };
 
     // Get hardware items for this series
-    let hardwareList = hardwareMaster[series];
+    // Door hardware is generated dynamically based on closing mechanism
+    let hardwareList = (series === 'Door')
+        ? generateDoorHardware(window)
+        : hardwareMaster[series];
+
     if (!hardwareList) {
         // Fallback for migrated names
         if (series === '1') hardwareList = hardwareMaster['1"'];
@@ -1675,6 +1864,7 @@ function calculateWindowHardware(window, optimizationResults = null) {
         MW: (window.middleWidth || 47.5) / 25.4,
         BW: (window.bottomWidth || 85) / 25.4,
         P: (window.width * 2 + window.height * 2),
+        L: window.leaves || 1,
         GL: GL // Passing the helper function itself
     };
 
@@ -1718,6 +1908,20 @@ function calculateWindowHardware(window, optimizationResults = null) {
 //   - rates use "3/4\" 2 track top"     vs  component "3/4\" 2 Track Top"
 //   - rates use "Domal Shutter"          vs  component "27mm Domal Shutter"
 //   - rates use "Domal 3 Track"          vs  series="Domal" + component="3 Track"
+// For Door series, append the correct size suffix (45mm / 85mm / 115mm) to the
+// component name so the size-specific PC rate is selected.
+function doorCompWithSize(compName, win) {
+    const sizeLabel = mm => mm >= 110 ? '115mm' : mm >= 80 ? '85mm' : '45mm';
+    const c = (compName || '').toLowerCase();
+    if (c === 'door top')           return `Door Top ${sizeLabel(win.topWidth    || 47.5)}`;
+    if (c === 'door bottom')        return `Door Bottom ${sizeLabel(win.bottomWidth || 114.5)}`;
+    if (c === 'door middle double') return `Door Middle Double ${sizeLabel(win.middleWidth || 47.5)}`;
+    if (c === 'door middle single') return `Door Middle Single ${sizeLabel(win.verticalWidth || 47.5)}`;
+    if (c === 'door vertical')      return `Door Vertical ${sizeLabel(win.verticalWidth || 47.5)}`;
+    // Tips Vertical, Door Glazing Clip, Door Leg Partition have no size variant
+    return compName;
+}
+
 function lookupPowderCoatingRate(series, compName) {
     const pc = (typeof ratesConfig !== 'undefined') ? (ratesConfig.powderCoating || {}) : {};
     const norm = s => (s || '').toString().toLowerCase().replace(/\s+/g, ' ').trim();
@@ -1762,6 +1966,81 @@ function lookupPowderCoatingRate(series, compName) {
     return bestRate;
 }
 
+// Calculate glass cost for a door using its upper/lower partition definitions.
+// Each glass partition's area = (inner door width) × (zone height), converted to sqft.
+function calculateDoorGlassCost(win) {
+    if (!win || win.category !== 'Door') return 0;
+
+    const VW = (win.verticalWidth || 47.5) / 25.4;    // inches
+    const TW = (win.topWidth    || 47.5) / 25.4;
+    const BW = (win.bottomWidth || 114.5)/ 25.4;
+    const MW = (win.middleWidth || 47.5) / 25.4;
+    const F  = win.frame || 0;
+    const L  = win.leaves || 1;
+
+    // For double doors each leaf is narrower; glass width = per-leaf interior width
+    const leafW   = (win.width - (F * 3.15)) / L - 2 * VW;
+    const innerW  = Math.max(0, leafW);                    // per-leaf glass width
+    const innerH  = win.height - (F * 1.575);             // door interior height
+    const midMM   = win.middleRailPositionMM;
+
+    // Heights of lower and upper zones (excluding top/bottom/middle rail profiles)
+    let lowerZoneH, upperZoneH;
+    if (midMM != null) {
+        const midIn = midMM / 25.4;
+        lowerZoneH = Math.max(0, midIn - BW - MW / 2);
+        upperZoneH = Math.max(0, innerH - midIn - TW - MW / 2);
+    } else {
+        // Center: both zones equal
+        const halfH = (innerH - TW - BW - MW) / 2;
+        lowerZoneH = upperZoneH = Math.max(0, halfH);
+    }
+
+    const GLASS_DEDUCT  = 0.3125; // 8mm for glass (rubber + buffer)
+    const OTHER_DEDUCT  = 0.25;   // 6mm for ACP, Bakelite, etc.
+
+    const partitionDimensions = (partition, openingW, openingH) => {
+        const isGlass = partition && partition.material === 'Glass';
+        const d = isGlass ? GLASS_DEDUCT : OTHER_DEDUCT;
+        return { w: Math.max(0, openingW - d), h: Math.max(0, openingH - d) };
+    };
+
+    const glassRateForPartition = (partition) => {
+        if (!partition || !partition.material || partition.material === 'None') return 0;
+        if (partition.material === 'Glass') {
+            const toughened = !!partition.glassToughened;
+            const thk       = partition.thickness || '6';
+            const prefix    = (partition.glassType === 'DGU') ? 'DGU_' : '';
+            const key       = `${prefix}${toughened ? 'toughened' : 'non_toughened'}_${thk}mm`;
+            const fallback  = `${toughened ? 'toughened' : 'non_toughened'}_5mm`;
+            let rate = ratesConfig.glass[key];
+            if (rate == null) rate = ratesConfig.glass[fallback] || 0;
+            return rate;
+        }
+        // Non-glass partition: look up partitionRates by material + thickness
+        const pr = (ratesConfig.partitionRates || {});
+        const thk = partition.thickness && partition.thickness !== '0' ? `_${partition.thickness}mm` : '';
+        const key = partition.material + thk;
+        return pr[key] || pr[partition.material] || 0;
+    };
+
+    const qty = win.qty || 1;
+
+    // Upper zone
+    const up = win.upperPartition || (win.partitionMaterial ? { material: win.partitionMaterial, thickness: win.partitionThickness, glassType: win.glassUnit || 'SGU', glassToughened: win.glassToughened } : null);
+    const upperRate = glassRateForPartition(up);
+    const upperDim  = partitionDimensions(up, innerW, upperZoneH);
+    const upperArea = (upperDim.w * upperDim.h) / 144;
+
+    // Lower zone
+    const lo = win.lowerPartition || null;
+    const lowerRate = glassRateForPartition(lo);
+    const lowerDim  = partitionDimensions(lo, innerW, lowerZoneH);
+    const lowerArea = (lowerDim.w * lowerDim.h) / 144;
+
+    return (upperArea * upperRate + lowerArea * lowerRate) * qty * L;
+}
+
 // Helper: resolve glass info from window (supports new glassUnit/glassThickness and legacy glassType)
 function resolveGlassInfo(win) {
     if (win.glassUnit && win.glassUnit !== 'none') {
@@ -1786,47 +2065,68 @@ function resolveGlassInfo(win) {
     return { hasGlass: false, rateKey: null, fallbackKey: null, label: 'No Glass', thickness: '0', unit: 'none', toughened: false };
 }
 
-// Helper to calculate glass dimensions for a window
+// Helper to calculate glass dimensions for a window.
+// Shutter piece lengths are read from optimization results using the formula 'desc' identifiers
+// configured in ratesConfig.glassOffsets[series].shutterHDesc / shutterWDesc.
 function calculateGlassDimensions(window) {
     const gi = resolveGlassInfo(window);
     if (!gi.hasGlass) return null;
 
-    const offset = ratesConfig.global.glassOffset || 1.5;
-    let shutterW = 0;
-    let shutterH = 0;
+    const fallbackOffset = ratesConfig.global.glassOffset || 1.5;
+    const seriesCfg      = (ratesConfig.glassOffsets && ratesConfig.glassOffsets[window.series]) || {};
+    const offsetW        = seriesCfg.offsetW  != null ? seriesCfg.offsetW  : fallbackOffset;
+    const offsetH        = seriesCfg.offsetH  != null ? seriesCfg.offsetH  : fallbackOffset;
+    const shutterHDesc   = (seriesCfg.shutterHDesc || '').toLowerCase();
+    const shutterWDesc   = (seriesCfg.shutterWDesc || '').toLowerCase();
 
-    if (optimizationResults && optimizationResults.results) {
-        for (const [key, plans] of Object.entries(optimizationResults.results)) {
-            plans.forEach(plan => {
-                plan.pieces.forEach(p => {
-                    if (p.label && p.label.startsWith(window.configId)) {
-                        if (p.label.toLowerCase().includes('shutter') || p.label.toLowerCase().includes('handle') || p.label.toLowerCase().includes('interlock')) {
-                            // Heuristic to detect vertical vs horizontal
-                            if (p.desc && (p.desc.toLowerCase().includes('vertical') || p.desc.toLowerCase().includes('handle') || p.desc.toLowerCase().includes('interlock'))) {
-                                shutterH = p.length;
-                            } else {
-                                shutterW = p.length;
-                            }
-                        }
-                    }
-                });
-            });
+    // Find shutter piece lengths from optimization results.
+    // Pieces are labelled: "<configId> - <formula.desc>"
+    let shutterH = 0;
+    let shutterW = 0;
+
+    if (optimizationResults && optimizationResults.results && shutterHDesc && shutterWDesc) {
+        const prefix = window.configId + ' - ';
+        for (const plans of Object.values(optimizationResults.results)) {
+            for (const plan of plans) {
+                for (const p of plan.pieces) {
+                    if (!p.label || !p.label.startsWith(prefix)) continue;
+                    const desc = p.label.slice(prefix.length).toLowerCase();
+                    if (!shutterH && desc === shutterHDesc) shutterH = p.length;
+                    if (!shutterW && desc === shutterWDesc) shutterW = p.length;
+                    if (shutterH && shutterW) break;
+                }
+                if (shutterH && shutterW) break;
+            }
+            if (shutterH && shutterW) break;
         }
     }
 
-    // Fallback if not optimized
-    if (!shutterW) shutterW = (window.width / window.shutters) - 1.5;
-    if (!shutterH) shutterH = window.height - 1.5;
+    // Fallback when optimization hasn't been run
+    if (!shutterH) shutterH = window.height;
+    if (!shutterW) shutterW = window.width / Math.max(1, window.shutters);
 
-    const gw = Math.max(0, shutterW - offset);
-    const gh = Math.max(0, shutterH - offset);
+    const gw = Math.max(0, shutterW - offsetW);
+    const gh = Math.max(0, shutterH - offsetH);
+
+    const regularQty  = window.shutters || 0;
+    const regularArea = (gw * gh) / 144; // sqft per shutter
+
+    // Mosquito shutter glass — only when msOffsets are explicitly set
+    let msArea = 0, msQty = 0;
+    if (seriesCfg.msOffsetW != null && seriesCfg.msOffsetH != null && (window.mosquitoShutters || 0) > 0) {
+        const msW = Math.max(0, shutterW - seriesCfg.msOffsetW);
+        const msH = Math.max(0, shutterH - seriesCfg.msOffsetH);
+        msQty  = window.mosquitoShutters;
+        msArea = (msW * msH) / 144;
+    }
 
     return {
-        width: gw,
-        height: gh,
-        area: (gw * gh) / 144, // sqft
-        perimeter: (gw * 2 + gh * 2) / 12, // feet
-        qty: window.shutters
+        width: gw, height: gh,
+        area: regularArea,
+        perimeter: (gw * 2 + gh * 2) / 12,
+        qty: regularQty,
+        msQty, msArea,
+        totalArea: regularArea * regularQty + msArea * msQty
     };
 }
 
@@ -1839,12 +2139,18 @@ function generateQuotationHTML(projectWindows, selectedProject) {
     let grandTotal = 0;
 
     projectWindows.forEach(win => {
-        const glass = calculateGlassDimensions(win);
-        const _gi = resolveGlassInfo(win);
-        const glassRate = (glass && _gi.rateKey) ? (ratesConfig.glass[_gi.rateKey] || 0) : 0;
-        const glassCost = glass ? glass.area * glass.qty * glassRate : 0;
-        const rubberFeet = glass ? glass.perimeter * glass.qty * 1.05 : 0;
-        const rubberCost = rubberFeet * (ratesConfig.global.rubberRate || 5);
+        let glassCost = 0;
+        let rubberCost = 0;
+        if (win.category === 'Door') {
+            glassCost = calculateDoorGlassCost(win);
+        } else {
+            const glass = calculateGlassDimensions(win);
+            const _gi = resolveGlassInfo(win);
+            const glassRate = (glass && _gi && _gi.rateKey) ? (ratesConfig.glass[_gi.rateKey] || 0) : 0;
+            glassCost = glass ? glass.totalArea * glassRate : 0;
+            const rubberFeet = glass ? glass.perimeter * glass.qty * 1.05 : 0;
+            rubberCost = rubberFeet * (ratesConfig.global.rubberRate || 5);
+        }
         const hardware = calculateWindowHardware(win, optimizationResults);
         const hardwareCost = hardware.reduce((sum, h) => sum + h.total, 0);
 
@@ -1856,7 +2162,9 @@ function generateQuotationHTML(projectWindows, selectedProject) {
                 let purchasedLenForWindow = 0;
                 let weightForWindow = 0;
                 let compName = key.includes('|') ? key.split('|')[1].trim() : key;
-                const pcRate = ratesConfig.powderCoating[compName] || 1;
+                const _seriesKey = key.includes('|') ? key.split('|')[0].trim() : '';
+                const _effComp = (_seriesKey === 'Door') ? doorCompWithSize(compName, win) : compName;
+                const pcRate = lookupPowderCoatingRate(_seriesKey, _effComp) || 1;
 
                 data.forEach(plan => {
                     const stockLen = parseFloat(plan.stock);
@@ -1881,7 +2189,8 @@ function generateQuotationHTML(projectWindows, selectedProject) {
             }
         }
 
-        const profileCost = weightTotal * (typeof aluminumRate !== 'undefined' ? aluminumRate : 280);
+        const _seriesRate = (typeof stockRates !== 'undefined' && stockRates[win.series]) ? stockRates[win.series] : (typeof aluminumRate !== 'undefined' ? aluminumRate : 280);
+        const profileCost = weightTotal * _seriesRate;
         const winTotal = profileCost + powderCoatingCost + glassCost + hardwareCost + rubberCost;
         grandTotal += winTotal;
 
@@ -2106,6 +2415,10 @@ function verifySectionsConfigured() {
 
     const missing = [];
     Object.keys(optimizationResults.results).forEach(key => {
+        // Door components use ₹/ft PC rates directly — section weight not required
+        const seriesKey = key.split('|')[0].trim();
+        if (seriesKey === 'Door') return;
+
         const selected = optimizationResults.componentSections ? optimizationResults.componentSections[key] : null;
         if (!selected) {
             missing.push(key);
