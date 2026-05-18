@@ -175,6 +175,65 @@ function runOptimization() {
 }
 
 // ============================================================================
+// DOOR FORMULA GENERATOR
+// ============================================================================
+
+// Auto-select hinge side vertical profile (Door Bottom vs Door Top) by comparing
+// cut wastage against available stock lengths. Defaults to Door Bottom.
+function selectHingeSideProfile(win, supplierData) {
+    const pieceLen = win.height - ((win.frame || 0) * 1.575) - 1.634;
+    const doorStock = (supplierData && supplierData.stock && supplierData.stock['Door']) || [];
+
+    const calcMinWaste = (materialName) => {
+        const items = doorStock.filter(s => s.material === materialName);
+        if (!items.length) return Infinity;
+        let minWaste = Infinity;
+        for (const item of items) {
+            for (const sLen of [item.stock1, item.stock2].filter(s => s > 0)) {
+                const rem = pieceLen % sLen;
+                minWaste = Math.min(minWaste, rem === 0 ? 0 : sLen - rem);
+            }
+        }
+        return minWaste;
+    };
+
+    return calcMinWaste('Door Top') < calcMinWaste('Door Bottom') ? 'Door Top' : 'Door Bottom';
+}
+
+// Generate door profile formulas dynamically based on window properties.
+// Replaces the static formula array for Door series.
+function generateDoorProfileFormulas(win, supplierData) {
+    const HANDLE_COMP = {
+        'Door Vertical':      'Door Vertical',
+        'Door Tips Vertical': 'Tips Vertical',
+        'Door Middle Single':  'Door Middle Single'
+    };
+
+    const handleComp = HANDLE_COMP[win.handleProfile] || 'Door Vertical';
+
+    let hingeComp;
+    if ((win.closingMechanism || 'Hinge') === 'Hinge') {
+        hingeComp = selectHingeSideProfile(win, supplierData);
+    } else {
+        // Floor Spring: user-selectable hinge side (default = same as handle side)
+        hingeComp = HANDLE_COMP[win.floorSpringHingeProfile] || handleComp;
+    }
+
+    return [
+        { component: handleComp,           qty: 'L', length: 'H - (F*1.575) - 1.634',         desc: 'Vertical Handle' },
+        { component: hingeComp,            qty: 'L', length: 'H - (F*1.575) - 1.634',         desc: 'Vertical Hing' },
+        { component: 'Door Top',           qty: 'L', length: '(W - (F*3.15)) / L - 2*VW',     desc: 'Top Rail' },
+        { component: 'Door Bottom',        qty: 'L', length: '(W - (F*3.15)) / L - 2*VW',     desc: 'Bottom Rail' },
+        { component: 'Door Middle Double', qty: 'L', length: '(W - (F*3.15)) / L - 2*VW',     desc: 'Middle Rail' },
+        { component: 'Door Leg Partition', qty: '1*F', length: 'W',                            desc: 'Frame Top' },
+        { component: 'Door Leg Partition', qty: '1*F', length: 'H',                            desc: 'Frame Left' },
+        { component: 'Door Leg Partition', qty: '1*F', length: 'H',                            desc: 'Frame Right' },
+        { component: 'Door Glazing Clip',  qty: '8*L', length: '(H - (F*1.575) - TW - BW - MW) / 2', desc: 'Glazing Clip Vertical' },
+        { component: 'Door Glazing Clip',  qty: '8*L', length: '(W - (F*3.15)) / L - 2*VW',  desc: 'Glazing Clip Horizontal' }
+    ];
+}
+
+// ============================================================================
 // PIECE CALCULATION FROM FORMULAS
 // ============================================================================
 
@@ -182,10 +241,10 @@ function runOptimization() {
 function safeEval(formula, context, defaultValue = 0) {
     try {
         // Create variables from context
-        const { W, H, S, MS, T, P, CJ, IT, GT, MT, MIT, F, VW, TW, MW, BW } = context;
+        const { W, H, S, MS, T, P, CJ, IT, GT, MT, MIT, F, VW, TW, MW, BW, L } = context;
         // Use a function constructor for slightly better safety than eval()
-        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', 'CJ', 'IT', 'GT', 'MT', 'MIT', 'F', 'VW', 'TW', 'MW', 'BW', `return ${formula}`);
-        return fn(W, H, S, MS, T, P, CJ, IT, GT, MT, MIT, F, VW, TW, MW, BW);
+        const fn = new Function('W', 'H', 'S', 'MS', 'T', 'P', 'CJ', 'IT', 'GT', 'MT', 'MIT', 'F', 'VW', 'TW', 'MW', 'BW', 'L', `return ${formula}`);
+        return fn(W, H, S, MS, T, P, CJ, IT, GT, MT, MIT, F, VW, TW, MW, BW, L);
     } catch (e) {
         console.error('SafeEval Error:', e, 'Formula:', formula);
         return defaultValue;
@@ -259,6 +318,13 @@ function calculatePieces(selectedProject, preferredSupplier) {
             return;
         }
 
+        // Door formulas are generated dynamically based on closing mechanism & profile choices
+        if (seriesName === 'Door') {
+            const supplierData = (window.SUPPLIER_REGISTRY && window.SUPPLIER_REGISTRY[effectiveVendor]) || null;
+            formulas = generateDoorProfileFormulas(win, supplierData);
+            console.log(`%c🚪 Door formulas generated dynamically | Mechanism: ${win.closingMechanism || 'Hinge'} | Handle: ${win.handleProfile || 'Door Vertical'}`, 'background: #6f42c1; color: white; padding: 2px 6px;');
+        }
+
         console.log(`%c📐 Window ${id} | Vendor: ${win.vendor} | Series: ${seriesName} | MS: ${MS} | Formulas: ${formulas.length}`, 'background: #343a40; color: white; padding: 2px 6px; border-radius: 3px;');
 
         const context = {
@@ -278,7 +344,8 @@ function calculatePieces(selectedProject, preferredSupplier) {
             IT: win.interlockType || 'slim',
             GT: win.glassUnit || 'SGU',
             MT: win.mosquitoType || 'V-2513',
-            MIT: win.mosquitoInterlock || 'V-2516'
+            MIT: win.mosquitoInterlock || 'V-2516',
+            L: win.leaves || 1
         };
 
         formulas.forEach(formula => {
