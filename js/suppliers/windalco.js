@@ -223,24 +223,24 @@ window.registerSupplier("Windalco Aluminium", {
         ],
         // Door Formulas (same as JK ALU for universal compatibility)
         'Door': [
-            // Door Vertical Handle
-            { component: 'Door Vertical', qty: '1', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Handle' },
-            // Door Vertical Hing
-            { component: 'Door Vertical', qty: '1', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Hing' },
-            // Door Top
-            { component: 'Door Top', qty: '1', length: 'W - (F*3.15) - 2*VW', desc: 'Top Rail' },
-            // Door Bottom
-            { component: 'Door Bottom', qty: '1', length: 'W - (F*3.15) - 2*VW', desc: 'Bottom Rail' },
-            // Door Middle Double
-            { component: 'Door Middle Double', qty: '1', length: 'W - (F*3.15) - 2*VW', desc: 'Middle Rail' },
-            // Frame - Leg Partition (Only if F=1)
+            // Door Vertical Handle - 1 per leaf (L)
+            { component: 'Door Vertical', qty: 'L', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Handle' },
+            // Door Vertical Hing - 1 per leaf (L)
+            { component: 'Door Vertical', qty: 'L', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Hing' },
+            // Door Top - 1 per leaf, width split across leaves
+            { component: 'Door Top', qty: 'L', length: '(W - (F*3.15)) / L - 2*VW', desc: 'Top Rail' },
+            // Door Bottom - 1 per leaf, width split across leaves
+            { component: 'Door Bottom', qty: 'L', length: '(W - (F*3.15)) / L - 2*VW', desc: 'Bottom Rail' },
+            // Door Middle Double - 1 per leaf
+            { component: 'Door Middle Double', qty: 'L', length: '(W - (F*3.15)) / L - 2*VW', desc: 'Middle Rail' },
+            // Frame - Leg Partition (Only if F=1), 3 sides: top, left, right (no bottom)
             { component: 'Door Leg Partition', qty: '1*F', length: 'W', desc: 'Frame Top' },
             { component: 'Door Leg Partition', qty: '1*F', length: 'H', desc: 'Frame Left' },
             { component: 'Door Leg Partition', qty: '1*F', length: 'H', desc: 'Frame Right' },
-            // Door Glazing Clip - Vertical
-            { component: 'Door Glazing Clip', qty: '8', length: '(H - (F*1.575) - TW - BW - MW) / 2', desc: 'Glazing Clip Vertical' },
-            // Door Glazing Clip - Horizontal
-            { component: 'Door Glazing Clip', qty: '8', length: 'W - (F*3.15) - 2*VW', desc: 'Glazing Clip Horizontal' }
+            // Door Glazing Clip - Vertical (4 per pane × 2 panes per leaf)
+            { component: 'Door Glazing Clip', qty: '8*L', length: '(H - (F*1.575) - TW - BW - MW) / 2', desc: 'Glazing Clip Vertical' },
+            // Door Glazing Clip - Horizontal (4 per pane × 2 panes per leaf)
+            { component: 'Door Glazing Clip', qty: '8*L', length: '(W - (F*3.15)) / L - 2*VW', desc: 'Glazing Clip Horizontal' }
         ]
     },
 
