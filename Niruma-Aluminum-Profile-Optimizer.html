@@ -414,7 +414,7 @@
                             style="background: #fff5e6; padding: 20px; border-radius: 10px; border-left: 4px solid #e67e22;">
                             <h3 style="margin-top: 0; color: #e67e22;">🚪 Door Configuration</h3>
 
-                            <!-- Row 1: ID, Project, Size -->
+                            <!-- Row 1: ID, Project, Location, Size -->
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Config ID</label>
@@ -426,6 +426,10 @@
                                     <input type="text" id="doorProjectName" value="check" required>
                                 </div>
                                 <div class="form-group">
+                                    <label>Location</label>
+                                    <input type="text" id="doorLocation" placeholder="e.g. Main Entrance">
+                                </div>
+                                <div class="form-group">
                                     <label>Width <span class="unit-label">(inches)</span></label>
                                     <input type="text" id="doorWidth" value="36" placeholder="e.g. 36 1/4" required>
                                 </div>
@@ -435,13 +439,20 @@
                                 </div>
                             </div>
 
-                            <!-- Row 2: Vendor, Frame, Glass, Partition -->
+                            <!-- Row 2: Vendor, Door Type, Frame, Qty -->
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Vendor / Supplier</label>
                                     <select id="doorVendor" required>
                                         <option value="JK ALU EXTRUSION" selected>JK ALU EXTRUSION</option>
                                         <option value="Windalco Aluminium">Windalco Aluminium</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Door Type</label>
+                                    <select id="doorType" onchange="toggleDoubleDoorOptions()">
+                                        <option value="single" selected>🚪 Single Door</option>
+                                        <option value="double">🚪🚪 Double Door</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
@@ -452,53 +463,140 @@
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Glass Type</label>
-                                    <select id="doorGlassTypeNew">
-                                        <option value="SGU" selected>SGU (Single)</option>
-                                        <option value="DGU">DGU (Double)</option>
-                                    </select>
+                                    <label>Quantity</label>
+                                    <input type="number" id="doorQty" value="1" min="1" step="1">
                                 </div>
                             </div>
 
-                            <!-- Row 3: Partition Material & Thickness -->
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Partition Material</label>
-                                    <select id="doorPartitionMaterialNew" onchange="updateDoorPartitionThicknessNew()">
-                                        <option value="Glass" selected>Glass</option>
-                                        <option value="Bakelite">Bakelite Sheet</option>
-                                        <option value="ACP">ACP Sheet</option>
-                                        <option value="Louvers">Louvers</option>
-                                        <option value="SSMosquito">SS Mosquito Net</option>
-                                        <option value="ParticleBoard">Particle Board</option>
-                                        <option value="PartitionSheet">Partition Sheet</option>
-                                    </select>
+                            <!-- Double Door Options (hidden by default) -->
+                            <div id="doubleDoorOptions" style="display:none;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 15px;margin-bottom:12px;">
+                                <strong style="color:#856404;">🚪🚪 Double Door — Frame on 3 sides (Left, Right, Top). Total width minus both side frames is split equally between both leaves.</strong>
+                            </div>
+
+                            <!-- Row 3: Middle Rail Position -->
+                            <div style="background:#fff8f0;border:1px solid #f0c27b;border-radius:8px;padding:12px 15px;margin-bottom:12px;">
+                                <div style="display:flex;align-items:center;gap:15px;flex-wrap:wrap;">
+                                    <strong style="color:#d35400;min-width:140px;">🔲 Middle Rail</strong>
+                                    <label style="font-weight:normal;display:flex;align-items:center;gap:6px;cursor:pointer;">
+                                        <input type="checkbox" id="doorMiddleCustomPos" onchange="toggleDoorMiddlePosition()">
+                                        Custom position (not center)
+                                    </label>
+                                    <div id="doorMiddlePosGroup" style="display:none;align-items:center;gap:8px;">
+                                        <label style="font-weight:normal;font-size:13px;">Height from bottom:</label>
+                                        <input type="number" id="doorMiddlePosition" value="" placeholder="mm" min="0" step="1"
+                                            style="width:90px;padding:5px 8px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+                                        <span style="font-size:12px;color:#888;">mm from floor</span>
+                                    </div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Partition Thickness</label>
-                                    <select id="doorPartitionThicknessNew">
-                                        <option value="5">5mm</option>
-                                        <option value="6" selected>6mm</option>
-                                        <option value="8">8mm</option>
-                                    </select>
+                            </div>
+
+                            <!-- Row 4: Upper & Lower Partition -->
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                                <!-- Upper Partition -->
+                                <div style="background:#f0f8ff;border:1px solid #b0d4f1;border-radius:8px;padding:12px;">
+                                    <h6 style="margin:0 0 10px;color:#1a5276;">⬆ Upper Partition</h6>
+                                    <div style="display:flex;flex-direction:column;gap:8px;">
+                                        <select id="doorUpperMaterial" onchange="updateDoorPartitionThickness('upper')"
+                                            style="padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+                                            <option value="Glass" selected>Glass</option>
+                                            <option value="ACP">ACP Sheet</option>
+                                            <option value="Bakelite">Bakelite Sheet</option>
+                                            <option value="MosquitoNet">Mosquito Net</option>
+                                            <option value="SSMosquito">SS Mosquito Net</option>
+                                            <option value="Louvers">Louvers</option>
+                                            <option value="ParticleBoard">Particle Board</option>
+                                            <option value="PartitionSheet">Partition Sheet</option>
+                                            <option value="None">None / Open</option>
+                                        </select>
+                                        <div id="doorUpperGlassRow" style="display:flex;gap:6px;">
+                                            <select id="doorUpperGlassType" style="flex:1;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+                                                <option value="SGU">SGU Single</option>
+                                                <option value="DGU">DGU Double</option>
+                                            </select>
+                                            <select id="doorUpperGlassToughened" style="flex:1;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+                                                <option value="0">Non-Toughened</option>
+                                                <option value="1">Toughened</option>
+                                            </select>
+                                        </div>
+                                        <select id="doorUpperThickness" style="padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+                                            <option value="5">5mm</option>
+                                            <option value="6" selected>6mm</option>
+                                            <option value="8">8mm</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- Lower Partition -->
+                                <div style="background:#f0fff4;border:1px solid #a9dfbf;border-radius:8px;padding:12px;">
+                                    <h6 style="margin:0 0 10px;color:#1e8449;">⬇ Lower Partition</h6>
+                                    <div style="display:flex;flex-direction:column;gap:8px;">
+                                        <select id="doorLowerMaterial" onchange="updateDoorPartitionThickness('lower')"
+                                            style="padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+                                            <option value="Glass">Glass</option>
+                                            <option value="ACP">ACP Sheet</option>
+                                            <option value="Bakelite" selected>Bakelite Sheet</option>
+                                            <option value="MosquitoNet">Mosquito Net</option>
+                                            <option value="SSMosquito">SS Mosquito Net</option>
+                                            <option value="Louvers">Louvers</option>
+                                            <option value="ParticleBoard">Particle Board</option>
+                                            <option value="PartitionSheet">Partition Sheet</option>
+                                            <option value="None">None / Open</option>
+                                        </select>
+                                        <div id="doorLowerGlassRow" style="display:none;flex-direction:row;gap:6px;">
+                                            <select id="doorLowerGlassType" style="flex:1;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+                                                <option value="SGU">SGU Single</option>
+                                                <option value="DGU">DGU Double</option>
+                                            </select>
+                                            <select id="doorLowerGlassToughened" style="flex:1;padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+                                                <option value="0">Non-Toughened</option>
+                                                <option value="1">Toughened</option>
+                                            </select>
+                                        </div>
+                                        <select id="doorLowerThickness" style="padding:6px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+                                            <option value="4" selected>4mm</option>
+                                            <option value="6">6mm</option>
+                                            <option value="8">8mm</option>
+                                            <option value="12">12mm</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
                             <!-- Row 4: Profile Selection -->
-                            <h5
-                                style="margin: 15px 0 10px; color: #d35400; border-bottom: 1px solid #f0c27b; padding-bottom: 5px;">
+                            <h5 style="margin: 15px 0 10px; color: #d35400; border-bottom: 1px solid #f0c27b; padding-bottom: 5px;">
                                 📐 Profile Selection</h5>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label>Handle Profile (Verticals)</label>
-                                    <select id="doorHandleProfileNew">
-                                        <option value="Door Vertical" selected>Door Vertical (Standard)</option>
-                                        <option value="Door Tips Vertical">Door Tips Vertical</option>
-                                        <option value="Door Middle Single">Door Middle Single</option>
+                                    <label>Closing Mechanism</label>
+                                    <select id="doorClosingMechanism" onchange="toggleClosingMechanism()">
+                                        <option value="Hinge" selected>🔩 Hinge</option>
+                                        <option value="FloorSpring">🌀 Floor Spring</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Bottom Profile</label>
+                                    <label>Handle Side Profile <span style="font-size:11px;color:#888;">(non-hinge)</span></label>
+                                    <select id="doorHandleProfileNew">
+                                        <option value="Door Vertical" selected>Door Vertical (Standard)</option>
+                                        <option value="Door Tips Vertical">Door Tips Vertical</option>
+                                        <option value="Door Middle Single">Door Middle Single (DMS)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" id="doorHingeSideFSGroup" style="display:none;">
+                                    <label>Hinge Side Profile <span style="font-size:11px;color:#888;">(floor spring)</span></label>
+                                    <select id="doorHingeSideProfileFS">
+                                        <option value="">Same as handle side</option>
+                                        <option value="Door Vertical">Door Vertical (Standard)</option>
+                                        <option value="Door Tips Vertical">Door Tips Vertical</option>
+                                        <option value="Door Middle Single">Door Middle Single (DMS)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" id="doorHingeSideHingeInfo" style="">
+                                    <label>Hinge Side Profile <span style="font-size:11px;color:#888;">(auto-selected)</span></label>
+                                    <div style="padding:7px 10px;background:#f0f4f8;border:1px solid #cdd;border-radius:4px;font-size:13px;color:#555;">
+                                        Door Bottom / Door Top — auto-selected by least wastage
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Bottom Rail Profile</label>
                                     <select id="doorBottomProfileNew">
                                         <option value="Door Bottom" selected>Door Bottom (114.5mm Wide)</option>
                                         <option value="Door Top 47.5">Door Top (47.5mm Slim)</option>
@@ -661,10 +759,6 @@
                         <label>Kerf - Saw Blade Width <span class="unit-label">(inches)</span></label>
                         <input type="number" id="kerfGlobal" value="0.125" step="0.001" onchange="updateKerf()">
                     </div>
-                    <div class="form-group" style="max-width: 300px;">
-                        <label>Raw Material Price <span class="unit-label">(₹/Kg)</span></label>
-                        <input type="number" id="aluminumRate" value="280" step="1" onchange="updateAluminumRate()">
-                    </div>
                 </div>
                 <div id="stockMasterList"></div>
                 <div class="section-header">
@@ -823,11 +917,33 @@
                             🧪 Global Constants & Offsets</summary>
                         <div style="padding: 15px; border-top: 1px solid #eee;">
                             <div class="form-row">
-                                <div class="form-group"><label>Glass Offset (inches)</label><input type="number"
+                                <div class="form-group"><label>Glass Offset – Fallback (inches)</label><input type="number"
                                         id="glassOffset" value="1.5" step="0.1"></div>
                                 <div class="form-group"><label>Rubber Rate (₹/ft)</label><input type="number"
                                         id="rateRubber" value="5" step="1"></div>
                             </div>
+                        </div>
+                    </details>
+
+                    <details class="rate-group" style="margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: white;">
+                        <summary style="padding: 12px 15px; cursor: pointer; font-weight: bold; background: #f8f9fa; border-radius: 8px; list-style: none;">
+                            📐 Glass Deduction per Series (inches from shutter W &amp; H)</summary>
+                        <div style="padding: 15px; border-top: 1px solid #eee;">
+                            <p style="font-size:12px; color:#666; margin:0 0 12px 0;">
+                                Enter how many inches to subtract from the shutter width and height to get the glass pane size.
+                                Leave blank to use the fallback offset above. MS (mosquito) rows: leave blank if mosquito shutters have no glass.
+                            </p>
+                            <div id="glassOffsetsList"></div>
+                            <button class="btn btn-sm btn-secondary" onclick="saveGlassOffsets()" style="margin-top:8px;">💾 Save Glass Offsets</button>
+                        </div>
+                    </details>
+
+                    <details class="rate-group" style="margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; background: white;">
+                        <summary style="padding: 12px 15px; cursor: pointer; font-weight: bold; background: #f8f9fa; border-radius: 8px; list-style: none;">
+                            🪟 Door Partition Material Rates (₹ / sqft) — ACP, Bakelite, Mosquito, etc.</summary>
+                        <div style="padding: 15px; border-top: 1px solid #eee;">
+                            <div id="partitionRatesList"></div>
+                            <button class="btn btn-sm btn-secondary" onclick="savePartitionRates()" style="margin-top:10px;">💾 Save Partition Rates</button>
                         </div>
                     </details>
                 </div>
