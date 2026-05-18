@@ -80,28 +80,63 @@ let ratesConfig = {
         '1" 3 track bottom': 97.08,
         '1" 4 track top': 122.16,
         '1" 4 track bottom': 122.91,
-        'Domal Shutter': 33.0,
-        'Domal Clip': 25.8,
-        'Domal 2 Track': 50.4,
-        'Domal 3 Track': 69.0,
-        'Domal 4 Track': 87.0,
+        'Domal Shutter': 15.93,
+        'Domal Clip': 6.88,
+        'Domal 2 Track': 13.6,
+        'Domal 3 Track': 25.0,
+        'Domal 4 Track': 35.0,
         'Single Track Top': 33.0,
         'Single Track Bottom': 36.0,
         'Vitco 19mm': 35.0,
         'Vitco 25mm': 45.0,
         'C Channel 25mm': 28.0,
         'C Channel 50mm': 42.0,
-        'Door Vertical': 55.0,
-        'Door Top': 50.0,
-        'Door Bottom': 50.0,
-        'Door Middle Single': 45.0,
-        'Door Middle Double': 50.0,
-        'Door Leg Partition': 60.0,
-        'Door Glazing Clip': 25.0
+        // Door series — size-specific rates (₹ per running foot)
+        'Door Glazing Clip':        3.5,
+        'Tips Vertical':            15.0,
+        'Door Leg Partition':       15.2,
+        'Door Vertical 45mm':       14.89,
+        'Door Vertical 85mm':       19.26,
+        'Door Middle Single 45mm':  14.89,
+        'Door Middle Double 45mm':  14.89,
+        'Door Middle Double 85mm':  19.26,
+        'Door Top 45mm':            14.95,
+        'Door Top 85mm':            19.25,
+        'Door Bottom 45mm':         15.0,
+        'Door Bottom 85mm':         20.0,
+        'Door Bottom 115mm':        22.47
     },
     global: {
         'glassOffset': 1.5,
         'rubberRate': 5
+    },
+    // Per-series glass offsets (inches subtracted from shutter piece lengths to get glass pane size).
+    // shutterHDesc / shutterWDesc = formula 'desc' value that identifies the shutter vertical/horizontal piece.
+    // offsetW / offsetH applied to those derived lengths.
+    // msOffsetW / msOffsetH for mosquito shutters (null = no glass for MS).
+    glassOffsets: {
+        '3/4"':       { offsetW: 1.5,  offsetH: 1.5,  shutterHDesc: 'Handles',           shutterWDesc: 'Bearing Bottom',       msOffsetW: null, msOffsetH: null },
+        '1"':         { offsetW: 1.5,  offsetH: 1.5,  shutterHDesc: 'Handles',           shutterWDesc: 'Bearing Bottom',       msOffsetW: null, msOffsetH: null },
+        '27mm Domal': { offsetW: 4.25, offsetH: 4.25, shutterHDesc: 'Shutter Verticals', shutterWDesc: 'Shutter Horizontals',  msOffsetW: null, msOffsetH: null },
+        'Door':       { offsetW: 2.0,  offsetH: 2.0,  shutterHDesc: 'Vertical Handle',   shutterWDesc: 'Door Top',             msOffsetW: null, msOffsetH: null }
+    },
+    // Non-glass partition material rates for doors (₹ per sqft).
+    // Keys are "<Material>_<thickness>mm" or just "<Material>" for materials
+    // without thickness variants (MosquitoNet, SSMosquito, Louvers).
+    partitionRates: {
+        'ACP_3mm':            0,
+        'ACP_4mm':            0,
+        'ACP_6mm':            0,
+        'Bakelite_2.5mm':     0,
+        'Bakelite_4mm':       0,
+        'Bakelite_6mm':       0,
+        'MosquitoNet':        0,
+        'SSMosquito':         0,
+        'Louvers':            0,
+        'ParticleBoard_12mm': 0,
+        'ParticleBoard_18mm': 0,
+        'PartitionSheet_3mm': 0,
+        'PartitionSheet_4mm': 0
     }
 };
 
@@ -127,6 +162,13 @@ function initializeDefaults() {
             if (parsed.glass)         Object.assign(ratesConfig.glass, parsed.glass);
             if (parsed.global)        Object.assign(ratesConfig.global, parsed.global);
             if (parsed.powderCoating) Object.assign(ratesConfig.powderCoating, parsed.powderCoating);
+            if (parsed.partitionRates) Object.assign(ratesConfig.partitionRates, parsed.partitionRates);
+            if (parsed.glassOffsets)  {
+                // Deep merge so per-series desc fields are preserved alongside numeric offsets
+                for (const [s, v] of Object.entries(parsed.glassOffsets)) {
+                    ratesConfig.glassOffsets[s] = Object.assign(ratesConfig.glassOffsets[s] || {}, v);
+                }
+            }
         }
     } catch (e) { console.warn('Could not restore ratesConfig:', e); }
 
@@ -304,6 +346,129 @@ function refreshRatesDisplay() {
         document.getElementById('glassOffset').value = ratesConfig.global['glassOffset'];
         document.getElementById('rateRubber').value = ratesConfig.global['rubberRate'];
     }
+
+    renderGlassOffsetsList();
+    renderPartitionRatesList();
+}
+
+function renderPartitionRatesList() {
+    const container = document.getElementById('partitionRatesList');
+    if (!container) return;
+
+    const pr = ratesConfig.partitionRates || {};
+    const keys = Object.keys(pr).sort();
+
+    // Group keys by material for nicer display
+    const groups = {};
+    keys.forEach(k => {
+        const mat = k.split('_')[0];
+        (groups[mat] = groups[mat] || []).push(k);
+    });
+
+    const rowStyle = 'display:grid; grid-template-columns:180px 130px 110px; gap:10px; align-items:center; padding:5px 0; border-bottom:1px solid #f0f0f0;';
+    const hdrStyle = 'font-weight:600; font-size:11px; color:#555;';
+
+    let html = `<p style="font-size:12px;color:#666;margin:0 0 10px 0;">
+        Rates in ₹ per sqft for non-glass door partitions. Leave 0 if not applicable.
+    </p>`;
+    html += `<div style="${rowStyle}">
+        <span style="${hdrStyle}">Material</span>
+        <span style="${hdrStyle}">Thickness</span>
+        <span style="${hdrStyle}">Rate (₹/sqft)</span>
+    </div>`;
+
+    Object.keys(groups).sort().forEach(mat => {
+        groups[mat].forEach(key => {
+            const thkPart = key.includes('_') ? key.split('_').slice(1).join('_') : '—';
+            const safe = key.replace(/[^a-z0-9]/gi, '_');
+            html += `<div style="${rowStyle}">
+                <span style="font-size:12px;font-weight:500;">${mat}</span>
+                <span style="font-size:12px;color:#666;">${thkPart}</span>
+                <input type="number" id="prate_${safe}" data-key="${key}" value="${pr[key] || 0}" min="0" step="0.5"
+                       class="partition-rate-input"
+                       style="padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:12px;">
+            </div>`;
+        });
+    });
+
+    container.innerHTML = html;
+}
+
+function savePartitionRates() {
+    if (!ratesConfig.partitionRates) ratesConfig.partitionRates = {};
+    document.querySelectorAll('.partition-rate-input').forEach(input => {
+        const key = input.getAttribute('data-key');
+        ratesConfig.partitionRates[key] = parseFloat(input.value) || 0;
+    });
+    autoSaveRates();
+    showAlert('✅ Partition rates saved!');
+}
+
+function renderGlassOffsetsList() {
+    const container = document.getElementById('glassOffsetsList');
+    if (!container) return;
+
+    const allSeries = Object.keys(ratesConfig.glassOffsets || {});
+    // Also include any series in stockMaster not yet in glassOffsets
+    Object.keys(stockMaster || {}).forEach(s => { if (!allSeries.includes(s)) allSeries.push(s); });
+
+    if (allSeries.length === 0) {
+        container.innerHTML = '<p style="color:#999;font-size:12px;">No series configured yet.</p>';
+        return;
+    }
+
+    const rowStyle = 'display:grid; grid-template-columns:130px 75px 75px 160px 160px 75px 75px; gap:8px; align-items:center; padding:6px 0; border-bottom:1px solid #f0f0f0;';
+    const hdrStyle = 'font-weight:600; font-size:11px; color:#555;';
+    let html = `<div style="${rowStyle}">
+        <span style="${hdrStyle}">Series</span>
+        <span style="${hdrStyle}">Offset W"</span>
+        <span style="${hdrStyle}">Offset H"</span>
+        <span style="${hdrStyle}">Shutter H desc (formula)</span>
+        <span style="${hdrStyle}">Shutter W desc (formula)</span>
+        <span style="${hdrStyle}">MS Off W"</span>
+        <span style="${hdrStyle}">MS Off H"</span>
+    </div>`;
+
+    allSeries.forEach(series => {
+        const cfg  = (ratesConfig.glassOffsets && ratesConfig.glassOffsets[series]) || {};
+        const safe = series.replace(/[^a-z0-9]/gi, '_');
+        const num  = (id, val) => `<input type="number" id="goff_${safe}_${id}" value="${val !== null && val !== undefined ? val : ''}" placeholder="none" step="0.25" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:12px;">`;
+        const txt  = (id, val) => `<input type="text"   id="goff_${safe}_${id}" value="${val || ''}" placeholder="e.g. Shutter Verticals" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;font-family:monospace;">`;
+        html += `<div style="${rowStyle}">
+            <span style="font-size:12px;font-weight:500;">${series}</span>
+            ${num('w',  cfg.offsetW)}
+            ${num('h',  cfg.offsetH)}
+            ${txt('hd', cfg.shutterHDesc)}
+            ${txt('wd', cfg.shutterWDesc)}
+            ${num('mw', cfg.msOffsetW)}
+            ${num('mh', cfg.msOffsetH)}
+        </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+function saveGlassOffsets() {
+    if (!ratesConfig.glassOffsets) ratesConfig.glassOffsets = {};
+    const allSeries = Object.keys(ratesConfig.glassOffsets);
+    Object.keys(stockMaster || {}).forEach(s => { if (!allSeries.includes(s)) allSeries.push(s); });
+
+    allSeries.forEach(series => {
+        const safe   = series.replace(/[^a-z0-9]/gi, '_');
+        const getNum = id => { const el = document.getElementById(`goff_${safe}_${id}`); return (!el || el.value === '') ? null : parseFloat(el.value); };
+        const getTxt = id => { const el = document.getElementById(`goff_${safe}_${id}`); return el ? el.value.trim() : ''; };
+        ratesConfig.glassOffsets[series] = {
+            offsetW:      getNum('w'),
+            offsetH:      getNum('h'),
+            shutterHDesc: getTxt('hd'),
+            shutterWDesc: getTxt('wd'),
+            msOffsetW:    getNum('mw'),
+            msOffsetH:    getNum('mh')
+        };
+    });
+
+    autoSaveRates();
+    showAlert('✅ Glass offsets saved!');
 }
 
 function addPowderCoatingItem(groupName, safeId) {
@@ -704,37 +869,83 @@ function switchAddMode(mode) {
 function addDoor(event) {
     event.preventDefault();
 
-    const widthRaw = parseDimension(document.getElementById('doorWidth').value);
+    const widthRaw  = parseDimension(document.getElementById('doorWidth').value);
     const heightRaw = parseDimension(document.getElementById('doorHeight').value);
     const bottomProfile = document.getElementById('doorBottomProfileNew').value;
 
-    // Calculate bottom width based on profile
     let bottomWidth = 114.5;
     if (bottomProfile === 'Door Top 47.5') bottomWidth = 47.5;
     else if (bottomProfile === 'Door Top 85') bottomWidth = 85;
 
+    // Door type (single / double)
+    const doorType = document.getElementById('doorType')?.value || 'single';
+    const leaves   = doorType === 'double' ? 2 : 1;
+
+    // Closing mechanism
+    const closingMechanism = document.getElementById('doorClosingMechanism')?.value || 'Hinge';
+    const floorSpringHingeProfile = (closingMechanism === 'FloorSpring')
+        ? (document.getElementById('doorHingeSideProfileFS')?.value || '')
+        : '';
+
+    // Middle rail position
+    const customPos = document.getElementById('doorMiddleCustomPos').checked;
+    const middleRailPositionMM = customPos
+        ? (parseFloat(document.getElementById('doorMiddlePosition').value) || null)
+        : null; // null = center
+
+    // Upper partition
+    const upperMat    = document.getElementById('doorUpperMaterial').value;
+    const upperPartition = {
+        material:       upperMat,
+        thickness:      document.getElementById('doorUpperThickness').value,
+        glassType:      upperMat === 'Glass' ? document.getElementById('doorUpperGlassType').value : null,
+        glassToughened: upperMat === 'Glass' ? document.getElementById('doorUpperGlassToughened').value === '1' : false
+    };
+
+    // Lower partition
+    const lowerMat    = document.getElementById('doorLowerMaterial').value;
+    const lowerPartition = {
+        material:       lowerMat,
+        thickness:      document.getElementById('doorLowerThickness').value,
+        glassType:      lowerMat === 'Glass' ? document.getElementById('doorLowerGlassType').value : null,
+        glassToughened: lowerMat === 'Glass' ? document.getElementById('doorLowerGlassToughened').value === '1' : false
+    };
+
+    // Primary glass unit derived from upper partition (used by existing quotation glass lookup)
+    const primaryGlassType = upperMat === 'Glass' ? upperPartition.glassType
+                           : (lowerMat === 'Glass' ? lowerPartition.glassType : 'SGU');
+    const primaryToughened = upperMat === 'Glass' ? upperPartition.glassToughened
+                           : (lowerMat === 'Glass' ? lowerPartition.glassToughened : false);
+
     const doorData = {
-        category: 'Door',
-        configId: document.getElementById('doorConfigId').value,
+        category:   'Door',
+        configId:   document.getElementById('doorConfigId').value,
         projectName: document.getElementById('doorProjectName').value,
-        vendor: document.getElementById('doorVendor').value,
-        width: convertToInches(widthRaw),
-        height: convertToInches(heightRaw),
-        series: 'Door',
+        location:   document.getElementById('doorLocation')?.value || '',
+        vendor:     document.getElementById('doorVendor').value,
+        width:      convertToInches(widthRaw),
+        height:     convertToInches(heightRaw),
+        qty:        parseInt(document.getElementById('doorQty')?.value) || 1,
+        series:     'Door',
         description: document.getElementById('doorDescription').value,
-        glassUnit: document.getElementById('doorGlassTypeNew')?.value || 'SGU',
-        glassThickness: '6',
-        cornerJoint: '90', // Doors always 90°
+        glassUnit:      primaryGlassType,
+        glassThickness: upperMat === 'Glass' ? upperPartition.thickness : (lowerMat === 'Glass' ? lowerPartition.thickness : '6'),
+        glassToughened: primaryToughened,
+        cornerJoint: '90',
         frame: parseInt(document.getElementById('doorFrameSelect').value),
-        doorGlassType: document.getElementById('doorGlassTypeNew').value,
-        partitionMaterial: document.getElementById('doorPartitionMaterialNew').value,
-        partitionThickness: document.getElementById('doorPartitionThicknessNew').value,
+        doorType,               // 'single' | 'double'
+        leaves,                 // 1 | 2
+        closingMechanism,       // 'Hinge' | 'FloorSpring'
+        floorSpringHingeProfile, // '' | 'Door Vertical' | 'Door Middle Single' | 'Door Tips Vertical'
+        middleRailPositionMM,
+        upperPartition,
+        lowerPartition,
         handleProfile: document.getElementById('doorHandleProfileNew').value,
-        bottomProfile: bottomProfile,
+        bottomProfile,
         verticalWidth: 47.5,
-        topWidth: parseFloat(document.getElementById('doorTopWidthNew').value),
+        topWidth:    parseFloat(document.getElementById('doorTopWidthNew').value),
         middleWidth: parseFloat(document.getElementById('doorMiddleWidthNew').value),
-        bottomWidth: bottomWidth,
+        bottomWidth,
         shutters: 1,
         tracks: 0,
         mosquitoShutters: 0
@@ -743,7 +954,6 @@ function addDoor(event) {
     windows.push(doorData);
     autoSaveWindows();
 
-    // Increment counter and update ID
     incrementConfigCounter('Door');
     document.getElementById('doorConfigId').value = getNextConfigId('Door');
 
@@ -758,26 +968,57 @@ function clearDoorForm() {
     document.getElementById('doorConfigId').value = getNextConfigId('Door');
 }
 
-// Update Partition Thickness for new Door form
-function updateDoorPartitionThicknessNew() {
-    const material = document.getElementById('doorPartitionMaterialNew')?.value || 'Glass';
-    const thicknessSelect = document.getElementById('doorPartitionThicknessNew');
-    if (!thicknessSelect) return;
+// Thickness options per material
+const _partitionThicknessOpts = {
+    'Glass':          [{ v: '5', t: '5mm' }, { v: '6', t: '6mm' }, { v: '8', t: '8mm' }, { v: '10', t: '10mm' }],
+    'ACP':            [{ v: '3', t: '3mm' }, { v: '4', t: '4mm' }, { v: '6', t: '6mm' }],
+    'Bakelite':       [{ v: '2.5', t: '2.5mm' }, { v: '4', t: '4mm' }, { v: '6', t: '6mm' }],
+    'MosquitoNet':    [{ v: '0', t: 'N/A' }],
+    'SSMosquito':     [{ v: '0', t: 'N/A' }],
+    'Louvers':        [{ v: '0', t: 'N/A' }],
+    'ParticleBoard':  [{ v: '12', t: '12mm' }, { v: '18', t: '18mm' }],
+    'PartitionSheet': [{ v: '3', t: '3mm' }, { v: '4', t: '4mm' }],
+    'None':           [{ v: '0', t: 'N/A' }]
+};
 
-    const thicknessOptions = {
-        'Glass': [{ v: '5', t: '5mm' }, { v: '6', t: '6mm' }, { v: '8', t: '8mm' }],
-        'Bakelite': [{ v: '2.5', t: '2.5mm' }, { v: '4', t: '4mm' }],
-        'ACP': [{ v: '3', t: '3mm' }, { v: '4', t: '4mm' }, { v: '6', t: '6mm' }],
-        'Louvers': [{ v: '0', t: 'N/A' }],
-        'SSMosquito': [{ v: '0', t: 'N/A' }],
-        'ParticleBoard': [{ v: '12', t: '12mm' }, { v: '18', t: '18mm' }],
-        'PartitionSheet': [{ v: '3', t: '3mm' }, { v: '4', t: '4mm' }]
-    };
+function updateDoorPartitionThickness(zone) {
+    const mat       = document.getElementById(`door${zone.charAt(0).toUpperCase()+zone.slice(1)}Material`)?.value || 'Glass';
+    const thickSel  = document.getElementById(`door${zone.charAt(0).toUpperCase()+zone.slice(1)}Thickness`);
+    const glassRow  = document.getElementById(`door${zone.charAt(0).toUpperCase()+zone.slice(1)}GlassRow`);
 
-    const options = thicknessOptions[material] || [{ v: '0', t: 'N/A' }];
-    thicknessSelect.innerHTML = options.map(o =>
-        `<option value="${o.v}">${o.t}</option>`
-    ).join('');
+    if (glassRow) glassRow.style.display = mat === 'Glass' ? 'flex' : 'none';
+
+    if (thickSel) {
+        const opts = _partitionThicknessOpts[mat] || [{ v: '0', t: 'N/A' }];
+        thickSel.innerHTML = opts.map(o => `<option value="${o.v}">${o.t}</option>`).join('');
+    }
+}
+
+// Legacy alias (kept so old code paths don't break)
+function updateDoorPartitionThicknessNew() { updateDoorPartitionThickness('upper'); }
+
+function toggleDoubleDoorOptions() {
+    const isDouble = document.getElementById('doorType')?.value === 'double';
+    const opts = document.getElementById('doubleDoorOptions');
+    if (opts) opts.style.display = isDouble ? 'block' : 'none';
+}
+
+function toggleClosingMechanism() {
+    const cm = document.getElementById('doorClosingMechanism')?.value;
+    const fsGroup   = document.getElementById('doorHingeSideFSGroup');
+    const hingeInfo = document.getElementById('doorHingeSideHingeInfo');
+    if (fsGroup)   fsGroup.style.display   = (cm === 'FloorSpring') ? '' : 'none';
+    if (hingeInfo) hingeInfo.style.display = (cm === 'Hinge') ? '' : 'none';
+}
+
+function toggleDoorMiddlePosition() {
+    const checked = document.getElementById('doorMiddleCustomPos')?.checked;
+    const grp     = document.getElementById('doorMiddlePosGroup');
+    if (grp) grp.style.display = checked ? 'flex' : 'none';
+    if (!checked) {
+        const inp = document.getElementById('doorMiddlePosition');
+        if (inp) inp.value = '';
+    }
 }
 
 function toggleDoorFrame() {
@@ -1171,11 +1412,34 @@ function renderWindowCard(w, idx) {
                 <div><strong>Project:</strong> ${w.projectName}</div>
                 <div><strong>Vendor:</strong> ${w.vendor || 'Not Set'}</div>
                 <div><strong>Size:</strong> ${w.width}" × ${w.height}"</div>
-                ${isDoor ? `<div><strong>Frame:</strong> ${w.frame ? 'Yes' : 'No'}</div>` :
+                ${isDoor ? (() => {
+                    const up = w.upperPartition || {};
+                    const lo = w.lowerPartition || {};
+                    const fmtPartition = (p, legacy) => {
+                        if (!p || !p.material) return legacy || '-';
+                        if (p.material === 'None') return 'None';
+                        if (p.material === 'Glass') return `Glass ${p.glassType || ''} ${p.thickness || ''}mm${p.glassToughened ? ' (T)' : ''}`;
+                        return `${p.material} ${p.thickness ? p.thickness+'mm' : ''}`.trim();
+                    };
+                    const midPos = w.middleRailPositionMM != null
+                        ? `${w.middleRailPositionMM}mm from bottom`
+                        : 'Center';
+                    const doorTypeLabel = (w.leaves || 1) > 1 ? '🚪🚪 Double Door' : '🚪 Single Door';
+                    const cmLabel = w.closingMechanism === 'FloorSpring' ? '🌀 Floor Spring' : '🔩 Hinge';
+                    return `<div><strong>Type:</strong> ${doorTypeLabel}</div>
+                <div><strong>Mechanism:</strong> ${cmLabel}</div>
+                <div><strong>Frame:</strong> ${w.frame ? 'Yes' : 'No'}</div>
+                <div><strong>Middle Rail:</strong> ${midPos}</div>
+                <div style="grid-column:1/-1;display:flex;gap:10px;flex-wrap:wrap;">
+                    <span style="background:#e8f4fd;padding:2px 8px;border-radius:4px;font-size:12px;">⬆ ${fmtPartition(up, w.partitionMaterial)}</span>
+                    <span style="background:#eafaf1;padding:2px 8px;border-radius:4px;font-size:12px;">⬇ ${fmtPartition(lo)}</span>
+                </div>`;
+                })() :
             `<div><strong>Tracks:</strong> ${w.tracks}</div>
                 <div><strong>Shutters:</strong> ${w.shutters}</div>
                 <div><strong>Mosquito:</strong> ${w.mosquitoShutters}</div>`}
                 <div><strong>Series:</strong> ${w.series}</div>
+                <div><strong>Qty:</strong> ${w.qty || 1}</div>
                 <div><strong>Thickness:</strong> <span style="color: ${hasThickness ? '#2e7d32' : '#e67e22'};">${thicknessStatus} ${thicknessLabel}</span></div>
             </div>
             <div class="window-actions">
@@ -1834,7 +2098,8 @@ function updateKerf() {
 }
 
 function updateAluminumRate() {
-    aluminumRate = parseFloat(document.getElementById('aluminumRate').value);
+    const el = document.getElementById('aluminumRate');
+    if (el) aluminumRate = parseFloat(el.value);
     autoSaveSettings();
 }
 
@@ -1867,7 +2132,7 @@ function refreshHardwareMaster() {
 
         hardwareItems.forEach((item, idx) => {
             html += `<tr>
-                <td>${item.hardware}</td>
+                <td><input type="text" value="${item.hardware || ''}" onchange="updateHardwareField('${series}', ${idx}, 'hardware', this.value)" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px; font-weight: 500;"></td>
                 <td><input type="text" value="${item.unit || 'Nos'}" onchange="updateHardwareField('${series}', ${idx}, 'unit', this.value)" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
                 <td><input type="text" value="${item.formula || ''}" onchange="updateHardwareField('${series}', ${idx}, 'formula', this.value)" style="width: 100%; font-family: monospace; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
                 <td><input type="number" value="${item.rate}" onchange="updateHardwareField('${series}', ${idx}, 'rate', this.value)" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px;"></td>
