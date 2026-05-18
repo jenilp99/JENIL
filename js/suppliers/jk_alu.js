@@ -332,38 +332,31 @@ window.registerSupplier("JK ALU EXTRUSION", {
         // MW = Door Middle Double Width (from user selection)
         // VW = Vertical Width (Handle + Hing, from user selection)
         'Door': [
-            // Door Vertical Handle
-            // Length = DoorHeight - Frame Top Deduct - LEG_PARTITION_WIDTH - 1.5mm play top - 1.5mm play bottom
-            // LEG_PARTITION_WIDTH = 38.5mm = 1.516"
-            { component: 'Door Vertical', qty: '1', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Handle' },
+            // Door Vertical Handle - 1 per leaf (L)
+            { component: 'Door Vertical', qty: 'L', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Handle' },
 
-            // Door Vertical Hing (Same as Handle)
-            { component: 'Door Vertical', qty: '1', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Hing' },
+            // Door Vertical Hing - 1 per leaf (L)
+            { component: 'Door Vertical', qty: 'L', length: 'H - (F*1.575) - 1.634', desc: 'Vertical Hing' },
 
-            // Door Top
-            // Length = DoorWidth - (Frame side deductions) - Handle Width - Hing Width
-            // = W - (F*3.15) - VW - VW = W - (F*3.15) - 2*VW
-            { component: 'Door Top', qty: '1', length: 'W - (F*3.15) - 2*VW', desc: 'Top Rail' },
+            // Door Top - 1 per leaf, width split equally across leaves
+            { component: 'Door Top', qty: 'L', length: '(W - (F*3.15)) / L - 2*VW', desc: 'Top Rail' },
 
-            // Door Bottom
-            // Length = DoorWidth - (Frame deductions) - Handle Width - Hing Width
-            { component: 'Door Bottom', qty: '1', length: 'W - (F*3.15) - 2*VW', desc: 'Bottom Rail' },
+            // Door Bottom - 1 per leaf, width split equally across leaves
+            { component: 'Door Bottom', qty: 'L', length: '(W - (F*3.15)) / L - 2*VW', desc: 'Bottom Rail' },
 
-            // Door Middle Double
-            { component: 'Door Middle Double', qty: '1', length: 'W - (F*3.15) - 2*VW', desc: 'Middle Rail' },
+            // Door Middle Double - 1 per leaf
+            { component: 'Door Middle Double', qty: 'L', length: '(W - (F*3.15)) / L - 2*VW', desc: 'Middle Rail' },
 
-            // Frame - Leg Partition (Only if F=1)
+            // Frame - Leg Partition (Only if F=1), 3 sides: top, left, right (no bottom)
             { component: 'Door Leg Partition', qty: '1*F', length: 'W', desc: 'Frame Top' },
             { component: 'Door Leg Partition', qty: '1*F', length: 'H', desc: 'Frame Left' },
             { component: 'Door Leg Partition', qty: '1*F', length: 'H', desc: 'Frame Right' },
 
-            // Door Glazing Clip - Vertical (Qty: 8 = 4 per glass pane × 2 panes)
-            // Length = (DoorHeight - FrameDeduct - TopWidth - BottomWidth - MiddleWidth) / 2
-            { component: 'Door Glazing Clip', qty: '8', length: '(H - (F*1.575) - TW - BW - MW) / 2', desc: 'Glazing Clip Vertical' },
+            // Door Glazing Clip - Vertical (4 per pane × 2 panes per leaf)
+            { component: 'Door Glazing Clip', qty: '8*L', length: '(H - (F*1.575) - TW - BW - MW) / 2', desc: 'Glazing Clip Vertical' },
 
-            // Door Glazing Clip - Horizontal (Qty: 8)
-            // Length = DoorWidth - FrameDeduct - HandleWidth - HingWidth
-            { component: 'Door Glazing Clip', qty: '8', length: 'W - (F*3.15) - 2*VW', desc: 'Glazing Clip Horizontal' }
+            // Door Glazing Clip - Horizontal (4 per pane × 2 panes per leaf)
+            { component: 'Door Glazing Clip', qty: '8*L', length: '(W - (F*3.15)) / L - 2*VW', desc: 'Glazing Clip Horizontal' }
         ]
     },
 
@@ -436,21 +429,24 @@ window.registerSupplier("JK ALU EXTRUSION", {
             { hardware: 'Acrylic Stopper', qty: 4, unit: 'Nos', formula: '4', rate: 2 }
         ],
         '27mm Domal': [
-            { hardware: 'Domal Bearing', qty: 4, unit: 'Nos', formula: '2 * S', rate: 120 },
-            { hardware: 'Concealed Lock', qty: 2, unit: 'Nos', formula: '1 * S', rate: 350 }, // 1 per shutter usually for Domal? User said "Window Lock: 2 per window". Sticking to user.
-            { hardware: 'Touch Lock (Domal)', qty: 2, unit: 'Nos', formula: '2 + (MS > 0 ? 1 : 0)', rate: 150 },
-            { hardware: 'Wool Pile (Domal)', qty: 10, unit: 'R.Ft', formula: '(GL("DOMAL CLIP (27MM)") + 2 * S * H) / 12', rate: 6 },
-            { hardware: 'Silicon Sealant', qty: 1, unit: 'R.Ft', formula: '(W + H) * 2 / 12', rate: 10 },
-            { hardware: 'Anti-Lift Plug', qty: 2, unit: 'Nos', formula: '2 * S', rate: 15 },
-            { hardware: 'Domal Stopper', qty: 4, unit: 'Nos', formula: '4', rate: 25 }
+            { hardware: 'Domal Bearing',                         unit: 'Nos',  formula: '2 * S + (MS*2)',                                                                         rate: 47 },
+            { hardware: 'Concealed Lock',                        unit: 'Nos',  formula: '2 * (S/S) + (MS*1)',                                                                     rate: 118 },
+            { hardware: 'Wool Pile (Domal)',                     unit: 'R.Ft', formula: '(((H * 3) + (W * 2)) * S) + (((H * 3) + (W * 2)) * MS)',                                rate: 7 },
+            { hardware: 'Silicon Sealant',                       unit: 'R.Ft', formula: '(W + H) * 2 / 12',                                                                       rate: 8 },
+            { hardware: 'Anti-Lift Plug',                        unit: 'Nos',  formula: '2 * S',                                                                                  rate: 2 },
+            { hardware: 'Domal Cleat',                           unit: 'Nos',  formula: '4*S + (MS*4)',                                                                           rate: 18 },
+            { hardware: 'Domal Inter Lock Cap',                  unit: 'Nos',  formula: '2*(S-1) + (2*(MS*1))',                                                                   rate: 2 },
+            { hardware: 'Domal Wing Connector',                  unit: 'Nos',  formula: '8*S + (MS*8)',                                                                           rate: 0.6 },
+            { hardware: 'Screw (13*6, 19*6, 25*7, 32*8, 60*10)', unit: 'Nos', formula: '(S/S) * 16 + (2*(S-1) * 5) + ((S*4) + (MS * 4)) + 4*(S/S) + 8*(S/S)',                  rate: 1 }
         ],
         'Door': [
-            { hardware: 'Door Hinge', qty: 3, unit: 'Nos', formula: '3', rate: 150 },
-            { hardware: 'Door Handle', qty: 2, unit: 'Nos', formula: '2', rate: 450 },
-            { hardware: 'Door Closer', qty: 1, unit: 'Nos', formula: '1', rate: 1800 },
-            { hardware: 'Lock Body', qty: 1, unit: 'Nos', formula: '1', rate: 850 },
-            { hardware: 'Cylinder', qty: 1, unit: 'Nos', formula: '1', rate: 450 },
-            { hardware: 'Silicon Sealant', qty: 1, unit: 'R.Ft', formula: '(W + H) * 2 / 12', rate: 10 }
+            { hardware: 'Door Hinge',      unit: 'Nos',  formula: '4 * L',              rate: 52 },
+            { hardware: 'Door Handle',     unit: 'Nos',  formula: '2 * L',              rate: 450 },
+            { hardware: 'Door Closer',     unit: 'Nos',  formula: '1 * L',              rate: 1800 },
+            { hardware: 'Lock Body',       unit: 'Nos',  formula: '1 * L',              rate: 850 },
+            { hardware: 'Cylinder',        unit: 'Nos',  formula: '1 * L',              rate: 450 },
+            { hardware: 'Silicon Sealant', unit: 'R.Ft', formula: '(W + H) * 2 / 12',  rate: 10 },
+            { hardware: 'Door Road 12mm',  unit: 'Nos',  formula: '2 * L',              rate: 60 }
         ]
     }
 });
